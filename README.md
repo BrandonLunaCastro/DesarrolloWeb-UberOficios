@@ -1,12 +1,19 @@
-UberOficios
+# UberOficios
+
 Aplicación web para consultar y encontrar prestadores de servicios locales, como mecánicos, plomeros, electricistas, técnicos, etc.
+
 El proyecto está dividido en:
-Backend: Python + FastAPI + SQLAlchemy + PostgreSQL
-Base de datos: PostgreSQL mediante Supabase
-Frontend: HTML + CSS + JavaScript
-Autenticación: Passlib + bcrypt + JWT
-Control de versiones: Git + GitHub
-1. Estructura del proyecto
+
+* **Backend:** Python + FastAPI + SQLAlchemy + PostgreSQL
+* **Base de datos:** PostgreSQL mediante Supabase
+* **Frontend:** HTML + CSS + JavaScript
+* **Autenticación:** Passlib + bcrypt + JWT
+
+---
+
+# 1. Estructura del proyecto
+
+```text
 UberOficios/
 │
 ├── backend/
@@ -27,431 +34,526 @@ UberOficios/
 ├── alembic.ini
 ├── requirements.txt
 └── README.md
+```
 
-El archivo .env no debe subirse a GitHub porque contiene información sensible de conexión.
-2. Requisitos
+> El archivo `.env` no debe subirse a GitHub porque contiene información sensible de conexión.
+
+---
+
+# 2. Requisitos
+
 Antes de comenzar, instalar:
-Python 3
-Git
-Visual Studio Code
-Comprobar Python:
+
+* Python 3
+* Git
+* Visual Studio Code
+
+Se recomienda tener Python agregado al PATH.
+
+Para comprobar Python:
+
+```powershell
 python --version
+```
 
-Comprobar Git:
+Para comprobar Git:
+
+```powershell
 git --version
+```
 
-3. Clonar el repositorio
-Cada integrante debe clonar el repositorio una sola vez.
+---
+
+# 3. Clonar el repositorio
+
+Abrir PowerShell o una terminal y ejecutar:
+
+```powershell
 git clone URL_DEL_REPOSITORIO
+```
 
-Entrar al proyecto:
+Luego entrar al proyecto:
+
+```powershell
 cd UberOficios
+```
 
-4. Crear el entorno virtual
-Cada integrante debe crear su propio entorno virtual.
+---
+
+# 4. Crear el entorno virtual
+
+Cada integrante del equipo debe crear su propio entorno virtual.
+
+Desde la raíz del proyecto:
+
+```powershell
 python -m venv venv
+```
 
-No se debe copiar el venv de otro integrante ni subirlo a GitHub.
-5. Activar el entorno virtual
+No se debe copiar el `venv` de otro integrante.
+
+---
+
+# 5. Activar el entorno virtual
+
 En Windows PowerShell:
+
+```powershell
 .\venv\Scripts\Activate.ps1
+```
 
-Si se activó correctamente, aparecerá:
+Si se activó correctamente, la terminal debería mostrar:
+
+```text
 (venv)
+```
 
-al principio de la terminal.
-6. Instalar las dependencias
+Por ejemplo:
+
+```text
+(venv) PS E:\UberOficios>
+```
+
+---
+
+# 6. Instalar las dependencias
+
 Con el entorno virtual activado:
+
+```powershell
 pip install -r requirements.txt
+```
 
 Esto instala las librerías necesarias para ejecutar el backend.
-Entre ellas:
-FastAPI
-Uvicorn
-SQLAlchemy
-PostgreSQL
-Passlib
-bcrypt
-JWT
-Importante: bcrypt
-El proyecto utiliza:
-bcrypt==4.0.1
 
-Esta versión debe mantenerse debido a la compatibilidad con Passlib.
-No actualizar bcrypt manualmente a una versión 5.x sin comprobar la compatibilidad.
-7. Configurar el archivo .env
-El archivo .env no debe estar en el repositorio.
-Cada integrante debe crear su propio:
+Entre ellas se encuentran las utilizadas por:
+
+* FastAPI
+* Uvicorn
+* SQLAlchemy
+* PostgreSQL
+* Passlib
+* bcrypt
+* JWT
+
+## Importante sobre bcrypt
+
+El proyecto utiliza:
+
+```text
+bcrypt==4.0.1
+```
+
+Esta versión debe mantenerse porque estamos utilizando Passlib para el hash de contraseñas.
+
+No actualizar bcrypt manualmente a una versión 5.x sin comprobar la compatibilidad con Passlib.
+
+---
+
+# 7. Crear el archivo `.env`
+
+El archivo `.env` no se encuentra en el repositorio por seguridad.
+
+Cada integrante debe crear su propio archivo:
+
+```text
 .env
+```
 
 en la raíz del proyecto.
-Ejemplo:
-DATABASE_URL=URL_DE_LA_BASE_DE_DATOS
 
-La información real de conexión debe ser proporcionada por el equipo.
-Nunca subir contraseñas, claves privadas ni credenciales a GitHub.
-El .gitignore debe contener:
+La configuración debe ser proporcionada por el equipo.
+
+Ejemplo de estructura:
+
+```env
+DATABASE_URL=URL_DE_LA_BASE_DE_DATOS
+```
+
+> No subir el archivo `.env` a GitHub.
+
+El `.gitignore` debe contener:
+
+```gitignore
 venv/
 __pycache__/
 *.pyc
 .env
+```
 
-8. Ejecutar el backend
-El backend se ejecuta desde la carpeta backend.
+---
+
+# 8. Ejecutar el backend
+
+Importante: el backend se ejecuta desde la carpeta `backend`.
+
+Primero:
+
+```powershell
 cd backend
+```
 
 Luego:
-uvicorn app.main:app --reload
 
-Si funciona correctamente:
+```powershell
+uvicorn app.main:app --reload
+```
+
+Si todo funciona correctamente aparecerá algo similar a:
+
+```text
 Uvicorn running on http://127.0.0.1:8000
 Application startup complete.
+```
 
-9. Swagger
-FastAPI proporciona automáticamente una interfaz para probar los endpoints.
-Abrir:
+---
+
+# 9. Abrir Swagger
+
+FastAPI genera automáticamente una interfaz para probar los endpoints.
+
+Abrir en el navegador:
+
+```text
 http://127.0.0.1:8000/docs
+```
 
-Desde Swagger se pueden ejecutar y probar los endpoints del backend.
-10. Health Check
+Desde ahí se pueden probar los endpoints del backend.
+
+---
+
+# 10. Comprobar el Health Check
+
 El proyecto tiene un endpoint para comprobar que el servidor está funcionando:
-GET /health
 
-Respuesta esperada:
+```text
+GET /health
+```
+
+Desde Swagger se puede ejecutar.
+
+La respuesta esperada es:
+
+```json
 {
   "status": "ok"
 }
+```
 
-11. Autenticación
-Actualmente el backend contiene funcionalidades relacionadas con autenticación.
-Registro de usuarios
+---
+
+# 11. Autenticación
+
+Actualmente el backend contiene endpoints relacionados con autenticación.
+
+## Registrar usuario
+
 Endpoint:
-POST /auth/register
 
-Datos:
+```text
+POST /auth/register
+```
+
+Datos necesarios:
+
+```json
 {
   "nombre_apellido": "Nombre Apellido",
   "correo": "correo@email.com",
   "contrasena": "123456"
 }
+```
 
 El proceso es:
+
+```text
 Datos recibidos
       ↓
 Pydantic valida los datos
       ↓
 Se comprueba si el correo ya existe
       ↓
-Se hashea la contraseña
+Se hashea la contraseña con Passlib + bcrypt
       ↓
 Se crea el Usuario
       ↓
 Se guarda en PostgreSQL
+```
 
-La contraseña no se almacena en texto plano.
-Por ejemplo:
+La contraseña **no se guarda en texto plano**.
+
+Por ejemplo, si el usuario escribe:
+
+```text
 123456
+```
 
-se convierte en un hash similar a:
+en la base de datos se almacena un hash similar a:
+
+```text
 $2b$12$................................
+```
 
-12. Trabajo con Git y Branches
-Para evitar que un cambio de un integrante rompa el código estable, no se debe trabajar directamente sobre main.
-La rama main representa el código estable del proyecto.
-Cada nueva funcionalidad debe desarrollarse en una rama independiente.
-La estructura será:
-main
-│
-├── feature/register
-├── feature/login
-├── feature/prestadores
-├── feature/clientes
-├── feature/calificaciones
-└── feature/busqueda
+---
 
-13. ¿Qué es main?
-main es la rama principal y estable.
-Debe contener código que:
-Funcione.
-Haya sido probado.
-Esté listo para integrarse con el resto del proyecto.
-Regla
-No desarrollar funcionalidades directamente en main.
-14. Crear una branch para una funcionalidad
-Antes de comenzar una tarea, actualizar main:
-git switch main
+# 12. Importante: no modificar las contraseñas almacenadas
+
+Las contraseñas están almacenadas mediante hash.
+
+No se deben guardar contraseñas directamente como:
+
+```text
+123456
+password
+admin123
+```
+
+El backend utiliza:
+
+```python
+pwd_context.hash(contrasena)
+```
+
+para generar el hash.
+
+Para comprobar una contraseña se utiliza:
+
+```python
+pwd_context.verify(
+    contrasena,
+    contrasena_hash
+)
+```
+
+---
+
+# 13. Trabajar con Git
+
+Antes de comenzar a trabajar, siempre actualizar el repositorio:
+
+```powershell
 git pull
+```
 
-Después crear una nueva branch:
-git switch -c feature/nombre-de-la-funcionalidad
+Después de realizar cambios:
 
-Ejemplo:
-git switch -c feature/prestadores
-
-Ahora estamos trabajando en:
-feature/prestadores
-
-y no directamente en main.
-15. Trabajar dentro de la branch
-Ahora se puede modificar el código normalmente.
-Por ejemplo:
-backend/app/models/
-backend/app/routes/
-backend/app/schemas/
-
-Después probar el funcionamiento:
-cd backend
-uvicorn app.main:app --reload
-
-Y utilizar:
-http://127.0.0.1:8000/docs
-
-para probar los endpoints.
-16. Guardar los cambios
-Cuando la funcionalidad esté funcionando:
-Volver a la raíz del proyecto:
-cd ..
-
-Comprobar cambios:
+```powershell
 git status
+```
 
-Agregar los archivos:
+Agregar los archivos modificados:
+
+```powershell
 git add .
+```
 
 Crear el commit:
-git commit -m "feat: agregar funcionalidad de prestadores"
 
-17. Subir la branch a GitHub
-Después del commit:
-git push -u origin feature/prestadores
+```powershell
+git commit -m "descripcion del cambio"
+```
 
-Esto crea/sube la branch a GitHub.
-18. Pull Request
-Una vez subida la branch, se debe crear un Pull Request (PR) en GitHub.
-El flujo es:
-feature/prestadores
-        ↓
-      GitHub
-        ↓
- Pull Request
-        ↓
-Revisión del equipo
-        ↓
-      main
+Finalmente:
 
-El Pull Request permite revisar los cambios antes de incorporarlos a main.
-19. ¿Por qué usamos Pull Requests?
-Porque queremos evitar:
-Compañero
-    ↓
-modifica código
-    ↓
-push directo a main
-    ↓
-💥 main deja de funcionar
+```powershell
+git push
+```
 
-En cambio:
-Compañero
-    ↓
-feature/prestadores
-    ↓
-commit
-    ↓
-push
-    ↓
-Pull Request
-    ↓
-revisión
-    ↓
-merge
-    ↓
-main
+---
 
-Esto permite detectar errores antes de modificar la rama estable.
-20. Proteger la rama main
-En GitHub se recomienda configurar main como Protected Branch.
-La idea es impedir que los integrantes hagan push directamente a main.
-El flujo recomendado será:
-Branch de trabajo
-       ↓
-Pull Request
-       ↓
-Revisión
-       ↓
-Merge
-       ↓
-main
+# 14. Antes de empezar a programar
 
-De esta manera, main queda protegida.
-21. Ejemplo de trabajo entre dos compañeros
-Supongamos que:
-Brandon
-Trabaja en:
-feature/login
+Siempre hacer:
 
-Compañero
-Trabaja en:
-feature/prestadores
-
-El repositorio queda:
-                    main
-                     │
-            ┌────────┴────────┐
-            ↓                 ↓
-     feature/login     feature/prestadores
-          Brandon             compañero
-
-Cada uno puede trabajar independientemente.
-Cuando una funcionalidad termina:
-feature/login
-      ↓
-Pull Request
-      ↓
-revisión
-      ↓
-main
-
-Después la otra:
-feature/prestadores
-      ↓
-Pull Request
-      ↓
-revisión
-      ↓
-main
-
-22. Antes de comenzar una nueva tarea
-Siempre actualizar main:
-git switch main
+```powershell
 git pull
+```
 
-Después crear la branch:
-git switch -c feature/nueva-funcionalidad
+Esto permite obtener los últimos cambios realizados por los demás integrantes.
 
 Ejemplo:
-git switch -c feature/calificaciones
 
-23. Si otro compañero ya actualizó main
-Si estás trabajando en una branch y otro integrante incorporó cambios a main, primero hay que actualizarse antes de continuar o integrar la funcionalidad.
-Una forma sencilla:
-git switch main
+```text
+GitHub
+   ↓
 git pull
+   ↓
+Tu computadora
+   ↓
+Realizás cambios
+   ↓
+git add
+   ↓
+git commit
+   ↓
+git push
+   ↓
+GitHub
+```
 
-Luego volver a tu branch:
-git switch feature/nueva-funcionalidad
+---
 
-Si aparecen conflictos al integrar cambios, no borrar archivos ni utilizar:
-git push --force
+# 15. Trabajo entre compañeros
 
-sin consultar al equipo.
-24. Flujo completo de trabajo
-Este será el flujo habitual del equipo:
-1. git switch main
-        ↓
-2. git pull
-        ↓
-3. git switch -c feature/nueva-funcionalidad
-        ↓
-4. Programar
-        ↓
-5. Probar
-        ↓
-6. git status
-        ↓
-7. git add .
-        ↓
-8. git commit -m "feat: descripción"
-        ↓
-9. git push -u origin feature/nueva-funcionalidad
-        ↓
-10. Crear Pull Request
-        ↓
-11. Revisar
-        ↓
-12. Merge a main
+El proyecto está separado en backend y frontend:
 
-25. Después de hacer Merge
-Una vez que el Pull Request fue aceptado y fusionado:
-git switch main
+```text
+UberOficios/
+│
+├── backend/
+│
+└── frontend/
+```
+
+Esto permite que los integrantes puedan trabajar principalmente en su respectiva parte del proyecto.
+
+### Backend
+
+Ubicación:
+
+```text
+backend/
+```
+
+Tecnologías:
+
+* Python
+* FastAPI
+* SQLAlchemy
+* PostgreSQL
+* JWT
+* Passlib
+
+### Frontend
+
+Ubicación:
+
+```text
+frontend/
+```
+
+Tecnologías:
+
+* HTML
+* CSS
+* JavaScript
+
+---
+
+# 16. Regla importante antes de hacer cambios
+
+Antes de comenzar:
+
+```powershell
 git pull
+```
 
-La funcionalidad ya estará disponible en la rama principal.
-La branch utilizada para esa funcionalidad puede eliminarse si el equipo considera que ya no es necesaria.
-26. Convención para nombres de branches
-Utilizar:
-feature/nombre
+Después de terminar una tarea:
 
-para nuevas funcionalidades.
-Ejemplos:
-feature/register
-feature/login
-feature/prestadores
-feature/clientes
-feature/calificaciones
-feature/busqueda
+```powershell
+git status
+git add .
+git commit -m "descripcion"
+git push
+```
 
-Para correcciones:
-fix/nombre-del-error
+Evitar trabajar durante mucho tiempo sin actualizar el repositorio.
 
-Ejemplo:
-fix/error-login
+---
 
-27. Convención para commits
-Utilizar mensajes claros.
-Ejemplos:
-feat: agregar registro de usuarios
+# 17. Si Git muestra conflictos
 
-feat: agregar endpoints de prestadores
+Si aparece un mensaje indicando que existen conflictos, **no borrar archivos ni hacer `git push --force`**.
 
-fix: corregir validacion de correo
+Primero avisar al equipo para resolver el conflicto correctamente.
 
-chore: actualizar dependencias
+---
 
-La idea es que mirando el historial de Git se pueda entender qué se modificó.
-28. Reglas importantes del equipo
-No trabajar directamente en main
-❌ main → programar
+# 18. Flujo recomendado para una tarea
 
-Utilizar:
-✅ feature/... → programar
+Ejemplo: implementar un nuevo endpoint.
 
-No subir .env
-❌ git add .env
+### 1. Actualizar código
 
-No subir venv
-❌ git add venv/
+```powershell
+git pull
+```
 
-No hacer push --force sobre main
-❌ git push --force
+### 2. Crear/modificar código
 
-Siempre probar antes de crear el Pull Request
-Código
- ↓
-Prueba
- ↓
-Commit
- ↓
-Push
- ↓
-Pull Request
+Trabajar dentro de:
 
-29. Estado actual del proyecto
-Actualmente el backend cuenta con:
-Estructura organizada dentro de backend/app
-FastAPI funcionando
-Swagger funcionando
-Health Check
-PostgreSQL
-SQLAlchemy
-Modelos de usuarios
-Schemas con Pydantic
-Registro de usuarios
-Validación de datos
-Hash de contraseñas con Passlib + bcrypt
+```text
+backend/app/
+```
+
+### 3. Probar
+
+Ejecutar:
+
+```powershell
+cd backend
+uvicorn app.main:app --reload
+```
+
+Y comprobar mediante:
+
+```text
+http://127.0.0.1:8000/docs
+```
+
+### 4. Guardar cambios
+
+Desde la raíz:
+
+```powershell
+git add .
+```
+
+### 5. Crear commit
+
+```powershell
+git commit -m "feat: agregar nuevo endpoint"
+```
+
+### 6. Subir
+
+```powershell
+git push
+```
+
+---
+
+# 19. Estado actual del proyecto
+
+Actualmente el backend tiene:
+
+* Estructura organizada dentro de `backend/app`
+* Conexión con PostgreSQL
+* Modelos SQLAlchemy
+* FastAPI funcionando
+* Swagger funcionando
+* Health Check
+* Sistema de registro de usuarios
+* Validación mediante Pydantic
+* Hash de contraseñas mediante Passlib + bcrypt
+* Primer endpoint de autenticación:
+
+```text
 POST /auth/register
-30. Objetivo del desarrollo
+```
+
+---
+
+# 20. Objetivo del desarrollo
+
 El proyecto se desarrollará progresivamente.
-La idea es trabajar por funcionalidades:
+
+No es necesario implementar todas las entidades y funcionalidades de una sola vez.
+
+La idea es:
+
+```text
 Base de datos
       ↓
 Modelos
@@ -469,58 +571,31 @@ Frontend
 Integración
       ↓
 Pruebas
+```
 
-Cada funcionalidad debe probarse antes de integrarse a main.
-31. Comandos rápidos
-Actualizar proyecto
-git switch main
-git pull
+Cada funcionalidad debe probarse antes de continuar con la siguiente.
 
-Crear branch
-git switch -c feature/nueva-funcionalidad
+---
 
-Ver branch actual
-git branch
+# 21. Comando rápido para empezar a trabajar
 
-Ver cambios
-git status
+Después de haber clonado y configurado el proyecto, el flujo habitual será:
 
-Guardar cambios
-git add .
-git commit -m "feat: descripcion"
-
-Subir branch
-git push -u origin nombre-de-la-branch
-
-Volver a main
-git switch main
-
-32. Inicio rápido para un nuevo integrante
-Después de clonar y configurar el proyecto:
+```powershell
 cd UberOficios
-
-python -m venv venv
+git pull
 
 .\venv\Scripts\Activate.ps1
 
-pip install -r requirements.txt
-
-git switch main
-
-git pull
-
 cd backend
-
 uvicorn app.main:app --reload
+```
 
-Abrir:
+Luego abrir:
+
+```text
 http://127.0.0.1:8000/docs
+```
 
-Cuando vaya a comenzar una tarea:
-git switch main
-git pull
-git switch -c feature/nombre-de-la-tarea
+¡Listo para trabajar!
 
-A partir de ese momento puede trabajar en su branch sin modificar directamente main.
-33. Regla principal del proyecto
-main debe mantenerse estable. Cada funcionalidad nueva se desarrolla en una branch, se prueba y luego se incorpora mediante Pull Request.
