@@ -14,12 +14,16 @@ from app.models.usuario import Usuario
 # Importamos el schema que creamos anteriormente.
 # LoginRequest define los datos que debe recibir el login:
 # correo y contraseña.
-from app.schemas.auth import LoginRequest
+from app.schemas.auth import LoginRequest, RegisterRequest
 
 # Importamos las funciones que creamos en auth.py:
 # - verificar_contrasena() compara la contraseña con el hash guardado.
 # - crear_token() genera el JWT.
-from app.auth import verificar_contrasena, crear_token
+from app.auth import (
+    verificar_contrasena, 
+    crear_token,
+    hashear_contrasena
+)
 
 
 # Creamos un router para los endpoints de autenticación.
@@ -30,6 +34,76 @@ router = APIRouter(
     # Esto sirve para agruparlos dentro de Swagger (/docs).
     tags=["Autenticación"]
 )
+
+
+# Endpoint para registrar un nuevo usuario.
+#
+# POST /auth/register
+#
+# Recibe:
+# - nombre_apellido
+# - correo
+# - contrasena
+#
+# Luego:
+# 1. Comprueba que el correo no esté registrado.
+# 2. Hashea la contraseña.
+# 3. Crea el usuario.
+# 4. Lo guarda en la base de datos.
+@router.post("/register")
+def register(
+    datos: RegisterRequest,
+    db: Session = Depends(get_db)
+):
+
+    # Buscamos si ya existe un usuario
+    # con el correo recibido.
+    usuario_existente = db.query(Usuario).filter(
+        Usuario.correo == datos.correo
+    ).first()
+
+    # Si encontramos un usuario,
+    # significa que ese correo ya está registrado.
+    if usuario_existente:
+        raise HTTPException(
+            status_code=400,
+            detail="El correo ya está registrado"
+        )
+
+    # Convertimos la contraseña original
+    # en un hash antes de guardarla.
+    contrasena_hash = hashear_contrasena(
+        datos.contrasena
+    )
+
+    # Creamos un nuevo objeto Usuario.
+    nuevo_usuario = Usuario(
+        nombre_apellido=datos.nombre_apellido,
+        correo=datos.correo,
+        contrasena=contrasena_hash
+    )
+
+    # Agregamos el nuevo usuario a la sesión.
+    db.add(nuevo_usuario)
+
+    # Confirmamos los cambios en la base de datos.
+    db.commit()
+
+    # Actualizamos el objeto para obtener,
+    # por ejemplo, el id generado automáticamente.
+    db.refresh(nuevo_usuario)
+
+    # Devolvemos información del usuario creado.
+    #
+    # IMPORTANTE:
+    # Nunca devolvemos la contraseña ni su hash.
+    return {
+        "mensaje": "Usuario registrado correctamente",
+        "id_usuario": nuevo_usuario.id_usuario,
+        "nombre_apellido": nuevo_usuario.nombre_apellido,
+        "correo": nuevo_usuario.correo
+    }
+
 
 
 # Creamos el endpoint:
