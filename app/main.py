@@ -4,6 +4,7 @@ from fastapi import FastAPI
 app = FastAPI()
 
 #cuando alguien haga una peticion get ejecuta nuestra funcion get
+
 @app.get("/health")
 def healt_check():
     return {"status" :  "ok"}
