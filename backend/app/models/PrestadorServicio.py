@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Numeric, ForeignKey
+from sqlalchemy import Column, Integer, String, Numeric, ForeignKey,Boolean
 from sqlalchemy.orm import relationship
 from app.database import Base
 
@@ -13,5 +13,6 @@ class PrestadorServicio(Base):
     departamento = Column(String, nullable=True)
     prom_calificacion = Column(Numeric(3, 2), nullable=True, default=0)
     creditos = Column(Integer, nullable=False, default=10)
+    activo = Column(Boolean,nullable=False, default=True)
 
     usuario = relationship("Usuario", back_populates="prestador")
