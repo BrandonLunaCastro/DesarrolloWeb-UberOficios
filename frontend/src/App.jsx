@@ -39,12 +39,20 @@ const handleSubmit = async (e) => {
       setToken(data.access_token);
     } else {
       // 1. Registramos (esto no devuelve token)
-      await registerUser({ nombre_apellido: name, correo: email, contrasena: password });
-      // 2. Logueamos automáticamente para obtener el JWT
-      const loginData = await loginUser(email, password);
-      localStorage.setItem('jwt', loginData.access_token);
-      setToken(loginData.access_token);
-    }
+      await registerUser({ 
+        nombre_apellido: name,
+        correo: email,
+        contrasena: password });
+
+        alert("cuenta creada correctamente")
+        /*
+        teporalmente desactivo para probar registro en la db
+        // 2. Logueamos automáticamente para obtener el JWT
+        const loginData = await loginUser(email, password);
+        localStorage.setItem('jwt', loginData.access_token);
+        setToken(loginData.access_token);
+      */
+      }
   } catch (err) {
     setError(err.message);
   } finally {
