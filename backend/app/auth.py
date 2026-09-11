@@ -18,21 +18,12 @@ ALGORITHM = "HS256"
 
 
 # Hashea una contraseña.
-#
-# Ejemplo:
-# "123456" → "$2b$12$...."
-#
-# Nunca vamos a guardar la contraseña original
-# directamente en la base de datos.
 def hashear_contrasena(contrasena):
 
     return pwd_context.hash(contrasena)
 
 
 # Verifica si una contraseña coincide con un hash.
-#
-# contraseña → la que escribió el usuario
-# contraseña_hash → la que tenemos guardada en la BD
 def verificar_contrasena(contrasena, contrasena_hash):
 
     return pwd_context.verify(
@@ -49,3 +40,58 @@ def crear_token(data: dict):
         SECRET_KEY,
         algorithm=ALGORITHM
     )
+from fastapi import Depends, HTTPException
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from jose import JWTError
+from sqlalchemy.orm import Session
+
+from app.database import get_db
+from app.models.usuario import Usuario
+
+
+# Permite recibir el token enviado como:
+# Authorization: Bearer <token>
+security = HTTPBearer()
+
+
+# Obtiene y valida el usuario a partir del JWT.
+def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+    db: Session = Depends(get_db)
+):
+    token = credentials.credentials
+
+    try:
+        payload = jwt.decode(
+            token,
+            SECRET_KEY,
+            algorithms=[ALGORITHM]
+        )
+
+        id_usuario = payload.get("sub")
+
+        if id_usuario is None:
+            raise HTTPException(
+                status_code=401,
+                detail="Token inválido"
+            )
+
+        id_usuario = int(id_usuario)
+
+    except (JWTError, ValueError):
+        raise HTTPException(
+            status_code=401,
+            detail="Token inválido o expirado"
+        )
+
+    usuario = db.query(Usuario).filter(
+        Usuario.id_usuario == id_usuario
+    ).first()
+
+    if usuario is None:
+        raise HTTPException(
+            status_code=401,
+            detail="Usuario no encontrado"
+        )
+
+    return usuario

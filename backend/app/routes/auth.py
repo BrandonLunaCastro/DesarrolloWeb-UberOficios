@@ -1,4 +1,10 @@
-# APIRouter nos permite crear un grupo de endpoints relacionados.
+
+
+
+
+
+
+from app.auth import get_current_user# APIRouter nos permite crear un grupo de endpoints relacionados.
 # En este caso, todos los endpoints relacionados con autenticación.
 from fastapi import APIRouter, Depends, HTTPException
 
@@ -19,13 +25,14 @@ from app.schemas.auth import LoginRequest, RegisterRequest
 # Importamos las funciones que creamos en auth.py:
 # - verificar_contrasena() compara la contraseña con el hash guardado.
 # - crear_token() genera el JWT.
+
+
 from app.auth import (
-    verificar_contrasena, 
+    verificar_contrasena,
     crear_token,
-    hashear_contrasena
+    hashear_contrasena,
+    get_current_user
 )
-
-
 # Creamos un router para los endpoints de autenticación.
 router = APIRouter(
     # Todos los endpoints de este router comenzarán con /auth
@@ -188,4 +195,15 @@ def login(
     return {
         "access_token": token,
         "token_type": "bearer"
+    }
+
+
+@router.get("/me")
+def obtener_usuario_actual(usuario: Usuario = Depends(get_current_user)):
+
+    return {
+        "id_usuario": usuario.id_usuario,
+        "nombre_apellido": usuario.nombre_apellido,
+        "correo": usuario.correo,
+        "estado": usuario.estado
     }
