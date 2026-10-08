@@ -258,11 +258,19 @@ Datos necesarios:
 
 ```json
 {
-  "nombre_apellido": "Nombre Apellido",
-  "correo": "correo@email.com",
-  "contrasena": "123456"
+  "nombre": "Nombre",
+  "apellido": "Apellido",
+  "email": "correo@email.com",
+  "contrasena": "123456",
+  "telefono": "+5491112345678",
+  "rol": "CLIENTE"
 }
 ```
+
+`telefono` es opcional y `rol` puede ser `CLIENTE` o `PRESTADOR` (por defecto,
+`CLIENTE`). Al registrar un prestador también se crea su perfil en
+`prestador_servicio`. Los clientes se identifican por su rol y no tienen una
+tabla de perfil separada en el esquema nuevo.
 
 El proceso es:
 
@@ -281,6 +289,23 @@ Se guarda en PostgreSQL
 ```
 
 La contraseña **no se guarda en texto plano**.
+En la tabla `usuario` se almacena en `password_hash`; los datos de acceso usan
+`email` y `contrasena`.
+
+Para iniciar sesión se envía `email` y `contrasena` a `POST /auth/login`.
+El endpoint `GET /auth/me` devuelve los datos básicos del usuario autenticado.
+
+## Actualizar una base existente
+
+Desde la carpeta `backend`, ejecutar `alembic upgrade head` para aplicar la
+migración que adapta el esquema anterior, conserva los usuarios existentes y
+crea los roles requeridos. Los nombres completos se dividen en nombre y
+apellido, y los créditos existentes del prestador se conservan como saldo.
+Los campos antiguos sin equivalente (localidad del cliente,
+provincia/departamento, promedio y estado del prestador) se eliminan. La
+migración del backend cubre las tablas de autenticación y perfiles utilizadas
+actualmente; las tablas de avisos, postulaciones, trabajos y créditos se crean
+con el script PostgreSQL del modelo nuevo.
 
 Por ejemplo, si el usuario escribe:
 
@@ -598,4 +623,3 @@ http://127.0.0.1:8000/docs
 ```
 
 ¡Listo para trabajar!
-

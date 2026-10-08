@@ -1,6 +1,11 @@
 from passlib.context import CryptContext
 from jose import jwt
-
+from fastapi import Depends, HTTPException
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from jose import JWTError
+from sqlalchemy.orm import Session
+from app.database import get_db
+from app.models.usuario import Usuario
 
 # Configuración para hashear o verificar contraseñas.
 pwd_context = CryptContext(
@@ -40,13 +45,7 @@ def crear_token(data: dict):
         SECRET_KEY,
         algorithm=ALGORITHM
     )
-from fastapi import Depends, HTTPException
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from jose import JWTError
-from sqlalchemy.orm import Session
 
-from app.database import get_db
-from app.models.usuario import Usuario
 
 
 # Permite recibir el token enviado como:
