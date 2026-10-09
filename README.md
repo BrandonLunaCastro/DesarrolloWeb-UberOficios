@@ -206,6 +206,19 @@ Uvicorn running on http://127.0.0.1:8000
 Application startup complete.
 ```
 
+## Ejecutar el frontend
+
+En otra terminal, desde la raíz del proyecto:
+
+```powershell
+cd frontend
+npm install
+npm run dev
+```
+
+En desarrollo, el frontend se conecta por defecto a `http://127.0.0.1:8000`.
+Para desplegarlo, configurar `VITE_API_URL` con la URL base del backend.
+
 ---
 
 # 9. Abrir Swagger

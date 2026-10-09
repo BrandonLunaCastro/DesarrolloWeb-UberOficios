@@ -1,5 +1,5 @@
-const API_URL = import.meta.env.VITE_API_URL;
-console.log('TODAS LAS ENV:', import.meta.env); // sacar después de confirmar
+const API_URL = (import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000')
+  .replace(/\/+$/, '');
 
 async function request(endpoint, body) {
   const response = await fetch(`${API_URL}${endpoint}`, {
@@ -8,24 +8,23 @@ async function request(endpoint, body) {
     body: JSON.stringify(body),
   });
 
-  const data = await response.json().catch(() => null);
+  const data = await response.json();
 
   if (!response.ok) {
-    throw new Error(data?.detail || `Error ${response.status}`);
+    const detail = data.detail;
+    const message = Array.isArray(detail)
+      ? detail.map((issue) => issue.msg).join(', ')
+      : detail;
+    throw new Error(message || `Error ${response.status}`);
   }
 
   return data;
 }
 
 // Login: devuelve { access_token, token_type }
-export const loginUser = (correo, contrasena) =>
-  request('/auth/login', { correo, contrasena });
+export const loginUser = (email, contrasena) =>
+  request('/auth/login', { email, contrasena });
 
-// Register: devuelve { mensaje, id_usuario, nombre_apellido, correo } - SIN token
-export const registerUser = ({ nombre_apellido, correo, contrasena }) =>
-  request('/auth/register', { nombre_apellido, correo, contrasena });
-
-
-
-
-
+// Register: los campos corresponden a RegisterRequest del backend.
+export const registerUser = ({ nombre, apellido, email, contrasena, rol }) =>
+  request('/auth/register', { nombre, apellido, email, contrasena, rol });
