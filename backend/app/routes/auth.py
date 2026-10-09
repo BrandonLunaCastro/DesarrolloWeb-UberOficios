@@ -113,3 +113,9 @@ def obtener_usuario_actual(usuario: Usuario = Depends(get_current_user)):
         "fecha_registro": usuario.fecha_registro,
         "rol": usuario.rol.nombre,
     }
+
+
+# ----En esta parte iria la ruta de avisos general----
+
+ #@router.get("/avisos/zona/{zona}")
+  #   def obtener_avisos_por_zona()

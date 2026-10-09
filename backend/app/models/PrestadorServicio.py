@@ -13,9 +13,7 @@ class PrestadorServicio(Base):
     )
     matricula = Column(String(50), nullable=True)
     biografia = Column(Text, nullable=True)
-    radio_cobertura_km = Column(
-        Integer, nullable=True, server_default=text("10")
-    )
+    zona = Column(String(150), nullable=True)
     saldo_creditos = Column(
         Integer, nullable=False, server_default=text("0")
     )
