@@ -2,6 +2,8 @@ from fastapi import FastAPI
 # Importamos el router que contiene nuestros endpoints
 # de autenticación.
 from app.routes.auth import router as auth_router
+from app.routes.usuarios import router as usuarios_router
+from app.routes.avisos import router as avisos_router
 from fastapi.middleware.cors import CORSMiddleware
 
 #crea una app Fast API
@@ -23,6 +25,8 @@ app.add_middleware(
 # Esto hace que FastAPI conozca los endpoints que definimos
 # en routes/auth.py.
 app.include_router(auth_router)
+app.include_router(usuarios_router)
+app.include_router(avisos_router)
 
 #cuando alguien haga una peticion get ejecuta nuestra funcion get
 

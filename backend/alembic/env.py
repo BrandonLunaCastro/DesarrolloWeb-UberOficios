@@ -4,7 +4,11 @@ from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
 from app.database import Base
+<<<<<<< HEAD
 from app.models import Usuario, PrestadorServicio, Rol
+=======
+from app.models import Usuario, Cliente, PrestadorServicio, Aviso
+>>>>>>> 9ca3141 (feat(backend): reestructurar endpoints PUT /usuarios/perfil y POST /avisos)
 
 from alembic import context
 
