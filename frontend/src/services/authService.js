@@ -1,5 +1,5 @@
 const API_URL = import.meta.env.VITE_API_URL;
-console.log('TODAS LAS ENV:', import.meta.env); // sacar después de confirmar
+
 
 async function request(endpoint, body) {
   const response = await fetch(`${API_URL}${endpoint}`, {
