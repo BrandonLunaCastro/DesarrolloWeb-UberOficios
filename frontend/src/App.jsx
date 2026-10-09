@@ -10,7 +10,8 @@ import PerfilPage from './pages/PerfilPrestador/PerfilPage';
 export default function App() {
   const [mode, setMode] = useState('login'); // 'login' | 'register'
   const [role, setRole] = useState('client'); // 'client' | 'provider'
-  const [name, setName] = useState('');
+  const [nombre, setNombre] = useState('');
+  const [apellido, setApellido] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -40,12 +41,15 @@ const handleSubmit = async (e) => {
       localStorage.setItem('jwt', data.access_token);
       setToken(data.access_token);
     } else {
-      // 1. Registramos (esto no devuelve token)
-      await registerUser({ nombre_apellido: name, correo: email, contrasena: password });
-      // 2. Logueamos automáticamente para obtener el JWT
-      const loginData = await loginUser(email, password);
-      localStorage.setItem('jwt', loginData.access_token);
-      setToken(loginData.access_token);
+      await registerUser({
+        nombre,
+        apellido,
+        email,
+        contrasena: password,
+        rol: role === 'provider' ? 'PRESTADOR' : 'CLIENTE',
+      });
+
+      alert('Cuenta creada correctamente');
     }
   } catch (err) {
     setError(err.message);
@@ -139,21 +143,38 @@ const handleSubmit = async (e) => {
 
         <form onSubmit={handleSubmit}>
           {mode === 'register' && (
-            <div className="field">
-              <label>Nombre y Apellido</label>
-              <div className="input-wrap">
-                <span className="icon-left">
-                    <User size={16} />
-                    </span>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="ej: Pedro González"
-                  required
-                />
+            <>
+              <div className="field">
+                <label htmlFor="nombre">Nombre</label>
+                <div className="input-wrap">
+                  <span className="icon-left"><User size={16} /></span>
+                  <input
+                    id="nombre"
+                    type="text"
+                    value={nombre}
+                    onChange={(e) => setNombre(e.target.value)}
+                    placeholder="Pedro"
+                    autoComplete="given-name"
+                    required
+                  />
+                </div>
               </div>
-            </div>
+              <div className="field">
+                <label htmlFor="apellido">Apellido</label>
+                <div className="input-wrap">
+                  <span className="icon-left"><User size={16} /></span>
+                  <input
+                    id="apellido"
+                    type="text"
+                    value={apellido}
+                    onChange={(e) => setApellido(e.target.value)}
+                    placeholder="González"
+                    autoComplete="family-name"
+                    required
+                  />
+                </div>
+              </div>
+            </>
           )}
 
           <div className="field">
