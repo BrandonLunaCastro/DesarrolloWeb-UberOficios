@@ -3,7 +3,7 @@ import { Bell, ClipboardList, Home, LogOut, Pencil, RefreshCw, Search, Settings 
 import { perfilApi } from '../services/perfilService';
 import './AppLayout.css';
 
-const iniciales = (full = '') => { const p = full.trim().split(/\s+/); return ((p[0]?.[0] ?? '') + (p.length > 1 ? p[p.length - 1][0] : '')).toUpperCase(); };
+const iniciales = (n = '', a = '') => `${n[0] ?? ''}${a[0] ?? ''}`.toUpperCase();
 
 export default function AppLayout({ children, onLogout, onSwitchRole }) {
   const [yo, setYo] = useState(null);
@@ -18,8 +18,8 @@ export default function AppLayout({ children, onLogout, onSwitchRole }) {
     return () => { document.removeEventListener('mousedown', fuera); document.removeEventListener('keydown', esc); };
   }, []);
 
-  const nombre = yo?.nombre_apellido ?? 'Mi cuenta';
-  const ini = iniciales(yo?.nombre_apellido) || '·';
+  const nombre = yo ? `${yo.nombre} ${yo.apellido}` : 'Mi cuenta';
+  const ini = iniciales(yo?.nombre, yo?.apellido) || '·';
 
   return (
     <div className="lay">

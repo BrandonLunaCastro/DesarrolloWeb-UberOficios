@@ -5,7 +5,7 @@ import EditarPerfilModal from './EditarPerfilModal';
 import PortfolioUploader from './PortfolioUploader';
 import './perfil.css';
 
-const iniciales = (full = '') => { const p = full.trim().split(/\s+/); return ((p[0]?.[0] ?? '') + (p.length > 1 ? p[p.length - 1][0] : '')).toUpperCase(); };
+const iniciales = (n = '', a = '') => `${n[0] ?? ''}${a[0] ?? ''}`.toUpperCase();
 const mesAnio = (iso) => new Intl.DateTimeFormat('es-AR', { month: 'long', year: 'numeric' }).format(new Date(iso))
   .replace(/^./, (c) => c.toUpperCase()).replace(' de ', ' ');
 
@@ -28,7 +28,7 @@ export default function PerfilPage() {
     <article className="perfil-card">
       <div className="cover"><button className="btn sm"><Camera size={14} /> Editar portada</button></div>
       <div className="head">
-        <div className="avatar">{usuario.foto_perfil ? <img src={usuario.foto_perfil} alt="" /> : iniciales(usuario.nombre_apellido)}
+        <div className="avatar">{usuario.foto_perfil ? <img src={usuario.foto_perfil} alt="" /> : iniciales(usuario.nombre, usuario.apellido)}
           <button className="icon-btn cam" aria-label="Cambiar foto de perfil"><Camera size={12} /></button></div>
         <div className="actions">
           <button className="btn primary" onClick={() => setModal('fotos')}><Plus size={16} /> Agregar al portafolio</button>
@@ -37,7 +37,7 @@ export default function PerfilPage() {
       </div>
 
       <div className="body">
-        <h1>{usuario.nombre_apellido}</h1>
+        <h1>{usuario.nombre} {usuario.apellido}</h1>
         <p className="oficio">{perfil.categoria}{prestador.matricula ? ' Matriculado' : ''}</p>
         <p className="meta"><Star size={14} fill="#f59e0b" stroke="#f59e0b" />
           <b className="rating">{rating.promedio?.toFixed(1) ?? '–'}</b> ({rating.total} opiniones de clientes)</p>
