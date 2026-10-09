@@ -4,6 +4,8 @@ import { FaApple } from 'react-icons/fa';
 import { useState } from 'react';
 import { loginUser, registerUser } from './services/authService';
 import './App.css';
+import AppLayout from './components/AppLayout';
+import PerfilPage from './pages/PerfilPrestador/PerfilPage';
 
 export default function App() {
   const [mode, setMode] = useState('login'); // 'login' | 'register'
@@ -61,17 +63,13 @@ const handleSubmit = async (e) => {
     setToken('');
   };
 
-  if (token) {
-    return (
-      <div className="page">
-        <div className="card session-active">
-          <p style={{ color: '#059669', fontWeight: 600 }}>✓ Sesión activa</p>
-          <div className="token-box"><strong>JWT:</strong> {token}</div>
-          <button className="logout-btn" onClick={handleLogout}>Cerrar Sesión</button>
-        </div>
-      </div>
-    );
-  }
+ if (token) {
+  return (
+    <AppLayout onLogout={handleLogout}>
+      <PerfilPage />
+    </AppLayout>
+  );
+}
 
   return (
     <div className="page">
