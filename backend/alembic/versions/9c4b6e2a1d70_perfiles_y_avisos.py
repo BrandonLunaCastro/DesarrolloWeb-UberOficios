@@ -1,7 +1,7 @@
 """Agregar datos de perfil y solicitudes de trabajo.
 
 Revision ID: 9c4b6e2a1d70
-Revises: 5fa6e0cf26d5
+Revises: c14a6b9e2f30
 Create Date: 2026-10-09
 """
 from typing import Sequence, Union
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 
 revision: str = "9c4b6e2a1d70"
-down_revision: Union[str, Sequence[str], None] = "5fa6e0cf26d5"
+down_revision: Union[str, Sequence[str], None] = "c14a6b9e2f30"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -19,7 +19,6 @@ depends_on: Union[str, Sequence[str], None] = None
 def upgrade() -> None:
     op.add_column("cliente", sa.Column("zona", sa.String(), nullable=True))
     op.add_column("cliente", sa.Column("telefono", sa.String(), nullable=True))
-    op.add_column("prestador_servicio", sa.Column("zona", sa.String(), nullable=True))
     op.add_column("prestador_servicio", sa.Column("oficio", sa.String(), nullable=True))
     op.create_table(
         "aviso",
@@ -41,6 +40,5 @@ def downgrade() -> None:
     op.drop_index(op.f("ix_aviso_id_aviso"), table_name="aviso")
     op.drop_table("aviso")
     op.drop_column("prestador_servicio", "oficio")
-    op.drop_column("prestador_servicio", "zona")
     op.drop_column("cliente", "telefono")
     op.drop_column("cliente", "zona")

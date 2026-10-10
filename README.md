@@ -308,6 +308,28 @@ En la tabla `usuario` se almacena en `password_hash`; los datos de acceso usan
 Para iniciar sesión se envía `email` y `contrasena` a `POST /auth/login`.
 El endpoint `GET /auth/me` devuelve los datos básicos del usuario autenticado.
 
+## Bono mensual de créditos para prestadores
+
+Al registrarse, un prestador recibe 5 créditos iniciales. Además, recibe 5
+créditos acumulables en cada aniversario mensual de su ciclo. El proceso
+`python -m app.scripts.acreditar_creditos_mensuales` acredita los bonos
+vencidos sin reemplazar el saldo disponible; si se ejecuta tarde, acredita
+juntos todos los meses pendientes y no duplica los ya pagados.
+
+Después de `alembic upgrade head`, configura el programador de tareas del
+hosting para ejecutar ese comando diariamente desde la carpeta `backend`
+(por ejemplo, un Cron Job diario a las 00:00 UTC). Para prestadores ya
+registrados, el primer aniversario mensual empieza al aplicar esta migración;
+los nuevos prestadores empiezan desde su registro.
+
+## Buscar solicitudes por zona
+
+El endpoint autenticado `GET /avisos/zona` devuelve las solicitudes cuya
+localidad (`zona`) coincide con la zona configurada en el perfil del prestador.
+La comparación ignora mayúsculas y espacios al inicio o al final. El backend
+actual guarda la ubicación como texto, por lo que este filtro no calcula
+distancias geográficas.
+
 ## Actualizar una base existente
 
 Desde la carpeta `backend`, ejecutar `alembic upgrade head` para aplicar la

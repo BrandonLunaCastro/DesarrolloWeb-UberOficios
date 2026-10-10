@@ -12,6 +12,7 @@ from app.database import get_db
 from app.models.PrestadorServicio import PrestadorServicio
 from app.models.rol import Rol
 from app.models.usuario import Usuario
+from app.services.creditos import BONO_MENSUAL_CREDITOS
 from app.schemas.auth import LoginRequest, RegisterRequest
 
 router = APIRouter(
@@ -47,7 +48,9 @@ def register(
         rol=rol,
     )
     if datos.rol == "PRESTADOR":
-        nuevo_usuario.prestador = PrestadorServicio()
+        nuevo_usuario.prestador = PrestadorServicio(
+            saldo_creditos=BONO_MENSUAL_CREDITOS
+        )
 
     db.add(nuevo_usuario)
     try:
@@ -113,9 +116,3 @@ def obtener_usuario_actual(usuario: Usuario = Depends(get_current_user)):
         "fecha_registro": usuario.fecha_registro,
         "rol": usuario.rol.nombre,
     }
-
-
-# ----En esta parte iria la ruta de avisos general----
-
- #@router.get("/avisos/zona/{zona}")
-  #   def obtener_avisos_por_zona()

@@ -128,6 +128,30 @@ def upgrade() -> None:
     )
 
     op.drop_table("cliente")
+    op.create_table(
+        "cliente",
+        sa.Column("id_cliente", sa.Integer(), autoincrement=True, nullable=False),
+        sa.Column("id_usuario", sa.Integer(), nullable=False),
+        sa.ForeignKeyConstraint(["id_usuario"], ["usuario.id_usuario"]),
+        sa.PrimaryKeyConstraint("id_cliente"),
+        sa.UniqueConstraint("id_usuario"),
+    )
+    op.create_index(
+        op.f("ix_cliente_id_cliente"),
+        "cliente",
+        ["id_cliente"],
+        unique=False,
+    )
+    op.execute(
+        """
+        INSERT INTO cliente (id_usuario)
+        SELECT usuario.id_usuario
+        FROM usuario
+        JOIN rol ON rol.id_rol = usuario.id_rol
+        WHERE rol.nombre = 'CLIENTE'
+        """
+    )
+
     op.execute(
         """
         CREATE TEMPORARY TABLE prestador_servicio_migration_data AS
@@ -199,6 +223,8 @@ def downgrade() -> None:
         """
     )
 
+    op.drop_index(op.f("ix_cliente_id_cliente"), table_name="cliente")
+    op.drop_table("cliente")
     op.create_table(
         "cliente",
         sa.Column("id_cliente", sa.Integer(), autoincrement=True, nullable=False),
@@ -207,6 +233,12 @@ def downgrade() -> None:
         sa.ForeignKeyConstraint(["id_usuario"], ["usuario.id_usuario"]),
         sa.PrimaryKeyConstraint("id_cliente"),
         sa.UniqueConstraint("id_usuario"),
+    )
+    op.create_index(
+        op.f("ix_cliente_id_cliente"),
+        "cliente",
+        ["id_cliente"],
+        unique=False,
     )
     op.execute(
         """
