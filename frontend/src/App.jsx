@@ -6,6 +6,7 @@ import { loginUser, registerUser } from './services/authService';
 import './App.css';
 import AppLayout from './components/AppLayout';
 import PerfilPage from './pages/PerfilPrestador/PerfilPage';
+import FeedPage from './pages/FeedOportunidades/FeedPage';
 
 export default function App() {
   const [mode, setMode] = useState('login'); // 'login' | 'register'
@@ -20,6 +21,7 @@ export default function App() {
   const [error, setError] = useState('');
   const [token, setToken] = useState(localStorage.getItem('jwt') || '');
 
+  const [pantalla, setPantalla] = useState('feed');
   const switchMode = (m) => {
     setMode(m);
     setError('');
@@ -63,13 +65,14 @@ const handleSubmit = async (e) => {
     setToken('');
   };
 
- if (token) {
-  return (
-    <AppLayout onLogout={handleLogout}>
-      <PerfilPage />
-    </AppLayout>
-  );
-}
+    if (token) {
+      return (
+        <AppLayout onLogout={handleLogout}>
+          {pantalla === 'feed' && <FeedPage onIrAPerfil={() => setPantalla('perfilPrestador')} />}
+          {pantalla === 'perfilPrestador' && <PerfilPage />}
+        </AppLayout>
+      );
+    }
 
   return (
     <div className="page">
