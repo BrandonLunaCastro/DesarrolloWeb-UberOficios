@@ -1,7 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import func
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 
+from app.async_database import get_async_db
 from app.auth import get_current_user
 from app.database import get_db
 from app.models.Aviso import Aviso
@@ -9,6 +11,8 @@ from app.models.Cliente import Cliente
 from app.models.PrestadorServicio import PrestadorServicio
 from app.models.usuario import Usuario
 from app.schemas.aviso import AvisoCreate
+from app.schemas.postulacion import PostulacionCreate, PostulacionResponse
+from app.services.postulaciones import crear_postulacion
 
 
 router = APIRouter(prefix="/avisos", tags=["Avisos"])
@@ -96,3 +100,33 @@ def crear_aviso(
         "estado": aviso.estado,
         "fecha_creacion": aviso.fecha_creacion,
     }
+
+
+@router.post(
+    "/{id_aviso}/postulaciones",
+    response_model=PostulacionResponse,
+    status_code=201,
+)
+async def postularse_a_aviso(
+    id_aviso: int,
+    datos: PostulacionCreate,
+    db: AsyncSession = Depends(get_async_db),
+    usuario: Usuario = Depends(get_current_user),
+):
+    prestador = await db.scalar(
+        select(PrestadorServicio).where(
+            PrestadorServicio.id_usuario == usuario.id_usuario
+        )
+    )
+    if prestador is None or not prestador.activo:
+        raise HTTPException(
+            status_code=403,
+            detail="Se requiere un perfil de prestador activo para postularse",
+        )
+
+    return await crear_postulacion(
+        db,
+        id_aviso=id_aviso,
+        id_prestador=prestador.id_prestador,
+        datos=datos,
+    )

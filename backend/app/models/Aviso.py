@@ -17,3 +17,8 @@ class Aviso(Base):
     fecha_creacion = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
     cliente = relationship("Cliente", back_populates="avisos")
+    postulaciones = relationship(
+        "Postulacion",
+        back_populates="aviso",
+        cascade="all, delete-orphan",
+    )

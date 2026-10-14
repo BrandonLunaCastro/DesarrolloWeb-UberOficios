@@ -48,3 +48,8 @@ class PrestadorServicio(Base):
     )
 
     usuario = relationship("Usuario", back_populates="prestador")
+    postulaciones = relationship(
+        "Postulacion",
+        back_populates="prestador",
+        cascade="all, delete-orphan",
+    )

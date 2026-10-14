@@ -4,7 +4,7 @@ from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
 from app.database import Base
-from app.models import Aviso, PrestadorServicio, Rol, Usuario
+from app.models import Aviso, Postulacion, PrestadorServicio, Rol, Usuario
 
 from alembic import context
 
