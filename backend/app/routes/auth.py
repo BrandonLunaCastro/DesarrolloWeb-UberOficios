@@ -116,3 +116,22 @@ def obtener_usuario_actual(usuario: Usuario = Depends(get_current_user)):
         "fecha_registro": usuario.fecha_registro,
         "rol": usuario.rol.nombre,
     }
+
+
+@router.get("/me/saldo")
+def obtener_saldo_prestador(
+    db: Session = Depends(get_db),
+    usuario: Usuario = Depends(get_current_user),
+):
+    prestador = (
+        db.query(PrestadorServicio)
+        .filter(PrestadorServicio.id_usuario == usuario.id_usuario)
+        .first()
+    )
+    if prestador is None:
+        raise HTTPException(
+            status_code=403,
+            detail="Se requiere una cuenta de prestador para consultar el saldo",
+        )
+
+    return {"saldo_creditos": prestador.saldo_creditos}

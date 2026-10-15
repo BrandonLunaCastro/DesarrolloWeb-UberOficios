@@ -37,5 +37,5 @@ export const avisosApi = USE_MOCK
   ? { listarPorZona: () => wait(AVISOS), saldo: () => wait(10) }
   : {
       listarPorZona: () => req('/avisos/zona'),
-      saldo: () => req('/prestadores/me').then((p) => p.prestador.saldo_creditos), // supuesto: ajustar al endpoint real
+      saldo: () => req('/auth/me/saldo').then((respuesta) => respuesta.saldo_creditos),
     };
