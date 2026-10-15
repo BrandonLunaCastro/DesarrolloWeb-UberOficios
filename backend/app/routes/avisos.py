@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import func, select
+from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 
@@ -113,20 +113,15 @@ async def postularse_a_aviso(
     db: AsyncSession = Depends(get_async_db),
     usuario: Usuario = Depends(get_current_user),
 ):
-    prestador = await db.scalar(
-        select(PrestadorServicio).where(
-            PrestadorServicio.id_usuario == usuario.id_usuario
-        )
-    )
-    if prestador is None or not prestador.activo:
+    if (usuario.rol.nombre or "").strip().upper() != "PRESTADOR":
         raise HTTPException(
             status_code=403,
-            detail="Se requiere un perfil de prestador activo para postularse",
+            detail="Se requiere una cuenta de prestador para postularse",
         )
 
     return await crear_postulacion(
         db,
         id_aviso=id_aviso,
-        id_prestador=prestador.id_prestador,
+        id_usuario=usuario.id_usuario,
         datos=datos,
     )
