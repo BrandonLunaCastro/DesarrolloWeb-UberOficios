@@ -4,6 +4,7 @@ from fastapi import FastAPI
 from app.routes.auth import router as auth_router
 from app.routes.usuarios import router as usuarios_router
 from app.routes.avisos import router as avisos_router
+from app.routes.creditos import router as creditos_router
 from fastapi.middleware.cors import CORSMiddleware
 
 #crea una app Fast API
@@ -27,6 +28,7 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(usuarios_router)
 app.include_router(avisos_router)
+app.include_router(creditos_router)
 
 #cuando alguien haga una peticion get ejecuta nuestra funcion get
 

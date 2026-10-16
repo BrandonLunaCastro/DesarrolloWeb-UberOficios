@@ -10,6 +10,11 @@ from app.auth import (
 )
 from app.database import get_db
 from app.models.PrestadorServicio import PrestadorServicio
+from app.models.creditos import (
+    BilleteraCredito,
+    TipoTransaccionEnum,
+    TransaccionCredito,
+)
 from app.models.rol import Rol
 from app.models.usuario import Usuario
 from app.services.creditos import BONO_MENSUAL_CREDITOS
@@ -48,9 +53,20 @@ def register(
         rol=rol,
     )
     if datos.rol == "PRESTADOR":
-        nuevo_usuario.prestador = PrestadorServicio(
+        prestador = PrestadorServicio(
             saldo_creditos=BONO_MENSUAL_CREDITOS
         )
+        billetera = BilleteraCredito(saldo_actual=BONO_MENSUAL_CREDITOS)
+        billetera.transacciones.append(
+            TransaccionCredito(
+                monto=BONO_MENSUAL_CREDITOS,
+                tipo=TipoTransaccionEnum.BONIFICACION,
+                referencia_tipo="bonificacion_inicial",
+                descripcion="Bonificación inicial de créditos por registro",
+            )
+        )
+        prestador.billetera = billetera
+        nuevo_usuario.prestador = prestador
 
     db.add(nuevo_usuario)
     try:

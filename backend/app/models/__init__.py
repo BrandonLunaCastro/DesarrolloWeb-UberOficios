@@ -4,3 +4,4 @@ from app.models.rol import Rol
 from app.models.Cliente import Cliente
 from app.models.Aviso import Aviso
 from app.models.postulacion import Postulacion
+from app.models.creditos import BilleteraCredito, TransaccionCredito
