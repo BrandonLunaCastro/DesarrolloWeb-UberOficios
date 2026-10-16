@@ -1,5 +1,5 @@
 from fastapi import HTTPException
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -54,7 +54,23 @@ async def crear_postulacion(
             detail="No tenés créditos suficientes para postularte",
         )
 
-    prestador.saldo_creditos -= COSTO_POSTULACION
+    descuento = await db.execute(
+        update(PrestadorServicio)
+        .where(
+            PrestadorServicio.id_prestador == prestador.id_prestador,
+            PrestadorServicio.saldo_creditos >= COSTO_POSTULACION,
+        )
+        .values(
+            saldo_creditos=PrestadorServicio.saldo_creditos - COSTO_POSTULACION,
+        )
+    )
+    if descuento.rowcount != 1:
+        await db.rollback()
+        raise HTTPException(
+            status_code=400,
+            detail="No tenés créditos suficientes para postularte",
+        )
+
     postulacion = Postulacion(
         id_aviso=id_aviso,
         id_prestador=prestador.id_prestador,
