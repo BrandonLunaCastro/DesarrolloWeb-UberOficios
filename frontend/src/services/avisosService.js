@@ -1,3 +1,5 @@
+import { obtenerSaldo } from './postulacionService';
+
 const BASE = (import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000').replace(/\/+$/, '');
 // Con VITE_USE_MOCK=true en el .env, el feed funciona con datos de ejemplo (sin backend).
 const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
@@ -29,13 +31,8 @@ const AVISOS = [
     descripcion: 'Se cortó la luz desde anoche y salta la térmica apenas la subo.' },
 ];
 
-// Costo de postularse en créditos (según el Figma). ⚠️ Confirmar con el back si es fijo o depende del aviso.
-export const COSTO_POSTULACION = 1;
-
 // ---------- API REAL ----------
+// El saldo y el costo de postularse viven en postulacionService (misma fuente que el formulario).
 export const avisosApi = USE_MOCK
-  ? { listarPorZona: () => wait(AVISOS), saldo: () => wait(10) }
-  : {
-      listarPorZona: () => req('/avisos/zona'),
-      saldo: () => req('/auth/me/saldo').then((respuesta) => respuesta.saldo_creditos),
-    };
+  ? { listarPorZona: () => wait(AVISOS), saldo: obtenerSaldo }
+  : { listarPorZona: () => req('/avisos/zona'), saldo: obtenerSaldo };

@@ -1,0 +1,11 @@
+.postulacion{display:flex;flex-direction:column;gap:8px;font-size:13px}
+.postulacion label{font-weight:600;margin-top:4px}
+.postulacion__creditos{padding:12px 14px;border-radius:8px;background:#f1f5f9;color:#0f172a}
+.postulacion__creditos p{margin:3px 0}
+.postulacion input,.postulacion textarea{padding:9px 10px;border:1px solid #cbd5e1;border-radius:6px;font:inherit;background:#fff;color:#0f172a}
+.postulacion input:focus-visible,.postulacion textarea:focus-visible,.postulacion button:focus-visible{outline:2px solid #2563eb;outline-offset:2px}
+.postulacion button[type='submit']{margin-top:6px;padding:11px 16px;border:0;border-radius:8px;background:#2563eb;color:#fff;font:600 14px inherit;cursor:pointer}
+.postulacion__creditos button{border:0;background:none;color:#2563eb;font:inherit;text-decoration:underline;cursor:pointer;padding:0}
+.postulacion button:disabled{cursor:not-allowed;opacity:.55}
+.postulacion__error{color:#dc2626;margin:0}
+.postulacion__ok{color:#15803d;font-weight:600;margin:0}

@@ -1,15 +1,16 @@
 import { useEffect, useState } from 'react';
 import { Plus } from 'lucide-react';
-import { avisosApi, COSTO_POSTULACION } from '../../services/avisosService';
+import { avisosApi } from '../../services/avisosService';
 import AvisoCard from './AvisoCard';
+import PostulacionModal from './PostulacionModal';
 import './feed.css';
 
-export default function FeedPage({ onIrAPerfil, onIrAAdquirirCreditos, onPostular }) {
+export default function FeedPage({ onIrAPerfil, onUnauthorized }) {
   const [avisos, setAvisos] = useState(null); // null = cargando
   const [saldo, setSaldo] = useState(null);
   const [error, setError] = useState(null);
-  const [mensajeSaldo, setMensajeSaldo] = useState('');
   const [intento, setIntento] = useState(0);
+  const [postulando, setPostulando] = useState(null); // aviso abierto en el modal
 
   useEffect(() => {
     let vivo = true;
@@ -20,15 +21,10 @@ export default function FeedPage({ onIrAPerfil, onIrAAdquirirCreditos, onPostula
 
   const reintentar = () => { setAvisos(null); setError(null); setIntento((n) => n + 1); };
   const sinZona = error?.status === 400;
-  const handlePostular = (aviso) => {
-    const costo = aviso.costo_creditos ?? COSTO_POSTULACION;
-    if (saldo != null && saldo < costo) {
-      setMensajeSaldo('No tenés créditos suficientes para postularte. Tu saldo permanece intacto.');
-      return;
-    }
-
-    setMensajeSaldo('');
-    onPostular?.(aviso);
+  // Después de postularse: actualiza el saldo del banner y la lista, sin volver a mostrar el esqueleto.
+  const refrescar = () => {
+    avisosApi.saldo().then(setSaldo).catch(() => {});
+    avisosApi.listarPorZona().then(setAvisos).catch(() => {});
   };
 
   return (
@@ -38,23 +34,8 @@ export default function FeedPage({ onIrAPerfil, onIrAAdquirirCreditos, onPostula
           <p>Tu Saldo Disponible</p>
           <div className="feed-num"><b>{saldo ?? '—'}</b><span>CRÉDITOS</span></div>
         </div>
-        {onIrAAdquirirCreditos && (
-          <button className="feed-recargar" onClick={onIrAAdquirirCreditos}>
-            <Plus size={16} /> Adquirir créditos
-          </button>
-        )}
+        <button className="feed-recargar"><Plus size={16} /> Recargar</button>
       </div>
-
-      {mensajeSaldo && (
-        <div className="feed-msg feed-creditos-alerta" role="alert">
-          <p>{mensajeSaldo}</p>
-          {onIrAAdquirirCreditos && (
-            <button className="feed-btn" onClick={onIrAAdquirirCreditos}>
-              Adquirir créditos
-            </button>
-          )}
-        </div>
-      )}
 
       <h2>Oportunidades cerca tuyo</h2>
 
@@ -71,8 +52,11 @@ export default function FeedPage({ onIrAPerfil, onIrAAdquirirCreditos, onPostula
         <p className="feed-msg">No hay oportunidades en tu zona por ahora. Volvé a mirar más tarde.</p>
       ) : (
         <div className="feed-list">
-          {avisos.map((a) => <AvisoCard key={a.id_aviso} aviso={a} onPostular={handlePostular} />)}
+          {avisos.map((a) => <AvisoCard key={a.id_aviso} aviso={a} saldo={saldo} onPostular={setPostulando} />)}
         </div>
+      )}
+      {postulando && (
+        <PostulacionModal aviso={postulando} onClose={() => setPostulando(null)} onSuccess={refrescar} onUnauthorized={onUnauthorized} />
       )}
     </section>
   );

@@ -65,14 +65,19 @@ const handleSubmit = async (e) => {
     setToken('');
   };
 
-    if (token) {
-      return (
-        <AppLayout onLogout={handleLogout}>
-          {pantalla === 'feed' && <FeedPage onIrAPerfil={() => setPantalla('perfilPrestador')} />}
-          {pantalla === 'perfilPrestador' && <PerfilPage />}
-        </AppLayout>
-      );
-    }
+if (token) {
+  return (
+    <AppLayout onLogout={handleLogout}>
+      {pantalla === 'feed' && (
+        <FeedPage
+          onIrAPerfil={() => setPantalla('perfilPrestador')}
+          onUnauthorized={handleLogout}
+        />
+      )}
+      {pantalla === 'perfilPrestador' && <PerfilPage />}
+    </AppLayout>
+  );
+}
 
   return (
     <div className="page">
