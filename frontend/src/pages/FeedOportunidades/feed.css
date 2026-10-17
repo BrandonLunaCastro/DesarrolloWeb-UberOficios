@@ -9,6 +9,7 @@
 .feed-skel{height:150px;border-radius:10px;background:#e2e8f0;margin-bottom:14px}
 .feed-msg{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:20px;text-align:center;font-size:13px;color:#475569}
 .feed-msg p{margin:0 0 12px}
+.feed-creditos-alerta{margin-top:12px;border-color:#fecaca;background:#fef2f2;color:#991b1b}
 .aviso{--c:#d97706;--bg:#fef3e2;background:#fff;border:1px solid #e2e8f0;border-left:4px solid var(--c);border-radius:10px;padding:16px 18px}
 .aviso-sin{--c:#94a3b8}.aviso-baja{--c:#16a34a;--bg:#dcfce7}.aviso-alta{--c:#dc2626;--bg:#fee2e2}
 .aviso-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
