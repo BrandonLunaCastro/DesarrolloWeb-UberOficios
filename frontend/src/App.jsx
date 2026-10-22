@@ -8,6 +8,7 @@ import AppLayout from './components/AppLayout';
 import PerfilPage from './pages/PerfilPrestador/PerfilPage';
 import FeedPage from './pages/FeedOportunidades/FeedPage';
 import InicioClientePage from './pages/InicioCliente/InicioClientePage';
+import PerfilClientePage from './pages/PerfilCliente/PerfilClientePage';
 import { avisosApi } from './services/avisosService';
 
 export default function App() {
@@ -96,7 +97,8 @@ if (token) {
       onSwitchRole={() => { setPantalla('feed'); setVista(vistaActual === 'CLIENTE' ? 'PRESTADOR' : 'CLIENTE'); }}
     >
       {vistaActual === null && <p aria-busy="true">Cargando…</p>}
-      {vistaActual === 'CLIENTE' && <InicioClientePage onUnauthorized={handleLogout} />}
+      {vistaActual === 'CLIENTE' && pantalla !== 'perfilCliente' && <InicioClientePage onUnauthorized={handleLogout} />}
+      {vistaActual === 'CLIENTE' && pantalla === 'perfilCliente' && <PerfilClientePage onUnauthorized={handleLogout} />}
       {vistaActual !== null && vistaActual !== 'CLIENTE' && pantalla === 'feed' && (
         <FeedPage
           onIrAPerfil={() => setPantalla('perfilPrestador')}

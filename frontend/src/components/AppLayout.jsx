@@ -49,7 +49,7 @@ export default function AppLayout({ children, onLogout, onSwitchRole, vista = 'P
 
       <div className="lay-body">
         <nav className="lay-side" aria-label="Principal">
-          <div className="lay-me"><span className="lay-av">{ini}</span><b>{nombre}</b></div>
+          <button type="button" className="lay-me" onClick={() => onNavigate?.(esCliente ? 'perfilCliente' : 'perfilPrestador')} aria-label="Ver mi perfil"><span className="lay-av">{ini}</span><b>{nombre}</b></button>
           <a className="lay-link" onClick={() => onNavigate?.('feed')}><Home size={16} color="#2563eb" /> Inicio</a>
           {!esCliente && <a className="lay-link" onClick={() => onNavigate?.('perfilPrestador')}><User size={16} color="#7c3aed" /> Mi Perfil</a>}
           <a className="lay-link"><ClipboardList size={16} color="#059669" /> Mis Presupuestos</a>
