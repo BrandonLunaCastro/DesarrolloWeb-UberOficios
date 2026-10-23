@@ -20,7 +20,7 @@ const ph = (c) => 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns='http:/
 const ZONAS = ['Capital', 'Godoy Cruz', 'Guaymallén', 'Las Heras', 'Luján de Cuyo', 'Maipú'].map((nombre, i) => ({ id_zona: i + 1, nombre }));
 const db = {
   usuario: { nombre: 'Martin', apellido: 'Gomez', foto_perfil: null, fecha_registro: '2026-08-12' },
-  prestador: { matricula: '55432', biografia: 'Especialista en instalaciones eléctricas domiciliarias. Trabajo rápido y con garantía. Matrícula N° 55432.', radio_cobertura_km: 15 },
+  prestador: { matricula: '55432', biografia: 'Especialista en instalaciones eléctricas domiciliarias. Trabajo rápido y con garantía. Matrícula N° 55432.', zona: 'Godoy Cruz', oficio: 'Electricista' },
   categoria: 'Electricista',
   zonas: ZONAS.slice(0, 2),
   rating: { promedio: 4.9, total: 32 },
@@ -31,9 +31,12 @@ const mock = {
   yo: () => wait(db.usuario),
   obtener: () => wait(db),
   zonas: () => wait(ZONAS),
-  actualizar: ({ biografia, zonas_ids }) => {
+  actualizar: ({ biografia, zona, oficio }) => {
     db.prestador.biografia = biografia;
-    db.zonas = ZONAS.filter((z) => zonas_ids.includes(z.id_zona));
+    db.prestador.zona = zona;
+    db.prestador.oficio = oficio;
+    db.categoria = oficio || 'Oficio sin definir';
+    db.zonas = zona ? [{ nombre: zona }] : [];
     return wait(db);
   },
   subirFotos: (files) => {
@@ -46,10 +49,12 @@ const mock = {
 
 // ---------- API REAL ----------
 const real = {
-  yo: () => req('/usuarios/me'),
-  obtener: () => req('/prestadores/me'),
-  zonas: () => req('/zonas'),
-  actualizar: (d) => req('/prestadores/me', { method: 'PUT', body: JSON.stringify(d) }),
+  yo: () => req('/auth/me'),
+  obtener: () => req('/usuarios/perfil'),
+  actualizar: async (d) => {
+    await req('/usuarios/perfil', { method: 'PUT', body: JSON.stringify(d) });
+    return req('/usuarios/perfil');
+  },
   subirFotos: (files) => {
     const fd = new FormData();
     files.forEach((f) => fd.append('fotos', f));
