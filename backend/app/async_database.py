@@ -15,8 +15,8 @@ def _async_database_url(url: str) -> str:
 
 async_engine = create_async_engine(
     _async_database_url(DATABASE_URL),
-    pool_size=3,
-    max_overflow=0,
+    pool_size=5,
+    max_overflow=2,
     pool_pre_ping=True,
     pool_recycle=1800,
 )
