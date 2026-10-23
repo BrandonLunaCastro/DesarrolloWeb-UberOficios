@@ -16,6 +16,7 @@ app.add_middleware(
         "http://localhost:5173",   # Vite dev server
         "http://127.0.0.1:5173",
         "https://uberoficios-frontend.onrender.com",
+        "https://desarrolloweb-uberoficios.onrender.com/auth/register",
     ],
     allow_credentials=True,
     allow_methods=["*"],
