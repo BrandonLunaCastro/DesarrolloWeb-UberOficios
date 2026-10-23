@@ -1,16 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
-import { Bell, ClipboardList, Home, LogOut, Pencil, RefreshCw, Search, Settings } from 'lucide-react';
-import { perfilApi } from '../services/perfilService';
+import { Bell, ClipboardList, Home, LogOut, Pencil, RefreshCw, Search, Settings, User } from 'lucide-react';
+import { avisosApi } from '../services/avisosService';
 import './AppLayout.css';
 
 const iniciales = (n = '', a = '') => `${n[0] ?? ''}${a[0] ?? ''}`.toUpperCase();
 
-export default function AppLayout({ children, onLogout, onSwitchRole }) {
+// vista: 'CLIENTE' | 'PRESTADOR' (qué pantalla está viendo). onNavigate('feed' | 'perfilPrestador').
+export default function AppLayout({ children, onLogout, onSwitchRole, vista = 'PRESTADOR', onNavigate }) {
+  const esCliente = vista === 'CLIENTE';
   const [yo, setYo] = useState(null);
   const [menu, setMenu] = useState(false);
   const ref = useRef(null);
 
-  useEffect(() => { perfilApi.yo().then(setYo).catch(() => {}); }, []);
+  useEffect(() => { avisosApi.me().then(setYo).catch(() => {}); }, []);
   useEffect(() => {
     const fuera = (e) => ref.current && !ref.current.contains(e.target) && setMenu(false);
     const esc = (e) => e.key === 'Escape' && setMenu(false);
@@ -33,10 +35,10 @@ export default function AppLayout({ children, onLogout, onSwitchRole }) {
           <button className="lay-av" aria-haspopup="menu" aria-expanded={menu} aria-label="Menú de usuario" onClick={() => setMenu(!menu)}>{ini}</button>
           {menu && (
             <div className="lay-menu" role="menu">
-              <div className="lay-cur"><span className="lay-av">{ini}</span><div><b>{nombre}</b><small>Perfil de Prestador</small></div></div>
+              <div className="lay-cur"><span className="lay-av">{ini}</span><div><b>{nombre}</b><small>{esCliente ? 'Perfil de Cliente' : 'Perfil de Prestador'}</small></div></div>
               <button role="menuitem" className="lay-item" onClick={() => { setMenu(false); onSwitchRole?.(); }}>
                 <span className="lay-circ"><RefreshCw size={14} /></span>
-                <div><b>Cambiar a Cliente</b><small>Buscar y contratar servicios</small></div></button>
+                <div><b>{esCliente ? 'Cambiar a Prestador de Servicios' : 'Cambiar a Cliente'}</b><small>{esCliente ? 'Gestionar presupuestos y saldo' : 'Buscar y contratar servicios'}</small></div></button>
               <hr />
               <button role="menuitem" className="lay-item sm"><span className="lay-circ"><Settings size={13} /></span><b>Configuración y privacidad</b></button>
               <button role="menuitem" className="lay-item sm" onClick={onLogout}><span className="lay-circ"><LogOut size={13} /></span><b>Cerrar sesión</b></button>
@@ -47,8 +49,9 @@ export default function AppLayout({ children, onLogout, onSwitchRole }) {
 
       <div className="lay-body">
         <nav className="lay-side" aria-label="Principal">
-          <div className="lay-me"><span className="lay-av">{ini}</span><b>{nombre}</b></div>
-          <a className="lay-link"><Home size={16} color="#2563eb" /> Inicio</a>
+          <button type="button" className="lay-me" onClick={() => onNavigate?.(esCliente ? 'perfilCliente' : 'perfilPrestador')} aria-label="Ver mi perfil"><span className="lay-av">{ini}</span><b>{nombre}</b></button>
+          <a className="lay-link" onClick={() => onNavigate?.('feed')}><Home size={16} color="#2563eb" /> Inicio</a>
+          {!esCliente && <a className="lay-link" onClick={() => onNavigate?.('perfilPrestador')}><User size={16} color="#7c3aed" /> Mi Perfil</a>}
           <a className="lay-link"><ClipboardList size={16} color="#059669" /> Mis Presupuestos</a>
         </nav>
         <main>{children}</main>

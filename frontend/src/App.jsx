@@ -1,12 +1,15 @@
 import { Mail, Lock, User, Eye, EyeOff, Search, Settings, Sparkles } from 'lucide-react';
 import { FcGoogle } from 'react-icons/fc';
 import { FaApple } from 'react-icons/fa';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { loginUser, registerUser } from './services/authService';
 import './App.css';
 import AppLayout from './components/AppLayout';
 import PerfilPage from './pages/PerfilPrestador/PerfilPage';
 import FeedPage from './pages/FeedOportunidades/FeedPage';
+import InicioClientePage from './pages/InicioCliente/InicioClientePage';
+import PerfilClientePage from './pages/PerfilCliente/PerfilClientePage';
+import { avisosApi } from './services/avisosService';
 
 export default function App() {
   const [mode, setMode] = useState('login'); // 'login' | 'register'
@@ -22,6 +25,9 @@ export default function App() {
   const [token, setToken] = useState(localStorage.getItem('jwt') || '');
 
   const [pantalla, setPantalla] = useState('feed');
+  const [rolUsuario, setRolUsuario] = useState(null); // 'CLIENTE' | 'PRESTADOR' | null (cargando)
+  const [vista, setVista] = useState(null); // vista elegida con "Cambiar a..."; si es null se usa el rol
+  const vistaActual = vista ?? rolUsuario;
   const switchMode = (m) => {
     setMode(m);
     setError('');
@@ -63,18 +69,43 @@ const handleSubmit = async (e) => {
   const handleLogout = () => {
     localStorage.removeItem('jwt');
     setToken('');
+    setRolUsuario(null);
+    setVista(null);
   };
+
+  // Con sesión activa, consulta el rol para decidir la pantalla de inicio.
+  useEffect(() => {
+    if (!token) return;
+    let vivo = true;
+    avisosApi.me()
+      .then((m) => vivo && setRolUsuario((m.rol || '').toUpperCase()))
+      .catch((e) => {
+        if (!vivo) return;
+        if (e.status === 401) handleLogout();
+        else setRolUsuario('PRESTADOR'); // si falla, mantiene el comportamiento anterior (feed)
+      });
+    return () => { vivo = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
 
 if (token) {
   return (
-    <AppLayout onLogout={handleLogout}>
-      {pantalla === 'feed' && (
+    <AppLayout
+      onLogout={handleLogout}
+      vista={vistaActual ?? 'PRESTADOR'}
+      onNavigate={setPantalla}
+      onSwitchRole={() => { setPantalla('feed'); setVista(vistaActual === 'CLIENTE' ? 'PRESTADOR' : 'CLIENTE'); }}
+    >
+      {vistaActual === null && <p aria-busy="true">Cargando…</p>}
+      {vistaActual === 'CLIENTE' && pantalla !== 'perfilCliente' && <InicioClientePage onUnauthorized={handleLogout} />}
+      {vistaActual === 'CLIENTE' && pantalla === 'perfilCliente' && <PerfilClientePage onUnauthorized={handleLogout} />}
+      {vistaActual !== null && vistaActual !== 'CLIENTE' && pantalla === 'feed' && (
         <FeedPage
           onIrAPerfil={() => setPantalla('perfilPrestador')}
           onUnauthorized={handleLogout}
         />
       )}
-      {pantalla === 'perfilPrestador' && <PerfilPage />}
+      {vistaActual !== null && vistaActual !== 'CLIENTE' && pantalla === 'perfilPrestador' && <PerfilPage />}
     </AppLayout>
   );
 }
