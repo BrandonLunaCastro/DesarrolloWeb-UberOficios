@@ -3,7 +3,7 @@ from jose import jwt
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from app.database import get_db
 from app.models.usuario import Usuario
 
@@ -83,9 +83,13 @@ def get_current_user(
             detail="Token inválido o expirado"
         )
 
-    usuario = db.query(Usuario).filter(
-        Usuario.id_usuario == id_usuario
-    ).first()
+    usuario = (
+        db.query(Usuario)
+        .options(joinedload(Usuario.rol))
+        .filter(Usuario.id_usuario == id_usuario)
+        .first()
+    )
+    db.close()
 
     if usuario is None:
         raise HTTPException(
