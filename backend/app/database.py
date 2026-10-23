@@ -10,7 +10,13 @@ load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 #basicamente creamos el puente entre nuestra base de datos y el programa 
-engine = create_engine(DATABASE_URL)
+engine = create_engine(
+    DATABASE_URL,
+    pool_size=3,
+    max_overflow=0,
+    pool_pre_ping=True,
+    pool_recycle=1800,
+)
 
 # esto nos permite crear sesiones, las cuales son importantes al momento que interactuen en la base de datos 
 SessionLocal = sessionmaker(

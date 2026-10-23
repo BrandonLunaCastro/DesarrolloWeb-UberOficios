@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import joinedload
 from sqlalchemy.orm import Session
 
 from app.auth import (
@@ -96,23 +97,35 @@ def login(
     datos: LoginRequest,
     db: Session = Depends(get_db),
 ):
-    usuario = db.query(Usuario).filter(Usuario.email == datos.email).first()
+    usuario = (
+        db.query(Usuario)
+        .options(joinedload(Usuario.rol))
+        .filter(Usuario.email == datos.email)
+        .first()
+    )
     if not usuario:
+        db.rollback()
         raise HTTPException(
             status_code=401,
             detail="Correo o contraseña incorrectos",
         )
 
-    if not verificar_contrasena(datos.contrasena, usuario.password_hash):
+    id_usuario = usuario.id_usuario
+    password_hash = usuario.password_hash
+    email = usuario.email
+    rol = usuario.rol.nombre
+    db.rollback()
+
+    if not verificar_contrasena(datos.contrasena, password_hash):
         raise HTTPException(
             status_code=401,
             detail="Correo o contraseña incorrectos",
         )
 
     token = crear_token({
-        "sub": str(usuario.id_usuario),
-        "email": usuario.email,
-        "rol": usuario.rol.nombre,
+        "sub": str(id_usuario),
+        "email": email,
+        "rol": rol,
     })
     return {
         "access_token": token,
