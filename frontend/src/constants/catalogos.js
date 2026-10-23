@@ -1,24 +1,14 @@
-// El backend guarda `oficio` y `zona` como texto libre (no hay endpoints /oficios ni /zonas).
-// Mantenemos las listas acá para que cliente y prestador escriban EXACTAMENTE lo mismo:
-// GET /avisos/zona compara la zona del prestador con la del aviso (sin mayúsculas ni espacios).
-// TODO: cuando el back exponga catálogos, reemplazar por una llamada a la API.
+// Zonas seleccionables para solicitudes; el backend las guarda como texto.
 export const ZONAS = ['Capital', 'Godoy Cruz', 'Guaymallén', 'Las Heras', 'Luján de Cuyo', 'Maipú'];
 
-// Los 4 primeros son los "Servicios rápidos" del Figma.
+// Categorías cargadas en la base de datos.
 export const OFICIOS = [
+  'Plomería y Gas',
   'Electricidad',
-  'Plomería',
-  'Gasista',
-  'Albañilería',
-  'Pintura',
-  'Carpintería',
   'Cerrajería',
-  'Aire acondicionado',
-  'Otro',
 ];
 export const SERVICIOS_RAPIDOS = [
+  { oficio: 'Plomería y Gas', emoji: '💧' },
   { oficio: 'Electricidad', emoji: '⚡' },
-  { oficio: 'Plomería', emoji: '💧' },
-  { oficio: 'Gasista', emoji: '🔥' },
-  { oficio: 'Albañilería', emoji: '🧱' },
+  { oficio: 'Cerrajería', emoji: '🔑' },
 ];

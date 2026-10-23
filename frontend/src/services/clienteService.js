@@ -1,8 +1,7 @@
 // Perfil del Cliente.
 //  - Lectura:   GET /auth/me          -> { nombre, apellido, email, telefono, fecha_registro, rol, ... }
-//  - Escritura: PUT /usuarios/perfil  -> body { zona?, telefono? }  (el back no permite editar nombre/apellido/email)
-//    Respuesta: { mensaje, cliente: { zona, telefono }, prestador: {...} | null }
-// NOTA: el back no tiene un GET que devuelva la zona guardada del cliente; solo la devuelve el PUT.
+//  - Escritura: PUT /usuarios/perfil  -> body { telefono? } (el back no permite editar nombre/apellido/email)
+// La zona se indica al publicar cada solicitud y no se guarda en un perfil de cliente.
 const BASE = (import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000').replace(/\/+$/, '');
 const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
 

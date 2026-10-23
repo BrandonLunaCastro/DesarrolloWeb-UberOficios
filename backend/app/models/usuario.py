@@ -21,6 +21,7 @@ class Usuario(Base):
     fecha_registro = Column(DateTime, nullable=False, server_default=func.now())
 
     rol = relationship("Rol", back_populates="usuarios")
+    avisos = relationship("Aviso", back_populates="cliente")
     prestador = relationship(
         "PrestadorServicio",
         back_populates="usuario",

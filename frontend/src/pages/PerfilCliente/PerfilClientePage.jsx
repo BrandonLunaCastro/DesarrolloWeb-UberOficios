@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Calendar, Camera, CheckCircle2, MapPin, Pencil, Phone, User } from 'lucide-react';
+import { Calendar, Camera, CheckCircle2, Pencil, Phone, User } from 'lucide-react';
 import { clienteApi } from '../../services/clienteService';
-import { ZONAS } from '../../constants/catalogos';
 import PublicarSolicitudModal from '../InicioCliente/PublicarSolicitudModal';
 import './perfilCliente.css';
 
@@ -14,14 +13,13 @@ const mesAnio = (iso) => {
 
 /**
  * Pantalla "Cliente - perfil" (Figma).
- *  - Vista: portada, avatar, nombre, "Datos Personales" (se unió, zona, teléfono) y "¿Qué necesitás hoy?".
- *  - "Editar perfil" / lápiz: muestra "Información Personal" (teléfono editable) y "Zona aproximada".
- *  - Guardar -> PUT /usuarios/perfil con { telefono, zona } (solo lo que cambió).
+ *  - Vista: portada, avatar, nombre, datos personales y "¿Qué necesitás hoy?".
+ *  - La zona se elige al publicar cada solicitud; solo el teléfono se guarda en el usuario.
  */
 export default function PerfilClientePage({ onUnauthorized }) {
   const [perfil, setPerfil] = useState(null);   // GET /auth/me
-  const [form, setForm] = useState({ telefono: '', zona: '' });
-  const [inicial, setInicial] = useState({ telefono: '', zona: '' }); // último valor guardado
+  const [form, setForm] = useState({ telefono: '' });
+  const [inicial, setInicial] = useState({ telefono: '' }); // último valor guardado
   const [editando, setEditando] = useState(false);
   const [errorCarga, setErrorCarga] = useState('');
   const [errores, setErrores] = useState({});
@@ -37,7 +35,7 @@ export default function PerfilClientePage({ onUnauthorized }) {
       .then((p) => {
         if (!vivo) return;
         setPerfil(p);
-        const v = { telefono: p.telefono ?? '', zona: p.zona ?? '' };
+        const v = { telefono: p.telefono ?? '' };
         setForm(v); setInicial(v); setErrorCarga('');
       })
       .catch((e) => {
@@ -55,7 +53,7 @@ export default function PerfilClientePage({ onUnauthorized }) {
     setMensaje(null);
   };
 
-  const hayCambios = form.telefono !== inicial.telefono || form.zona !== inicial.zona;
+  const hayCambios = form.telefono !== inicial.telefono;
 
   const cancelar = () => { setForm(inicial); setErrores({}); setMensaje(null); setEditando(false); };
 
@@ -69,14 +67,13 @@ export default function PerfilClientePage({ onUnauthorized }) {
 
     const body = {}; // el back actualiza únicamente los campos que recibe
     if (form.telefono !== inicial.telefono) body.telefono = form.telefono.trim() || null;
-    if (form.zona !== inicial.zona) body.zona = form.zona || null;
 
     setGuardando(true);
     setMensaje(null);
     try {
       const r = await clienteApi.actualizar(body);
       const c = r?.cliente ?? r?.prestador ?? {};
-      const v = { telefono: c.telefono ?? form.telefono.trim(), zona: c.zona ?? form.zona };
+      const v = { telefono: c.telefono ?? form.telefono.trim() };
       setForm(v); setInicial(v);
       setEditando(false);
       setMensaje({ tipo: 'ok', texto: 'Cambios guardados correctamente.' });
@@ -145,18 +142,6 @@ export default function PerfilClientePage({ onUnauthorized }) {
             <p className="pc-nota">El nombre, el apellido y el correo no se pueden modificar desde acá.</p>
           </div>
 
-          <div className="pc-card">
-            <h3><MapPin size={15} /> Zona aproximada</h3>
-            <div className="pc-field">
-              <label htmlFor="pc-zona">¿En qué zona necesitás los servicios?</label>
-              <select id="pc-zona" value={form.zona} onChange={set('zona')} disabled={guardando}>
-                <option value="">Sin definir</option>
-                {ZONAS.map((z) => <option key={z}>{z}</option>)}
-              </select>
-            </div>
-            <p className="pc-nota">Usamos tu zona para avisar a los prestadores cercanos. No compartimos tu ubicación exacta.</p>
-          </div>
-
           <div className="pc-actions">
             <button type="button" className="ps-cancel" onClick={cancelar} disabled={guardando}>Cancelar</button>
             <button type="submit" className="feed-btn" disabled={!hayCambios || guardando}>{guardando ? 'Guardando…' : 'Guardar cambios'}</button>
@@ -171,7 +156,7 @@ export default function PerfilClientePage({ onUnauthorized }) {
             </div>
             <ul className="pc-list">
               {perfil.fecha_registro && <li><Calendar size={14} /> {`Se unió en ${mesAnio(perfil.fecha_registro)}`}</li>}
-              <li><MapPin size={14} /> {inicial.zona ? `${inicial.zona}, Mendoza` : 'Zona sin definir'}</li>
+              <li>La zona se indica al publicar cada solicitud.</li>
               {inicial.telefono && <li><Phone size={14} /> {inicial.telefono}</li>}
             </ul>
           </div>
