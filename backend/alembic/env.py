@@ -6,6 +6,7 @@ from sqlalchemy import pool
 from app.database import Base
 from app.models import (
     Aviso,
+    Cliente,
     Conversacion,
     Mensaje,
     Postulacion,
