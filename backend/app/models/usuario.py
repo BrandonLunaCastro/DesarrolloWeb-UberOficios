@@ -28,3 +28,8 @@ class Usuario(Base):
         uselist=False,
         cascade="all, delete-orphan",
     )
+    mensajes_enviados = relationship(
+        "Mensaje",
+        back_populates="remitente",
+        passive_deletes="all",
+    )

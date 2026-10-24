@@ -1,34 +1,19 @@
 from fastapi import FastAPI
-# Importamos el router que contiene nuestros endpoints
-# de autenticación.
+from fastapi.middleware.cors import CORSMiddleware
+
 from app.routes.auth import router as auth_router
 from app.routes.usuarios import router as usuarios_router
 from app.routes.avisos import router as avisos_router
 from app.routes.creditos import router as creditos_router
-from fastapi.middleware.cors import CORSMiddleware
-
-#crea una app Fast API
-api = FastAPI()
-
-# Incluimos el router de autenticación dentro de nuestra aplicación.
-# Esto hace que FastAPI conozca los endpoints que definimos
-# en routes/auth.py.
-api.include_router(auth_router)
-api.include_router(usuarios_router)
-api.include_router(avisos_router)
-api.include_router(creditos_router)
-
-#cuando alguien haga una peticion get ejecuta nuestra funcion get
-
-@api.get("/health")
-def healt_check():
-    return {"status" :  "ok"}
+from app.routes.chat import router as chat_router
 
 
-app = CORSMiddleware(
-    app=api,
+app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
     allow_origins=[
-        "http://localhost:5173",   # Vite dev server
+        "http://localhost:5173",
         "http://127.0.0.1:5173",
         "https://uberoficios-frontend.onrender.com",
     ],
@@ -36,3 +21,14 @@ app = CORSMiddleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(auth_router)
+app.include_router(usuarios_router)
+app.include_router(avisos_router)
+app.include_router(creditos_router)
+app.include_router(chat_router)
+
+
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
