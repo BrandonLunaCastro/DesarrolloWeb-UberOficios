@@ -38,16 +38,16 @@ const oyentes = new Map(); // id_conversacion -> Set de { onMensaje, onEstado }
 const m = (id, rem, contenido, min) => ({ id_mensaje: id, id_conversacion: 1, id_remitente: rem, contenido, fecha_envio: hace(min) });
 const db = {
   conversaciones: [
-    { id_conversacion: 1, id_aviso: 1, oficio: 'Reparación caño cocina', estado: 'en_proceso', otro_participante: { id_usuario: 7, nombre: 'Carlos', apellido: 'Benítez' } },
-    { id_conversacion: 2, id_aviso: 2, oficio: 'Instalación de tomacorrientes', estado: 'en_proceso', otro_participante: { id_usuario: 9, nombre: 'Ana', apellido: 'Torres' } },
+    { id_conversacion: 1, id_aviso: 2, oficio: 'Instalación de tomacorrientes', estado: 'en_proceso', otro_participante: { id_usuario: 7, nombre: 'Martín', apellido: 'Gómez' } },
+    { id_conversacion: 2, id_aviso: 1, oficio: 'Reparación caño cocina', estado: 'en_proceso', otro_participante: { id_usuario: 9, nombre: 'Sofía', apellido: 'Ledesma' } },
   ],
   mensajes: {
     1: [
-      m(1, 7, 'Hola Luciana! Elegí tu propuesta para el caño de la cocina.', 60 * 26),
-      m(2, YO, 'Hola Carlos, gracias! ¿Podés mandarme la dirección exacta?', 60 * 26 - 3),
-      m(3, 7, 'Es Plaza Godoy Cruz, calle San Martín 1450.', 60 * 25),
-      m(4, YO, 'Perfecto. Mañana a las 10 paso a verlo.', 60 * 3),
-      m(5, 7, '¡Genial, te espero! Cualquier cosa me escribís por acá.', 60 * 2),
+      m(1, 7, 'Hola Luciana, soy Martín. Gracias por elegir mi presupuesto para los tomacorrientes.', 60 * 26),
+      m(2, YO, 'Hola Martín! ¿Cuándo podrías pasar a verlo?', 60 * 26 - 3),
+      m(3, 7, 'Puedo mañana a las 10. ¿Te queda bien?', 60 * 25),
+      m(4, YO, 'Perfecto, te espero. Es en Plaza Godoy Cruz, San Martín 1450.', 60 * 3),
+      m(5, 7, 'Genial, llevo los materiales. Cualquier cosa te escribo por acá.', 60 * 2),
     ],
     2: [], // conversación vacía, para ver ese estado
   },
