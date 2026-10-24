@@ -7,6 +7,7 @@ import './App.css';
 import AppLayout from './components/AppLayout';
 import PerfilPage from './pages/PerfilPrestador/PerfilPage';
 import FeedPage from './pages/FeedOportunidades/FeedPage';
+import ChatPage from './pages/Chat/ChatPage';
 import InicioClientePage from './pages/InicioCliente/InicioClientePage';
 import PerfilClientePage from './pages/PerfilCliente/PerfilClientePage';
 import { avisosApi } from './services/avisosService';
@@ -97,8 +98,8 @@ if (token) {
       onSwitchRole={() => { setPantalla('feed'); setVista(vistaActual === 'CLIENTE' ? 'PRESTADOR' : 'CLIENTE'); }}
     >
       {vistaActual === null && <p aria-busy="true">Cargando…</p>}
-      {vistaActual === 'CLIENTE' && pantalla !== 'perfilCliente' && <InicioClientePage onUnauthorized={handleLogout} />}
       {vistaActual === 'CLIENTE' && pantalla === 'perfilCliente' && <PerfilClientePage onUnauthorized={handleLogout} />}
+      {vistaActual === 'CLIENTE' && pantalla !== 'perfilCliente' && pantalla !== 'chat' && <InicioClientePage onUnauthorized={handleLogout} />}
       {vistaActual !== null && vistaActual !== 'CLIENTE' && pantalla === 'feed' && (
         <FeedPage
           onIrAPerfil={() => setPantalla('perfilPrestador')}
@@ -106,10 +107,10 @@ if (token) {
         />
       )}
       {vistaActual !== null && vistaActual !== 'CLIENTE' && pantalla === 'perfilPrestador' && <PerfilPage />}
+      {vistaActual !== null && pantalla === 'chat' && <ChatPage onUnauthorized={handleLogout} />}
     </AppLayout>
   );
 }
-
   return (
     <div className="page">
       <div className="card">
