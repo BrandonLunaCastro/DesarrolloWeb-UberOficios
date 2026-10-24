@@ -46,7 +46,7 @@ const mock = {
 
 // ---------- API REAL ----------
 const real = {
-  yo: () => req('/usuarios/me'),
+  yo: () => req('/auth/me'),
   obtener: () => req('/prestadores/me'),
   zonas: () => req('/zonas'),
   actualizar: (d) => req('/prestadores/me', { method: 'PUT', body: JSON.stringify(d) }),

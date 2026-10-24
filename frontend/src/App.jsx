@@ -7,6 +7,7 @@ import './App.css';
 import AppLayout from './components/AppLayout';
 import PerfilPage from './pages/PerfilPrestador/PerfilPage';
 import FeedPage from './pages/FeedOportunidades/FeedPage';
+import ChatPage from './pages/Chat/ChatPage';
 
 export default function App() {
   const [mode, setMode] = useState('login'); // 'login' | 'register'
@@ -75,7 +76,9 @@ if (token) {
         />
       )}
       {pantalla === 'perfilPrestador' && <PerfilPage />}
+      {pantalla === 'chat' && <ChatPage onUnauthorized={handleLogout} />}
     </AppLayout>
+       
   );
 }
 
