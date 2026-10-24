@@ -1,0 +1,30 @@
+[1mdiff --cc backend/app/main.py[m
+[1mindex 207e022,c3f5384..0000000[m
+[1m--- a/backend/app/main.py[m
+[1m+++ b/backend/app/main.py[m
+[36m@@@ -35,4 -21,19 +36,23 @@@[m [mapp = CORSMiddleware[m
+      allow_credentials=True,[m
+      allow_methods=["*"],[m
+      allow_headers=["*"],[m
+[31m- )[m
+[32m++<<<<<<< Updated upstream[m
+[32m++)[m
+[32m++=======[m
+[32m+ )[m
+[32m+ [m
+[32m+ # Incluimos el router de autenticación dentro de nuestra aplicación.[m
+[32m+ # Esto hace que FastAPI conozca los endpoints que definimos[m
+[32m+ # en routes/auth.py.[m
+[32m+ app.include_router(auth_router)[m
+[32m+ app.include_router(usuarios_router)[m
+[32m+ app.include_router(avisos_router)[m
+[32m+ app.include_router(creditos_router)[m
+[32m+ app.include_router(chat_router)[m
+[32m+ [m
+[32m+ #cuando alguien haga una peticion get ejecuta nuestra funcion get[m
+[32m+ [m
+[32m+ @app.get("/health")[m
+[32m+ def healt_check():[m
+[31m -    return {"status" :  "ok"}[m
+[32m++    return {"status" :  "ok"}[m
+[32m++>>>>>>> Stashed changes[m

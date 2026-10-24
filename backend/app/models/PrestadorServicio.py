@@ -53,6 +53,11 @@ class PrestadorServicio(Base):
         back_populates="prestador",
         cascade="all, delete-orphan",
     )
+    conversaciones = relationship(
+        "Conversacion",
+        back_populates="prestador",
+        cascade="all, delete-orphan",
+    )
     billetera = relationship(
         "BilleteraCredito",
         back_populates="prestador",

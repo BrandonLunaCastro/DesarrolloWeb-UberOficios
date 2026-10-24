@@ -3,8 +3,8 @@ from jose import jwt
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError
-from sqlalchemy.orm import Session
-from app.database import get_db
+from sqlalchemy.orm import joinedload
+from app.database import SessionLocal
 from app.models.usuario import Usuario
 
 # Configuración para hashear o verificar contraseñas.
@@ -56,7 +56,6 @@ security = HTTPBearer()
 # Obtiene y valida el usuario a partir del JWT.
 def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
-    db: Session = Depends(get_db)
 ):
     token = credentials.credentials
 
@@ -83,9 +82,13 @@ def get_current_user(
             detail="Token inválido o expirado"
         )
 
-    usuario = db.query(Usuario).filter(
-        Usuario.id_usuario == id_usuario
-    ).first()
+    with SessionLocal() as db:
+        usuario = (
+            db.query(Usuario)
+            .options(joinedload(Usuario.rol))
+            .filter(Usuario.id_usuario == id_usuario)
+            .first()
+        )
 
     if usuario is None:
         raise HTTPException(

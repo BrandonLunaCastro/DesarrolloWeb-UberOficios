@@ -13,7 +13,13 @@ def _async_database_url(url: str) -> str:
     return url
 
 
-async_engine = create_async_engine(_async_database_url(DATABASE_URL))
+async_engine = create_async_engine(
+    _async_database_url(DATABASE_URL),
+    pool_size=5,
+    max_overflow=2,
+    pool_pre_ping=True,
+    pool_recycle=1800,
+)
 AsyncSessionLocal = async_sessionmaker(
     bind=async_engine,
     class_=AsyncSession,

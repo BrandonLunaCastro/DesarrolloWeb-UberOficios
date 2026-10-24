@@ -18,3 +18,8 @@ class Cliente(Base):
     telefono = Column(String, nullable=True)
 
     avisos = relationship("Aviso", back_populates="cliente")
+    conversaciones = relationship(
+        "Conversacion",
+        back_populates="cliente",
+        cascade="all, delete-orphan",
+    )

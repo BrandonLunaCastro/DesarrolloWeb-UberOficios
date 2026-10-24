@@ -1,13 +1,15 @@
+import unicodedata
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.async_database import get_async_db
 from app.auth import get_current_user
 from app.database import get_db
-from app.models.Aviso import Aviso
-from app.models.Cliente import Cliente
+from app.models.Aviso import Aviso, EstadoAvisoEnum
+from app.models.Categoria import Categoria
 from app.models.PrestadorServicio import PrestadorServicio
 from app.models.usuario import Usuario
 from app.schemas.aviso import AvisoCreate
@@ -16,6 +18,23 @@ from app.services.postulaciones import crear_postulacion
 
 
 router = APIRouter(prefix="/avisos", tags=["Avisos"])
+
+
+def _normalizar_categoria(nombre: str) -> str:
+    descompuesto = unicodedata.normalize("NFKD", nombre.casefold())
+    sin_acentos = "".join(
+        caracter
+        for caracter in descompuesto
+        if not unicodedata.combining(caracter)
+    )
+    normalizado = " ".join(sin_acentos.strip().split())
+    aliases = {
+        "plomeria": "plomeria y gas",
+        "gasista": "plomeria y gas",
+        "electricista": "electricidad",
+        "cerrajero": "cerrajeria",
+    }
+    return aliases.get(normalizado, normalizado)
 
 
 @router.get("/zona")
@@ -43,20 +62,25 @@ def listar_avisos_por_zona(
     zona_prestador = prestador.zona.strip().lower()
     avisos = (
         db.query(Aviso)
-        .filter(func.lower(func.trim(Aviso.zona)) == zona_prestador)
-        .order_by(Aviso.fecha_creacion.desc())
+        .options(joinedload(Aviso.categoria), joinedload(Aviso.cliente))
+        .filter(
+            func.lower(func.trim(Aviso.ubicacion)) == zona_prestador,
+            Aviso.estado == EstadoAvisoEnum.ABIERTO,
+        )
+        .order_by(Aviso.fecha_publicacion.desc())
         .all()
     )
     return [
         {
             "id_aviso": aviso.id_aviso,
             "id_cliente": aviso.id_cliente,
-            "oficio": aviso.oficio,
+            "titulo": aviso.titulo,
+            "oficio": aviso.categoria.nombre,
             "descripcion": aviso.descripcion,
-            "zona": aviso.zona,
-            "telefono": aviso.telefono,
-            "estado": aviso.estado,
-            "fecha_creacion": aviso.fecha_creacion,
+            "zona": aviso.ubicacion,
+            "telefono": aviso.cliente.telefono,
+            "estado": aviso.estado.value.lower(),
+            "fecha_creacion": aviso.fecha_publicacion,
         }
         for aviso in avisos
     ]
@@ -68,22 +92,35 @@ def crear_aviso(
     db: Session = Depends(get_db),
     usuario: Usuario = Depends(get_current_user),
 ):
-    cliente = db.query(Cliente).filter(Cliente.id_usuario == usuario.id_usuario).first()
-    if cliente is None:
-        cliente = Cliente(id_usuario=usuario.id_usuario)
-        db.add(cliente)
-        db.flush()
+    categorias = db.query(Categoria).all()
+    categoria_buscada = _normalizar_categoria(datos.oficio)
+    categoria = next(
+        (
+            item
+            for item in categorias
+            if _normalizar_categoria(item.nombre) == categoria_buscada
+        ),
+        None,
+    )
+    if categoria is None:
+        raise HTTPException(
+            status_code=400,
+            detail=f"La categoría {datos.oficio} no está disponible para publicar avisos",
+        )
 
-    cliente.zona = datos.zona
+    usuario_db = db.get(Usuario, usuario.id_usuario)
+    if usuario_db is None:
+        raise HTTPException(status_code=401, detail="Usuario no encontrado")
     if datos.telefono is not None:
-        cliente.telefono = datos.telefono
+        usuario_db.telefono = datos.telefono
 
     aviso = Aviso(
-        id_cliente=cliente.id_cliente,
-        oficio=datos.oficio,
+        id_cliente=usuario.id_usuario,
+        id_categoria=categoria.id_categoria,
+        titulo=categoria.nombre,
         descripcion=datos.descripcion,
-        zona=datos.zona,
-        telefono=datos.telefono,
+        ubicacion=datos.zona,
+        estado=EstadoAvisoEnum.ABIERTO,
     )
     db.add(aviso)
     db.commit()
@@ -93,12 +130,13 @@ def crear_aviso(
         "mensaje": "Solicitud de trabajo creada correctamente",
         "id_aviso": aviso.id_aviso,
         "id_cliente": aviso.id_cliente,
-        "oficio": aviso.oficio,
+        "titulo": aviso.titulo,
+        "oficio": categoria.nombre,
         "descripcion": aviso.descripcion,
-        "zona": aviso.zona,
-        "telefono": aviso.telefono,
-        "estado": aviso.estado,
-        "fecha_creacion": aviso.fecha_creacion,
+        "zona": aviso.ubicacion,
+        "telefono": usuario_db.telefono,
+        "estado": aviso.estado.value.lower(),
+        "fecha_creacion": aviso.fecha_publicacion,
     }
 
 
