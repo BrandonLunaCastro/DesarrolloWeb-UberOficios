@@ -17,7 +17,6 @@ class Cliente(Base):
     zona = Column(String, nullable=True)
     telefono = Column(String, nullable=True)
 
-    avisos = relationship("Aviso", back_populates="cliente")
     conversaciones = relationship(
         "Conversacion",
         back_populates="cliente",
