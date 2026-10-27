@@ -1,7 +1,7 @@
 import { Mail, Lock, User, Eye, EyeOff, Search, Settings, Sparkles } from 'lucide-react';
 import { FcGoogle } from 'react-icons/fc';
 import { FaApple } from 'react-icons/fa';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { loginUser, registerUser } from './services/authService';
 import './App.css';
 import AppLayout from './components/AppLayout';
@@ -26,6 +26,7 @@ export default function App() {
   const [token, setToken] = useState(localStorage.getItem('jwt') || '');
 
   const [pantalla, setPantalla] = useState('feed');
+  const [usuarioActual, setUsuarioActual] = useState(null);
   const [rolUsuario, setRolUsuario] = useState(null); // 'CLIENTE' | 'PRESTADOR' | null (cargando)
   const [vista, setVista] = useState(null); // vista elegida con "Cambiar a..."; si es null se usa el rol
   const vistaActual = vista ?? rolUsuario;
@@ -67,31 +68,37 @@ const handleSubmit = async (e) => {
   }
 };
 
-  const handleLogout = () => {
+  const handleLogout = useCallback(() => {
     localStorage.removeItem('jwt');
     setToken('');
+    setUsuarioActual(null);
     setRolUsuario(null);
     setVista(null);
-  };
+  }, []);
 
   // Con sesión activa, consulta el rol para decidir la pantalla de inicio.
   useEffect(() => {
     if (!token) return;
     let vivo = true;
     avisosApi.me()
-      .then((m) => vivo && setRolUsuario((m.rol || '').toUpperCase()))
+      .then((m) => {
+        if (!vivo) return;
+        setUsuarioActual(m);
+        setRolUsuario((m.rol || '').toUpperCase());
+      })
       .catch((e) => {
         if (!vivo) return;
+        setUsuarioActual(null);
         if (e.status === 401) handleLogout();
         else setRolUsuario('PRESTADOR'); // si falla, mantiene el comportamiento anterior (feed)
       });
     return () => { vivo = false; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token]);
+  }, [token, handleLogout]);
 
 if (token) {
   return (
     <AppLayout
+      usuario={usuarioActual}
       onLogout={handleLogout}
       vista={vistaActual ?? 'PRESTADOR'}
       onNavigate={setPantalla}
@@ -99,7 +106,7 @@ if (token) {
     >
       {vistaActual === null && <p aria-busy="true">Cargando…</p>}
       {vistaActual === 'CLIENTE' && pantalla === 'perfilCliente' && <PerfilClientePage onUnauthorized={handleLogout} />}
-      {vistaActual === 'CLIENTE' && pantalla !== 'perfilCliente' && pantalla !== 'chat' && <InicioClientePage onUnauthorized={handleLogout} />}
+      {vistaActual === 'CLIENTE' && pantalla !== 'perfilCliente' && pantalla !== 'chat' && <InicioClientePage usuario={usuarioActual} onUnauthorized={handleLogout} />}
       {vistaActual !== null && vistaActual !== 'CLIENTE' && pantalla === 'feed' && (
         <FeedPage
           onIrAPerfil={() => setPantalla('perfilPrestador')}

@@ -6,20 +6,33 @@ import PublicarSolicitudModal from './PublicarSolicitudModal';
 import './inicioCliente.css';
 
 // Pantalla "Cliente - Inicio" del Figma: buscador + PUBLICAR GRATIS, servicios rápidos y seguimiento de avisos.
-export default function InicioClientePage({ onUnauthorized }) {
-  const [yo, setYo] = useState(null);
+export default function InicioClientePage({ usuario, onUnauthorized }) {
   const [texto, setTexto] = useState('');
   const [modal, setModal] = useState(null); // null | { oficio, descripcion }
-  const [publicados, setPublicados] = useState([]); // avisos creados en esta sesión
+  const [publicados, setPublicados] = useState(null);
+  const [errorAvisos, setErrorAvisos] = useState('');
 
-  useEffect(() => { avisosApi.me().then(setYo).catch(() => {}); }, []);
+  useEffect(() => {
+    let vivo = true;
+    avisosApi.listarMios()
+      .then((avisos) => vivo && setPublicados(avisos))
+      .catch((error) => {
+        if (!vivo) return;
+        if (error.status === 401) {
+          onUnauthorized?.();
+          return;
+        }
+        setErrorAvisos(error.message);
+      });
+    return () => { vivo = false; };
+  }, [onUnauthorized]);
 
   const abrir = (datos = {}) => setModal({ oficio: '', descripcion: '', ...datos });
 
   return (
     <section className="ic">
       <form className="ic-hero" onSubmit={(e) => { e.preventDefault(); abrir({ descripcion: texto.trim() }); }}>
-        <h2>{`¿Qué necesitás solucionar${yo?.nombre ? `, ${yo.nombre}` : ''}?`}</h2>
+        <h2>{`¿Qué necesitás solucionar${usuario?.nombre ? `, ${usuario.nombre}` : ''}?`}</h2>
         <p>Publicá tu problema y recibí presupuestos de profesionales de tu zona.</p>
         <div className="ic-bar">
           <input value={texto} onChange={(e) => setTexto(e.target.value)} aria-label="Qué necesitás"
@@ -36,7 +49,11 @@ export default function InicioClientePage({ onUnauthorized }) {
       </div>
 
       <h3 className="ic-sub">SEGUIMIENTO DE AVISOS</h3>
-      {publicados.length === 0 ? (
+      {errorAvisos ? (
+        <p className="feed-msg" role="alert">{errorAvisos}</p>
+      ) : publicados === null ? (
+        <p className="feed-msg" aria-busy="true">Cargando tus avisos…</p>
+      ) : publicados.length === 0 ? (
         <p className="feed-msg">Todavía no publicaste ninguna solicitud.</p>
       ) : (
         <div className="feed-list">
@@ -53,11 +70,14 @@ export default function InicioClientePage({ onUnauthorized }) {
 
       {modal && (
         <PublicarSolicitudModal
-          telefono={yo?.telefono ?? ''}
+          telefono={usuario?.telefono ?? ''}
           oficioInicial={modal.oficio}
           descripcionInicial={modal.descripcion}
           onClose={() => setModal(null)}
-          onSuccess={(a) => setPublicados((p) => [a, ...p])}
+          onSuccess={(a) => {
+            setErrorAvisos('');
+            setPublicados((p) => [a, ...(p ?? [])]);
+          }}
           onUnauthorized={onUnauthorized}
         />
       )}

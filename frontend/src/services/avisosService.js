@@ -32,25 +32,52 @@ const AVISOS = [
   { id_aviso: 3, id_cliente: 12, oficio: 'Corte de luz en todo el departamento', zona: 'Godoy Cruz', estado: 'abierto', fecha_creacion: '2026-10-07T21:40:00', urgencia: 'alta', postulados: 12,
     descripcion: 'Se cortó la luz desde anoche y salta la térmica apenas la subo.' },
 ];
+const AVISOS_PROPIOS = [];
 
 // Mock de POST /avisos (misma forma que la respuesta real) y de GET /auth/me.
-const crearMock = ({ oficio, descripcion, zona, telefono }) =>
-  wait({
+const crearMock = async ({ oficio, descripcion, zona, telefono }) => {
+  const aviso = await wait({
     mensaje: 'Solicitud de trabajo creada correctamente',
     id_aviso: Date.now(), id_cliente: 1, oficio, descripcion, zona,
     telefono: telefono ?? null, estado: 'abierto', fecha_creacion: new Date().toISOString(),
   });
+  AVISOS_PROPIOS.unshift(aviso);
+  return aviso;
+};
 const meMock = () => wait({ nombre: 'Luciana', apellido: 'Cruceño', telefono: '2615550000', rol: 'CLIENTE' });
+let meRequestToken = null;
+let meRequest = null;
+const obtenerMe = () => {
+  const token = localStorage.getItem('jwt');
+  if (meRequest && meRequestToken === token) return meRequest;
+
+  meRequestToken = token;
+  meRequest = req('/auth/me').catch((error) => {
+    if (meRequestToken === token) {
+      meRequestToken = null;
+      meRequest = null;
+    }
+    throw error;
+  });
+  return meRequest;
+};
 
 // ---------- API REAL ----------
 // El saldo y el costo de postularse viven en postulacionService (misma fuente que el formulario).
 export const avisosApi = USE_MOCK
-  ? { listarPorZona: () => wait(AVISOS), saldo: obtenerSaldo, crear: crearMock, me: meMock }
+  ? {
+      listarPorZona: () => wait(AVISOS),
+      listarMios: () => wait(AVISOS_PROPIOS),
+      saldo: obtenerSaldo,
+      crear: crearMock,
+      me: meMock,
+    }
   : {
       listarPorZona: () => req('/avisos/zona'),
+      listarMios: () => req('/avisos/mios'),
       saldo: obtenerSaldo,
       // POST /avisos -> 201. Body (AvisoCreate): oficio, descripcion, zona (obligatorios), telefono (opcional).
       crear: (datos) => req('/avisos', { method: 'POST', body: JSON.stringify(datos) }),
       // GET /auth/me -> { nombre, apellido, telefono, rol: 'CLIENTE' | 'PRESTADOR', ... }
-      me: () => req('/auth/me'),
+      me: obtenerMe,
     };

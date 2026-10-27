@@ -1,18 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
-import { avisosApi } from '../services/avisosService';
 import './AppLayout.css';
 import { Bell, ClipboardList, Home, LogOut, MessageSquare, Pencil, RefreshCw, Search, Settings, User } from 'lucide-react';
 
 const iniciales = (n = '', a = '') => `${n[0] ?? ''}${a[0] ?? ''}`.toUpperCase();
 
 // vista: 'CLIENTE' | 'PRESTADOR' (qué pantalla está viendo). onNavigate('feed' | 'perfilPrestador').
-export default function AppLayout({ children, onLogout, onSwitchRole, vista = 'PRESTADOR', onNavigate }) {
+export default function AppLayout({ children, usuario, onLogout, onSwitchRole, vista = 'PRESTADOR', onNavigate }) {
   const esCliente = vista === 'CLIENTE';
-  const [yo, setYo] = useState(null);
   const [menu, setMenu] = useState(false);
   const ref = useRef(null);
 
-  useEffect(() => { avisosApi.me().then(setYo).catch(() => {}); }, []);
   useEffect(() => {
     const fuera = (e) => ref.current && !ref.current.contains(e.target) && setMenu(false);
     const esc = (e) => e.key === 'Escape' && setMenu(false);
@@ -20,8 +17,8 @@ export default function AppLayout({ children, onLogout, onSwitchRole, vista = 'P
     return () => { document.removeEventListener('mousedown', fuera); document.removeEventListener('keydown', esc); };
   }, []);
 
-  const nombre = yo ? `${yo.nombre} ${yo.apellido}` : 'Mi cuenta';
-  const ini = iniciales(yo?.nombre, yo?.apellido) || '·';
+  const nombre = usuario ? `${usuario.nombre} ${usuario.apellido}` : 'Mi cuenta';
+  const ini = iniciales(usuario?.nombre, usuario?.apellido) || '·';
 
   return (
     <div className="lay">
