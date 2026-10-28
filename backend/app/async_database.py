@@ -1,6 +1,11 @@
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from app.database import DATABASE_URL
+from app.database import (
+    DATABASE_URL,
+    DB_MAX_OVERFLOW,
+    DB_POOL_SIZE,
+    DB_POOL_TIMEOUT,
+)
 
 
 def _async_database_url(url: str) -> str:
@@ -15,8 +20,9 @@ def _async_database_url(url: str) -> str:
 
 async_engine = create_async_engine(
     _async_database_url(DATABASE_URL),
-    pool_size=3,
-    max_overflow=1,
+    pool_size=DB_POOL_SIZE,
+    max_overflow=DB_MAX_OVERFLOW,
+    pool_timeout=DB_POOL_TIMEOUT,
     pool_pre_ping=True,
     pool_recycle=1800,
 )

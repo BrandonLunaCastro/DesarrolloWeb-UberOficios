@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.auth import (
     crear_token,
     get_current_user,
+    get_current_user_id,
     hashear_contrasena,
     verificar_contrasena,
 )
@@ -150,11 +151,11 @@ def obtener_usuario_actual(usuario: Usuario = Depends(get_current_user)):
 @router.get("/me/saldo")
 def obtener_saldo_prestador(
     db: Session = Depends(get_db),
-    usuario: Usuario = Depends(get_current_user),
+    id_usuario: int = Depends(get_current_user_id),
 ):
     prestador = (
         db.query(PrestadorServicio)
-        .filter(PrestadorServicio.id_usuario == usuario.id_usuario)
+        .filter(PrestadorServicio.id_usuario == id_usuario)
         .first()
     )
     if prestador is None:

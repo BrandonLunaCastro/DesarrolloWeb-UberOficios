@@ -8,12 +8,16 @@ load_dotenv()
 
 #esta linea de codigo sirve para leer nuestra variable de entorno que es la que actualmente contiene nuestra coneccion a la base de datos 
 DATABASE_URL = os.getenv("DATABASE_URL")
+DB_POOL_SIZE = int(os.getenv("DB_POOL_SIZE", "3"))
+DB_MAX_OVERFLOW = int(os.getenv("DB_MAX_OVERFLOW", "1"))
+DB_POOL_TIMEOUT = int(os.getenv("DB_POOL_TIMEOUT", "30"))
 
 #basicamente creamos el puente entre nuestra base de datos y el programa 
 engine = create_engine(
     DATABASE_URL,
-    pool_size=3,
-    max_overflow=1,
+    pool_size=DB_POOL_SIZE,
+    max_overflow=DB_MAX_OVERFLOW,
+    pool_timeout=DB_POOL_TIMEOUT,
     pool_pre_ping=True,
     pool_recycle=1800,
 )
@@ -33,4 +37,4 @@ def get_db():
     try:
         yield db
     finally:
-        db.close
+        db.close()

@@ -38,6 +38,30 @@ UberOficios/
 
 > El archivo `.env` no debe subirse a GitHub porque contiene información sensible de conexión.
 
+## Conexiones a PostgreSQL
+
+El backend usa un pool sincronizado y otro asíncrono. Ambos leen estas variables
+de entorno (también se pueden configurar como variables del servicio en Render):
+
+```env
+DB_POOL_SIZE=3
+DB_MAX_OVERFLOW=1
+DB_POOL_TIMEOUT=30
+```
+
+Cada proceso puede abrir hasta
+`2 * (DB_POOL_SIZE + DB_MAX_OVERFLOW)` conexiones entre ambos pools. Ajustá los
+valores según el máximo de conexiones de PostgreSQL, restando las conexiones
+reservadas para otros servicios y procesos. No existe concurrencia ilimitada
+hacia la base: cuando el pool está ocupado, las solicitudes esperan hasta
+`DB_POOL_TIMEOUT`; aumentar el pool por encima del límite de PostgreSQL puede
+causar nuevos errores de conexión.
+
+Por defecto, cada pool usa 3 conexiones y permite 1 conexión temporal adicional;
+como el backend tiene un pool síncrono y otro asíncrono, el máximo por proceso es
+8 conexiones. Evitá aumentar estos valores para resolver timeouts sin revisar
+primero si hay consultas duplicadas o conexiones retenidas.
+
 ---
 
 # 2. Requisitos

@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session, joinedload
 
 from app.async_database import get_async_db
-from app.auth import get_current_user
+from app.auth import get_current_user_async, get_current_user_id
 from app.database import get_db
 from app.models.Aviso import Aviso, EstadoAvisoEnum
 from app.models.Categoria import Categoria
@@ -40,11 +40,11 @@ def _normalizar_categoria(nombre: str) -> str:
 @router.get("/zona")
 def listar_avisos_por_zona(
     db: Session = Depends(get_db),
-    usuario: Usuario = Depends(get_current_user),
+    id_usuario: int = Depends(get_current_user_id),
 ):
     prestador = (
         db.query(PrestadorServicio)
-        .filter(PrestadorServicio.id_usuario == usuario.id_usuario)
+        .filter(PrestadorServicio.id_usuario == id_usuario)
         .first()
     )
     if prestador is None:
@@ -86,11 +86,38 @@ def listar_avisos_por_zona(
     ]
 
 
+@router.get("/mios")
+def listar_mis_avisos(
+    db: Session = Depends(get_db),
+    id_usuario: int = Depends(get_current_user_id),
+):
+    avisos = (
+        db.query(Aviso)
+        .options(joinedload(Aviso.categoria))
+        .filter(Aviso.id_cliente == id_usuario)
+        .order_by(Aviso.fecha_publicacion.desc())
+        .all()
+    )
+    return [
+        {
+            "id_aviso": aviso.id_aviso,
+            "id_cliente": aviso.id_cliente,
+            "titulo": aviso.titulo,
+            "oficio": aviso.categoria.nombre,
+            "descripcion": aviso.descripcion,
+            "zona": aviso.ubicacion,
+            "estado": aviso.estado.value.lower(),
+            "fecha_creacion": aviso.fecha_publicacion,
+        }
+        for aviso in avisos
+    ]
+
+
 @router.post("", status_code=201)
 def crear_aviso(
     datos: AvisoCreate,
     db: Session = Depends(get_db),
-    usuario: Usuario = Depends(get_current_user),
+    id_usuario: int = Depends(get_current_user_id),
 ):
     categorias = db.query(Categoria).all()
     categoria_buscada = _normalizar_categoria(datos.oficio)
@@ -108,14 +135,14 @@ def crear_aviso(
             detail=f"La categoría {datos.oficio} no está disponible para publicar avisos",
         )
 
-    usuario_db = db.get(Usuario, usuario.id_usuario)
+    usuario_db = db.get(Usuario, id_usuario)
     if usuario_db is None:
         raise HTTPException(status_code=401, detail="Usuario no encontrado")
     if datos.telefono is not None:
         usuario_db.telefono = datos.telefono
 
     aviso = Aviso(
-        id_cliente=usuario.id_usuario,
+        id_cliente=id_usuario,
         id_categoria=categoria.id_categoria,
         titulo=categoria.nombre,
         descripcion=datos.descripcion,
@@ -149,7 +176,7 @@ async def postularse_a_aviso(
     id_aviso: int,
     datos: PostulacionCreate,
     db: AsyncSession = Depends(get_async_db),
-    usuario: Usuario = Depends(get_current_user),
+    usuario: Usuario = Depends(get_current_user_async),
 ):
     if (usuario.rol.nombre or "").strip().upper() != "PRESTADOR":
         raise HTTPException(
