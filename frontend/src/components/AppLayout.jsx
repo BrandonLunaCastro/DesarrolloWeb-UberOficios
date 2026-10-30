@@ -4,8 +4,8 @@ import { Bell, ClipboardList, Home, LogOut, MessageSquare, Pencil, RefreshCw, Se
 
 const iniciales = (n = '', a = '') => `${n[0] ?? ''}${a[0] ?? ''}`.toUpperCase();
 
-// vista: 'CLIENTE' | 'PRESTADOR' (qué pantalla está viendo). onNavigate('feed' | 'perfilPrestador').
-export default function AppLayout({ children, usuario, onLogout, onSwitchRole, vista = 'PRESTADOR', onNavigate }) {
+// vista: 'CLIENTE' | 'PRESTADOR' (qué pantalla está viendo).
+export default function AppLayout({ children, usuario, onLogout, onSwitchRole, vista = 'PRESTADOR', pantalla, onNavigate }) {
   const esCliente = vista === 'CLIENTE';
   const [menu, setMenu] = useState(false);
   const ref = useRef(null);
@@ -47,10 +47,10 @@ export default function AppLayout({ children, usuario, onLogout, onSwitchRole, v
             <div className="lay-body">
         <nav className="lay-side" aria-label="Principal">
           <button type="button" className="lay-me" onClick={() => onNavigate?.(esCliente ? 'perfilCliente' : 'perfilPrestador')} aria-label="Ver mi perfil"><span className="lay-av">{ini}</span><b>{nombre}</b></button>
-          <a className="lay-link" onClick={() => onNavigate?.('feed')}><Home size={16} color="#2563eb" /> Inicio</a>
-          {!esCliente && <a className="lay-link" onClick={() => onNavigate?.('perfilPrestador')}><User size={16} color="#7c3aed" /> Mi Perfil</a>}
-          <a className="lay-link"><ClipboardList size={16} color="#059669" /> Mis Presupuestos</a>
-          <a className="lay-link" onClick={() => onNavigate?.('chat')}><MessageSquare size={16} color="#d97706" /> Mensajes</a>
+          <a className={`lay-link ${pantalla === 'feed' ? 'active' : ''}`} onClick={() => onNavigate?.('feed')}><Home size={16} color="#2563eb" /> Inicio</a>
+          {!esCliente && <a className={`lay-link ${pantalla === 'perfilPrestador' ? 'active' : ''}`} onClick={() => onNavigate?.('perfilPrestador')}><User size={16} color="#7c3aed" /> Mi Perfil</a>}
+          <a className={`lay-link ${pantalla === 'presupuestos' ? 'active' : ''}`} onClick={() => onNavigate?.('presupuestos')}><ClipboardList size={16} color="#059669" /> Mis Presupuestos</a>
+          <a className={`lay-link ${pantalla === 'chat' ? 'active' : ''}`} onClick={() => onNavigate?.('chat')}><MessageSquare size={16} color="#d97706" /> Mensajes</a>
         </nav>
         <main>{children}</main>
         <aside className="lay-act"><h3>ACTIVIDAD RECIENTE</h3><p>No hay novedades por el momento.</p></aside>

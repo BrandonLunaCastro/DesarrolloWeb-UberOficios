@@ -1,4 +1,4 @@
-import { Mail, Lock, User, Eye, EyeOff, Search, Settings, Sparkles } from 'lucide-react';
+import { Mail, Lock, User, Eye, EyeOff, Search, Settings } from 'lucide-react';
 import { FcGoogle } from 'react-icons/fc';
 import { FaApple } from 'react-icons/fa';
 import { useCallback, useEffect, useState } from 'react';
@@ -10,6 +10,8 @@ import FeedPage from './pages/FeedOportunidades/FeedPage';
 import ChatPage from './pages/Chat/ChatPage';
 import InicioClientePage from './pages/InicioCliente/InicioClientePage';
 import PerfilClientePage from './pages/PerfilCliente/PerfilClientePage';
+import PresupuestosClientePage from './pages/PresupuestosCliente/PresupuestosClientePage';
+import PresupuestosPrestadorPage from './pages/PresupuestosPrestador/PresupuestosPrestadorPage';
 import { avisosApi } from './services/avisosService';
 
 export default function App() {
@@ -101,12 +103,16 @@ if (token) {
       usuario={usuarioActual}
       onLogout={handleLogout}
       vista={vistaActual ?? 'PRESTADOR'}
+      pantalla={pantalla}
       onNavigate={setPantalla}
       onSwitchRole={() => { setPantalla('feed'); setVista(vistaActual === 'CLIENTE' ? 'PRESTADOR' : 'CLIENTE'); }}
     >
       {vistaActual === null && <p aria-busy="true">Cargando…</p>}
       {vistaActual === 'CLIENTE' && pantalla === 'perfilCliente' && <PerfilClientePage onUnauthorized={handleLogout} />}
-      {vistaActual === 'CLIENTE' && pantalla !== 'perfilCliente' && pantalla !== 'chat' && <InicioClientePage usuario={usuarioActual} onUnauthorized={handleLogout} />}
+      {vistaActual === 'CLIENTE' && pantalla === 'presupuestos' && (
+        <PresupuestosClientePage usuario={usuarioActual} onUnauthorized={handleLogout} />
+      )}
+      {vistaActual === 'CLIENTE' && pantalla !== 'perfilCliente' && pantalla !== 'presupuestos' && pantalla !== 'chat' && <InicioClientePage usuario={usuarioActual} onUnauthorized={handleLogout} />}
       {vistaActual !== null && vistaActual !== 'CLIENTE' && pantalla === 'feed' && (
         <FeedPage
           onIrAPerfil={() => setPantalla('perfilPrestador')}
@@ -114,6 +120,9 @@ if (token) {
         />
       )}
       {vistaActual !== null && vistaActual !== 'CLIENTE' && pantalla === 'perfilPrestador' && <PerfilPage />}
+      {vistaActual !== null && vistaActual !== 'CLIENTE' && pantalla === 'presupuestos' && (
+        <PresupuestosPrestadorPage onUnauthorized={handleLogout} />
+      )}
       {vistaActual !== null && pantalla === 'chat' && <ChatPage onUnauthorized={handleLogout} />}
     </AppLayout>
   );

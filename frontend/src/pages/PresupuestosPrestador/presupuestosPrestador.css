@@ -1,0 +1,66 @@
+.pp{font-family:Inter,system-ui,sans-serif;color:#0f172a;text-align:left;min-width:0}
+.pp button{font-family:inherit}
+.pp-titulo{margin:0 0 16px}
+.pp-kicker{display:block;color:#64748b;font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.pp-titulo h2{margin:3px 0 4px;font-size:22px;font-weight:700;letter-spacing:-.02em}
+.pp-titulo p{color:#64748b;font-size:11px}
+.pp-saldo{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 15px;border-radius:10px;background:linear-gradient(110deg,#0f172a,#1e3a8a);color:#fff}
+.pp-saldo>div>span{display:block;color:#dbeafe;font-size:10px}
+.pp-saldo-valor{display:flex;align-items:center;gap:7px;margin-top:3px}
+.pp-saldo-valor strong{font-size:20px;line-height:1}
+.pp-saldo-valor>span{padding:3px 6px;border-radius:4px;background:#ffffff24;color:#e2e8f0;font-size:8px;font-weight:700}
+.pp-recargar{padding:7px 12px;border:0;border-radius:6px;background:#2563eb;color:#fff;font-size:10px;font-weight:700;cursor:pointer}
+.pp-recargar:disabled{cursor:not-allowed;opacity:.65}
+.pp-saldo-error{max-width:250px;margin:5px 0 0;color:#fecaca;font-size:9px}
+.pp-saldo-error button{padding:0;border:0;background:none;color:#fff;font:inherit;text-decoration:underline;cursor:pointer}
+.pp-recargar:hover,.pp-btn-primario:hover{background:#1d4ed8}
+.pp-filtros{display:flex;gap:16px;margin:12px 0 10px;border-bottom:1px solid #e2e8f0}
+.pp-filtros button{padding:8px 7px;border:0;border-bottom:2px solid transparent;background:none;color:#64748b;font-size:10px;font-weight:600;cursor:pointer}
+.pp-filtros button.activo{border-bottom-color:#2563eb;color:#2563eb}
+.pp-filtros button:focus-visible,.pp button:focus-visible,.pp-modal input:focus-visible,.pp-modal textarea:focus-visible{outline:2px solid #2563eb;outline-offset:2px}
+.pp-lista{display:flex;flex-direction:column;gap:9px}
+.pp-card{padding:12px 14px;border:1px solid #e2e8f0;border-radius:10px;background:#fff}
+.pp-card-cabecera{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.pp-card-titulo{min-width:0}
+.pp-card-titulo h3{margin:3px 0 0;font-size:13px;line-height:1.35}
+.pp-card-precio{display:flex;flex:none;flex-direction:column;align-items:flex-end;gap:5px}
+.pp-card-precio>strong{font-size:15px}
+.pp-estado{padding:4px 7px;border-radius:999px;font-size:8px;font-weight:700;white-space:nowrap}
+.pp-estado.pendiente{background:#fff7ed;color:#c2410c}
+.pp-estado.aceptado{background:#ecfdf5;color:#059669}
+.pp-estado.no-seleccionado{background:#f1f5f9;color:#64748b}
+.pp-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;color:#64748b;font-size:9px}
+.pp-meta span{display:inline-flex;align-items:center;gap:4px}
+.pp-meta svg{flex:none}
+.pp-descripcion{margin:7px 0;color:#64748b;font-size:9px;line-height:1.45}
+.pp-visita{display:flex;align-items:center;gap:4px;margin:4px 0;color:#059669;font-size:9px;font-weight:600}
+.pp-card-pie{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:8px;padding-top:8px;border-top:1px solid #f1f5f9}
+.pp-fechas{display:flex;flex-direction:column;gap:3px;color:#64748b;font-size:8px}
+.pp-acciones{display:flex;flex:none;gap:6px}
+.pp-btn-primario,.pp-btn-secundario{display:inline-flex;align-items:center;justify-content:center;gap:5px;min-height:30px;padding:7px 11px;border:0;border-radius:6px;font-size:9px;font-weight:700;text-decoration:none;cursor:pointer}
+.pp-btn-primario{background:#2563eb;color:#fff}
+.pp-btn-secundario{background:#f8fafc;color:#2563eb}
+.pp-btn-secundario:hover{background:#eff6ff}
+.pp-nota{display:flex;align-items:center;gap:5px;margin:10px 0 0;color:#64748b;font-size:9px}
+.pp-vacio{padding:22px;text-align:center;color:#64748b;font-size:11px}
+.pp-error-carga{padding:16px;border:1px solid #fecaca;border-radius:10px;background:#fef2f2;color:#991b1b;font-size:11px}
+.pp-error-carga p{margin:0 0 10px}
+.pp-modal-fondo{position:fixed;inset:0;z-index:40;display:grid;place-items:center;padding:16px;background:#0f172a80}
+.pp-modal{position:relative;width:min(460px,100%);padding:24px;border-radius:14px;background:#fff;box-shadow:0 20px 60px #0f172a40}
+.pp-modal h2{margin:5px 25px 6px 0;font-size:19px}
+.pp-modal>p{margin:8px 0;color:#475569;font-size:11px;line-height:1.5}
+.pp-cerrar{position:absolute;top:14px;right:14px;display:grid;place-items:center;width:30px;height:30px;border:0;border-radius:50%;background:#f1f5f9;color:#475569;cursor:pointer}
+.pp-campo{display:flex;flex-direction:column;gap:6px;margin-top:14px;font-size:11px;font-weight:600}
+.pp-monto-input{display:flex;align-items:center;gap:6px;padding:0 10px;border:1px solid #cbd5e1;border-radius:7px;color:#64748b}
+.pp-monto-input input{width:100%;padding:9px 0;border:0;outline:0;font:inherit;color:#0f172a}
+.pp-campo textarea{padding:9px 10px;border:1px solid #cbd5e1;border-radius:7px;resize:vertical;font-family:inherit;font-size:11px;color:#0f172a}
+.pp-error{color:#dc2626;font-size:10px}
+.pp-modal-acciones{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+.pp-modal-cliente,.pp-modal-fecha{display:flex;align-items:center;gap:5px}
+.pp-modal-precio{display:block;margin:14px 0 8px;font-size:23px}
+.pp-modal h3{margin:14px 0 5px;font-size:11px}
+.pp-modal-comentario{padding:10px;border-radius:7px;background:#f8fafc}
+.pp-contacto{display:flex;align-items:center;gap:8px;margin:16px 0!important;padding:12px;border-radius:8px;background:#eff6ff;color:#1d4ed8!important;font-size:13px!important;font-weight:600}
+.pp-modal .pp-aviso-demo{color:#64748b;font-size:9px}
+.pp-modal-aviso{align-self:center}
+@media(max-width:520px){.pp-card-pie{align-items:flex-start;flex-direction:column}.pp-acciones{align-self:flex-end}.pp-card-cabecera{gap:7px}.pp-estado{max-width:118px;white-space:normal;text-align:center}}

@@ -25,6 +25,9 @@ class PostulacionListItem(BaseModel):
     nombre_prestador: str | None = None
     apellido_prestador: str | None = None
     oficio_prestador: str | None = None
+    nombre_cliente: str | None = None
+    apellido_cliente: str | None = None
+    zona_aviso: str | None = None
 
 
 class PostulacionResponse(BaseModel):

@@ -1,0 +1,60 @@
+.pcp{font-family:Inter,system-ui,sans-serif;color:#0f172a;text-align:left;min-width:0}
+.pcp button,.pcp select{font-family:inherit}
+.pcp-titulo{margin:0 0 16px}
+.pcp-titulo>span{display:block;margin-bottom:3px;color:#64748b;font-size:10px;font-weight:700;letter-spacing:.06em}
+.pcp-titulo h2{margin:0 0 4px;font-size:22px;font-weight:700;letter-spacing:-.02em}
+.pcp-titulo p{color:#64748b;font-size:12px}
+.pcp-filtros{display:flex;gap:18px;margin-bottom:12px;border-bottom:1px solid #e2e8f0}
+.pcp-filtros button{padding:9px 8px;border:0;border-bottom:2px solid transparent;background:none;color:#64748b;font-size:12px;font-weight:600;cursor:pointer}
+.pcp-filtros button.activo{border-bottom-color:#2563eb;color:#2563eb}
+.pcp-filtros button:focus-visible,.pcp-boton-elegir:focus-visible,.pcp-link:focus-visible,.pcp-ver-mas:focus-visible,.pcp-cerrar:focus-visible{outline:2px solid #2563eb;outline-offset:2px}
+.pcp-avisos{display:flex;flex-direction:column;gap:12px}
+.pcp-aviso{min-width:0;padding:14px;background:#fff;border:1px solid #e2e8f0;border-radius:12px}
+.pcp-aviso-cabecera{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.pcp-categoria{display:inline-block;padding:4px 7px;border-radius:5px;background:#eff6ff;color:#2563eb;font-size:9px;font-weight:700;letter-spacing:.03em;text-transform:uppercase}
+.pcp-aviso h3{margin:5px 0 0;font-size:14px;line-height:1.35}
+.pcp-estado{flex:none;padding:4px 8px;border-radius:999px;font-size:10px;font-weight:700}
+.pcp-estado.por-elegir{background:#ecfdf5;color:#059669}
+.pcp-estado.aceptado{background:#ecfdf5;color:#059669}
+.pcp-estado.cerrado{background:#f1f5f9;color:#64748b}
+.pcp-descripcion{margin:7px 0;color:#64748b;font-size:11px;line-height:1.5}
+.pcp-meta{display:flex;flex-wrap:wrap;gap:10px;color:#64748b;font-size:10px}
+.pcp-meta span,.pcp-recibido{display:inline-flex;align-items:center;gap:4px}
+.pcp-presupuestos-cabecera{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:12px;padding-top:10px;border-top:1px solid #e2e8f0;font-size:11px}
+.pcp-orden{display:flex;align-items:center;gap:5px;color:#64748b;font-size:10px}
+.pcp-orden select{appearance:none;max-width:140px;padding:4px 19px 4px 6px;border:1px solid #e2e8f0;border-radius:5px;background:#fff;color:#334155;font:inherit}
+.pcp-orden svg{margin-left:-21px;pointer-events:none}
+.pcp-lista{display:flex;flex-direction:column;gap:8px;margin-top:9px}
+.pcp-profesional{display:grid;grid-template-columns:30px minmax(0,1fr);gap:8px;padding:10px;border:1px solid #e2e8f0;border-radius:9px}
+.pcp-avatar{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:#2563eb;color:#fff;font-size:10px;font-weight:700}
+.pcp-profesional:nth-child(even) .pcp-avatar{background:#059669}
+.pcp-profesional-info{min-width:0}
+.pcp-nombre-fila{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px}
+.pcp-nombre-fila>b,.pcp-elegido-info>b{font-size:10px}
+.pcp-oficio{color:#64748b;font-size:9px}
+.pcp-propuesta-aceptada{display:inline-flex;align-items:center;gap:3px;color:#059669;font-size:9px;font-weight:700}
+.pcp-precio{display:block;margin-top:5px;font-size:15px}
+.pcp-profesional-info>p{margin:4px 0;color:#64748b;font-size:10px;line-height:1.4}
+.pcp-recibido{margin-top:4px;color:#64748b;font-size:9px}
+.pcp-acciones{display:flex;flex-wrap:wrap;align-items:center;gap:5px 10px;margin-top:8px}
+.pcp-boton-elegir{min-height:30px;padding:7px 12px;border:0;border-radius:6px;background:#2563eb;color:#fff;font-size:10px;font-weight:700;cursor:pointer}
+.pcp-boton-elegir:hover{background:#1d4ed8}
+.pcp-link{padding:4px 0;border:0;background:none;color:#2563eb;font-size:9px;font-weight:600;cursor:pointer}
+.pcp-ver-mas{display:block;margin:10px auto 0;padding:6px 10px;border:0;background:none;color:#2563eb;font-size:11px;font-weight:600;cursor:pointer}
+.pcp-nota{margin:8px 0 0;color:#64748b;font-size:9px}
+.pcp-sin-presupuestos{margin:10px 0 0;padding:12px;border-radius:8px;background:#f8fafc;color:#64748b;font-size:11px}
+.pcp-carga-error{padding:16px;border:1px solid #fecaca;border-radius:10px;background:#fef2f2;color:#991b1b;font-size:12px}
+.pcp-carga-error p{margin:0 0 10px}
+.pcp-vacio{padding:22px;text-align:center;color:#64748b;font-size:12px}
+.pcp-modal-fondo{position:fixed;inset:0;z-index:40;display:grid;place-items:center;padding:16px;background:#0f172a80}
+.pcp-modal{position:relative;width:min(460px,100%);padding:24px;border-radius:14px;background:#fff;box-shadow:0 20px 60px #0f172a40}
+.pcp-modal h2{margin:10px 24px 4px 0;font-size:19px}
+.pcp-modal>p{margin:8px 0;color:#475569;font-size:12px;line-height:1.5}
+.pcp-modal .pcp-modal-aviso{margin-top:0;color:#64748b}
+.pcp-modal-precio{margin:14px 0;font-size:24px;font-weight:750}
+.pcp-modal-meta{display:flex;align-items:center;gap:5px}
+.pcp-modal-meta svg{color:#f59e0b;flex:none}
+.pcp-contacto{display:flex;align-items:center;gap:6px;padding:10px;border-radius:8px;background:#ecfdf5;color:#047857!important}
+.pcp-cerrar{position:absolute;top:14px;right:14px;display:grid;place-items:center;width:30px;height:30px;border:0;border-radius:50%;background:#f1f5f9;color:#475569;cursor:pointer}
+@media(min-width:700px){.pcp-profesional{grid-template-columns:30px minmax(0,1fr) 150px;align-items:start}.pcp-acciones{flex-direction:column;align-items:stretch;margin-top:0}.pcp-boton-elegir{width:100%}.pcp-link{width:100%;text-align:center}}
+@media(max-width:500px){.pcp-presupuestos-cabecera{align-items:flex-start;flex-direction:column}.pcp-orden{align-self:flex-end}}

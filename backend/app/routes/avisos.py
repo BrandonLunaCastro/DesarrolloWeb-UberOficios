@@ -11,6 +11,7 @@ from app.database import get_db
 from app.models.Aviso import Aviso, EstadoAvisoEnum
 from app.models.Categoria import Categoria
 from app.models.PrestadorServicio import PrestadorServicio
+from app.models.postulacion import Postulacion
 from app.models.usuario import Usuario
 from app.schemas.aviso import AvisoCreate
 from app.schemas.postulacion import PostulacionCreate, PostulacionResponse
@@ -70,6 +71,28 @@ def listar_avisos_por_zona(
         .order_by(Aviso.fecha_publicacion.desc())
         .all()
     )
+    resumenes = {
+        id_aviso: {
+            "presupuesto_minimo": minimo,
+            "presupuesto_maximo": maximo,
+            "postulados": cantidad,
+        }
+        for id_aviso, minimo, maximo, cantidad in (
+            db.query(
+                Postulacion.id_aviso,
+                func.min(Postulacion.presupuesto),
+                func.max(Postulacion.presupuesto),
+                func.count(Postulacion.id_postulacion),
+            )
+            .join(Aviso, Aviso.id_aviso == Postulacion.id_aviso)
+            .filter(
+                Aviso.estado == EstadoAvisoEnum.ABIERTO,
+                Postulacion.id_aviso.in_([aviso.id_aviso for aviso in avisos]),
+            )
+            .group_by(Postulacion.id_aviso)
+            .all()
+        )
+    }
     return [
         {
             "id_aviso": aviso.id_aviso,
@@ -81,6 +104,9 @@ def listar_avisos_por_zona(
             "telefono": aviso.cliente.telefono,
             "estado": aviso.estado.value.lower(),
             "fecha_creacion": aviso.fecha_publicacion,
+            "presupuesto_minimo": resumenes.get(aviso.id_aviso, {}).get("presupuesto_minimo"),
+            "presupuesto_maximo": resumenes.get(aviso.id_aviso, {}).get("presupuesto_maximo"),
+            "postulados": resumenes.get(aviso.id_aviso, {}).get("postulados", 0),
         }
         for aviso in avisos
     ]

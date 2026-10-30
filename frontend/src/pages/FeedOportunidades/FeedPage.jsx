@@ -22,7 +22,40 @@ export default function FeedPage({ onIrAPerfil, onUnauthorized }) {
   const reintentar = () => { setAvisos(null); setError(null); setIntento((n) => n + 1); };
   const sinZona = error?.status === 400;
   // Después de postularse: actualiza el saldo del banner y la lista, sin volver a mostrar el esqueleto.
-  const refrescar = () => {
+  const refrescar = (postulacion) => {
+    if (postulacion?.id_aviso != null && postulacion.presupuesto != null) {
+      const presupuestoNuevo = Number(postulacion.presupuesto);
+      setAvisos((actuales) => actuales?.map((aviso) => {
+        if (aviso.id_aviso !== postulacion.id_aviso) return aviso;
+        const minimo = aviso.presupuesto_minimo == null
+          ? presupuestoNuevo
+          : Math.min(Number(aviso.presupuesto_minimo), presupuestoNuevo);
+        const maximo = aviso.presupuesto_maximo == null
+          ? presupuestoNuevo
+          : Math.max(Number(aviso.presupuesto_maximo), presupuestoNuevo);
+        return {
+          ...aviso,
+          presupuesto_minimo: minimo,
+          presupuesto_maximo: maximo,
+          postulados: (aviso.postulados ?? 0) + 1,
+        };
+      }));
+      setPostulando((actual) => {
+        if (actual?.id_aviso !== postulacion.id_aviso) return actual;
+        const minimo = actual.presupuesto_minimo == null
+          ? presupuestoNuevo
+          : Math.min(Number(actual.presupuesto_minimo), presupuestoNuevo);
+        const maximo = actual.presupuesto_maximo == null
+          ? presupuestoNuevo
+          : Math.max(Number(actual.presupuesto_maximo), presupuestoNuevo);
+        return {
+          ...actual,
+          presupuesto_minimo: minimo,
+          presupuesto_maximo: maximo,
+          postulados: (actual.postulados ?? 0) + 1,
+        };
+      });
+    }
     avisosApi.saldo().then(setSaldo).catch(() => {});
     avisosApi.listarPorZona().then(setAvisos).catch(() => {});
   };

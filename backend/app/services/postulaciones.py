@@ -19,7 +19,11 @@ async def listar_postulaciones_por_prestador(
     *,
     id_prestador: int,
 ) -> list[PostulacionListItem]:
-    prestador = await db.get(PrestadorServicio, id_prestador)
+    prestador = await db.scalar(
+        select(PrestadorServicio)
+        .where(PrestadorServicio.id_prestador == id_prestador)
+        .options(selectinload(PrestadorServicio.usuario))
+    )
     if prestador is None:
         raise HTTPException(status_code=404, detail="Prestador no encontrado")
 
@@ -52,6 +56,9 @@ async def listar_postulaciones_por_prestador(
                 nombre_prestador=prestador.usuario.nombre if prestador.usuario else None,
                 apellido_prestador=prestador.usuario.apellido if prestador.usuario else None,
                 oficio_prestador=prestador.oficio,
+                nombre_cliente=cliente.nombre if cliente else None,
+                apellido_cliente=cliente.apellido if cliente else None,
+                zona_aviso=aviso.ubicacion if aviso else None,
             )
         )
     return items
@@ -69,7 +76,7 @@ async def listar_postulaciones_por_cliente(
     resultados = await db.scalars(
         select(Postulacion)
         .options(
-            selectinload(Postulacion.aviso),
+            selectinload(Postulacion.aviso).selectinload(Aviso.cliente),
             selectinload(Postulacion.prestador).selectinload(PrestadorServicio.usuario),
         )
         .join(Aviso, Postulacion.id_aviso == Aviso.id_aviso)
@@ -80,6 +87,7 @@ async def listar_postulaciones_por_cliente(
     items: list[PostulacionListItem] = []
     for postulacion in resultados.all():
         aviso = postulacion.aviso
+        cliente = aviso.cliente if aviso else None
         prestador = postulacion.prestador
         items.append(
             PostulacionListItem(
@@ -96,6 +104,9 @@ async def listar_postulaciones_por_cliente(
                 nombre_prestador=prestador.usuario.nombre if prestador and prestador.usuario else None,
                 apellido_prestador=prestador.usuario.apellido if prestador and prestador.usuario else None,
                 oficio_prestador=prestador.oficio if prestador else None,
+                nombre_cliente=cliente.nombre if cliente else None,
+                apellido_cliente=cliente.apellido if cliente else None,
+                zona_aviso=aviso.ubicacion if aviso else None,
             )
         )
     return items

@@ -18,6 +18,7 @@
 .lay-body{display:grid;grid-template-columns:200px minmax(0,720px) 260px;gap:20px;max-width:1200px;margin:0 auto;padding:16px}
 .lay-me{display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:14px}
 .lay-link{display:flex;align-items:center;gap:10px;padding:8px 6px;font-size:13px;cursor:pointer}
+.lay-link.active{border-radius:7px;background:#dbeafe;color:#2563eb;font-weight:600}
 .lay-act h3{font-size:11px;color:#64748b;letter-spacing:.04em;margin:0 0 14px}.lay-act p{font-size:12px;color:#64748b;text-align:center}
 @media(max-width:1000px){.lay-body{grid-template-columns:minmax(0,1fr)}.lay-side,.lay-act{display:none}}
 
