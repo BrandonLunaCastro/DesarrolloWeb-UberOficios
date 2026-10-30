@@ -2,14 +2,103 @@ from fastapi import HTTPException
 from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.models.Aviso import Aviso
 from app.models.PrestadorServicio import PrestadorServicio
 from app.models.postulacion import Postulacion
-from app.schemas.postulacion import PostulacionCreate
+from app.models.usuario import Usuario
+from app.schemas.postulacion import PostulacionCreate, PostulacionListItem
 
 
 COSTO_POSTULACION = 1
+
+
+async def listar_postulaciones_por_prestador(
+    db: AsyncSession,
+    *,
+    id_prestador: int,
+) -> list[PostulacionListItem]:
+    prestador = await db.get(PrestadorServicio, id_prestador)
+    if prestador is None:
+        raise HTTPException(status_code=404, detail="Prestador no encontrado")
+
+    resultados = await db.scalars(
+        select(Postulacion)
+        .options(
+            selectinload(Postulacion.aviso).selectinload(Aviso.cliente),
+            selectinload(Postulacion.prestador).selectinload(PrestadorServicio.usuario),
+        )
+        .where(Postulacion.id_prestador == id_prestador)
+        .order_by(Postulacion.fecha_postulacion.desc())
+    )
+
+    items: list[PostulacionListItem] = []
+    for postulacion in resultados.all():
+        aviso = postulacion.aviso
+        cliente = aviso.cliente if aviso else None
+        items.append(
+            PostulacionListItem(
+                id_postulacion=postulacion.id_postulacion,
+                id_aviso=postulacion.id_aviso,
+                id_prestador=postulacion.id_prestador,
+                id_cliente=cliente.id_usuario if cliente else None,
+                presupuesto=postulacion.presupuesto,
+                comentario=postulacion.comentario,
+                fecha_postulacion=postulacion.fecha_postulacion,
+                estado=postulacion.estado,
+                titulo_aviso=aviso.titulo if aviso else None,
+                descripcion_aviso=aviso.descripcion if aviso else None,
+                nombre_prestador=prestador.usuario.nombre if prestador.usuario else None,
+                apellido_prestador=prestador.usuario.apellido if prestador.usuario else None,
+                oficio_prestador=prestador.oficio,
+            )
+        )
+    return items
+
+
+async def listar_postulaciones_por_cliente(
+    db: AsyncSession,
+    *,
+    id_cliente: int,
+) -> list[PostulacionListItem]:
+    cliente = await db.get(Usuario, id_cliente)
+    if cliente is None:
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
+
+    resultados = await db.scalars(
+        select(Postulacion)
+        .options(
+            selectinload(Postulacion.aviso),
+            selectinload(Postulacion.prestador).selectinload(PrestadorServicio.usuario),
+        )
+        .join(Aviso, Postulacion.id_aviso == Aviso.id_aviso)
+        .where(Aviso.id_cliente == id_cliente)
+        .order_by(Postulacion.fecha_postulacion.desc())
+    )
+
+    items: list[PostulacionListItem] = []
+    for postulacion in resultados.all():
+        aviso = postulacion.aviso
+        prestador = postulacion.prestador
+        items.append(
+            PostulacionListItem(
+                id_postulacion=postulacion.id_postulacion,
+                id_aviso=postulacion.id_aviso,
+                id_prestador=postulacion.id_prestador,
+                id_cliente=id_cliente,
+                presupuesto=postulacion.presupuesto,
+                comentario=postulacion.comentario,
+                fecha_postulacion=postulacion.fecha_postulacion,
+                estado=postulacion.estado,
+                titulo_aviso=aviso.titulo if aviso else None,
+                descripcion_aviso=aviso.descripcion if aviso else None,
+                nombre_prestador=prestador.usuario.nombre if prestador and prestador.usuario else None,
+                apellido_prestador=prestador.usuario.apellido if prestador and prestador.usuario else None,
+                oficio_prestador=prestador.oficio if prestador else None,
+            )
+        )
+    return items
 
 
 async def crear_postulacion(

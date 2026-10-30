@@ -9,6 +9,24 @@ class PostulacionCreate(BaseModel):
     comentario: str | None = Field(default=None, max_length=2000)
 
 
+class PostulacionListItem(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id_postulacion: int
+    id_aviso: int
+    id_prestador: int
+    id_cliente: int | None = None
+    presupuesto: Decimal
+    comentario: str | None = None
+    fecha_postulacion: datetime
+    estado: str
+    titulo_aviso: str | None = None
+    descripcion_aviso: str | None = None
+    nombre_prestador: str | None = None
+    apellido_prestador: str | None = None
+    oficio_prestador: str | None = None
+
+
 class PostulacionResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
