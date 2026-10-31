@@ -16,6 +16,7 @@ class PostulacionListItem(BaseModel):
     id_aviso: int
     id_prestador: int
     id_cliente: int | None = None
+    id_conversacion: int | None = None
     presupuesto: Decimal
     comentario: str | None = None
     fecha_postulacion: datetime
@@ -40,3 +41,9 @@ class PostulacionResponse(BaseModel):
     comentario: str | None
     fecha_postulacion: datetime
     estado: str
+
+
+class AceptarPostulacionResponse(BaseModel):
+    id_postulacion: int
+    estado: str
+    id_conversacion: int

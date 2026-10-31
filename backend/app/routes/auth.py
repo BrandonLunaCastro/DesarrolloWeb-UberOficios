@@ -11,6 +11,7 @@ from app.auth import (
     verificar_contrasena,
 )
 from app.database import get_db
+from app.models.Cliente import Cliente
 from app.models.PrestadorServicio import PrestadorServicio
 from app.models.creditos import (
     BilleteraCredito,
@@ -72,6 +73,9 @@ def register(
 
     db.add(nuevo_usuario)
     try:
+        db.flush()
+        if datos.rol == "CLIENTE":
+            db.add(Cliente(id_usuario=nuevo_usuario.id_usuario))
         db.commit()
     except IntegrityError as error:
         db.rollback()

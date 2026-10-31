@@ -9,13 +9,44 @@ from app.models.Aviso import Aviso
 from app.models.PrestadorServicio import PrestadorServicio
 from app.models.postulacion import Postulacion
 from app.models.usuario import Usuario
-from app.schemas.postulacion import PostulacionListItem
+from app.schemas.postulacion import (
+    AceptarPostulacionResponse,
+    PostulacionListItem,
+)
 from app.services.postulaciones import (
+    aceptar_postulacion,
     listar_postulaciones_por_cliente,
     listar_postulaciones_por_prestador,
 )
 
 router = APIRouter(tags=["Presupuestos"])
+
+
+@router.post(
+    "/presupuestos/{id_postulacion}/aceptar",
+    response_model=AceptarPostulacionResponse,
+)
+async def aceptar_presupuesto(
+    id_postulacion: int,
+    db: AsyncSession = Depends(get_async_db),
+    usuario_actual: Usuario = Depends(get_current_user),
+):
+    if (usuario_actual.rol.nombre or "").strip().upper() != "CLIENTE":
+        raise HTTPException(
+            status_code=403,
+            detail="Solo un cliente puede aceptar un presupuesto",
+        )
+
+    postulacion, conversacion = await aceptar_postulacion(
+        db,
+        id_postulacion=id_postulacion,
+        id_usuario=usuario_actual.id_usuario,
+    )
+    return {
+        "id_postulacion": postulacion.id_postulacion,
+        "estado": postulacion.estado,
+        "id_conversacion": conversacion.id_conversacion,
+    }
 
 
 @router.get(

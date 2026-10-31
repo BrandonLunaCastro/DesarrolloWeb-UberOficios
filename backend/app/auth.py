@@ -106,8 +106,10 @@ async def get_current_user_async(
 def _get_authenticated_user_id(
     credentials: HTTPAuthorizationCredentials,
 ) -> int:
-    token = credentials.credentials
+    return get_user_id_from_token(credentials.credentials)
 
+
+def get_user_id_from_token(token: str) -> int:
     try:
         payload = jwt.decode(
             token,

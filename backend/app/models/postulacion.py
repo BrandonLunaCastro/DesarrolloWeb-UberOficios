@@ -45,3 +45,8 @@ class Postulacion(Base):
 
     aviso = relationship("Aviso", back_populates="postulaciones")
     prestador = relationship("PrestadorServicio", back_populates="postulaciones")
+    conversacion = relationship(
+        "Conversacion",
+        back_populates="postulacion",
+        uselist=False,
+    )
