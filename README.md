@@ -62,6 +62,23 @@ como el backend tiene un pool síncrono y otro asíncrono, el máximo por proces
 8 conexiones. Evitá aumentar estos valores para resolver timeouts sin revisar
 primero si hay consultas duplicadas o conexiones retenidas.
 
+## Chat en tiempo real
+
+El historial y el envío de mensajes usan la API autenticada:
+
+```text
+GET  /conversaciones/{id}/mensajes?after_id={id_mensaje}
+POST /conversaciones/{id}/mensajes
+```
+
+Para recibir mensajes en vivo, el cliente abre
+`/conversaciones/{id}/ws?token={jwt}&after_id={ultimo_id_recibido}` usando
+`ws://` en desarrollo o `wss://` con HTTPS. El servidor valida el JWT y que el
+usuario participe de la conversación antes de enviar el historial pendiente.
+Cada mensaje llega como `{"type":"message","message":{...}}`. Los mensajes se
+guardan antes de difundirse; si hay una desconexión, el cliente reconecta con el
+último ID recibido para recuperar lo pendiente sin duplicarlo en pantalla.
+
 ---
 
 # 2. Requisitos
@@ -306,8 +323,13 @@ Datos necesarios:
 
 `telefono` es opcional y `rol` puede ser `CLIENTE` o `PRESTADOR` (por defecto,
 `CLIENTE`). Al registrar un prestador también se crea su perfil en
-`prestador_servicio`. Los clientes se identifican por su rol y no tienen una
-tabla de perfil separada en el esquema nuevo.
+`prestador_servicio`; para habilitar conversaciones, también se crea el perfil
+de cliente que relaciona su cuenta con los chats.
+
+Al aceptar un presupuesto, el sistema marca el aviso como `EN_PROCESO`, crea la
+conversación con el prestador elegido y permite continuar el chat desde
+**Mensajes**. Los cambios de esquema de conversaciones se aplican ejecutando
+`alembic upgrade head` desde la carpeta `backend`.
 
 El proceso es:
 

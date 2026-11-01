@@ -12,24 +12,35 @@ export default function ChatWindow({ conversacion, yoId, onVolver, onActividad, 
   const [texto, setTexto] = useState('');
   const [intento, setIntento] = useState(0);
   const lista = useRef(null);
+  const temporaryId = useRef(0);
   const [confirmando, setConfirmando] = useState(false);
   const [eliminando, setEliminando] = useState(false);
   const [errorEliminar, setErrorEliminar] = useState('');
 
   useEffect(() => {
     let vivo = true;
+    let baja = () => {};
     chatApi.obtenerMensajes(id)
-      .then((m) => vivo && setMensajes(m))
-      .catch((e) => { if (!vivo) return; if (e.status === 401) onUnauthorized?.(); setError(e); });
-    const baja = chatApi.suscribir(id, {
-      // Se descartan duplicados por id (mismo mensaje por POST y por tiempo real, o al reconectar)
-      onMensaje: (m) => {
+      .then((m) => {
         if (!vivo) return;
-        setMensajes((prev) => (prev && !prev.some((x) => x.id === m.id) ? [...prev, m] : prev));
-        onActividad?.(id, m);
-      },
-      onEstado: (e) => vivo && setConexion(e),
-    });
+        setMensajes(m);
+        const lastMessageId = m.reduce((max, mensaje) => Math.max(max, Number(mensaje.id) || 0), 0);
+        baja = chatApi.suscribir(id, {
+          // Se descartan duplicados por id (mismo mensaje por POST y por tiempo real, o al reconectar)
+          onMensaje: (mensaje) => {
+            if (!vivo) return;
+            setMensajes((prev) => (prev && !prev.some((x) => x.id === mensaje.id) ? [...prev, mensaje] : prev));
+            onActividad?.(id, mensaje);
+          },
+          onEstado: (estado) => vivo && setConexion(estado),
+          onError: (error) => {
+            if (!vivo) return;
+            if (error.status === 401) onUnauthorized?.();
+            else setError(error);
+          },
+        }, lastMessageId);
+      })
+      .catch((e) => { if (!vivo) return; if (e.status === 401) onUnauthorized?.(); setError(e); });
     return () => { vivo = false; baja(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, intento]);
@@ -39,7 +50,7 @@ export default function ChatWindow({ conversacion, yoId, onVolver, onActividad, 
   const reintentarCarga = () => { setMensajes(null); setError(null); setIntento((n) => n + 1); };
 
   async function enviar(contenido, tmpId) {
-    const tmp = tmpId ?? `tmp-${Date.now()}`;
+    const tmp = tmpId ?? `tmp-${++temporaryId.current}`;
     const optimista = { id: tmp, idConversacion: id, idRemitente: yoId, texto: contenido, fecha: new Date().toISOString(), estado: 'enviando' };
     setMensajes((prev) => (tmpId ? prev.map((m) => (m.id === tmp ? { ...m, estado: 'enviando' } : m)) : [...prev, optimista]));
     try {

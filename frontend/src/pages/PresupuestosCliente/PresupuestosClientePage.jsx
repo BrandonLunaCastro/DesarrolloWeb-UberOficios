@@ -41,6 +41,7 @@ function agruparPresupuestos(avisos, postulaciones) {
         .join(' ') || 'Prestador';
       return {
         id: postulacion.id_postulacion,
+        idConversacion: postulacion.id_conversacion,
         nombre,
         iniciales: iniciales(nombre),
         oficio: postulacion.oficio_prestador || aviso.oficio,
@@ -74,7 +75,14 @@ const formatosOrden = {
 
 const formatoPrecio = (precio) => `$ ${precio.toLocaleString('es-AR')}`;
 
-function PresupuestoCard({ aviso, onVerDetalle }) {
+function PresupuestoCard({
+  aviso,
+  onVerDetalle,
+  onAceptar,
+  onAbrirChat,
+  aceptandoId,
+  errorAceptacion,
+}) {
   const [orden, setOrden] = useState('precio');
   const [mostrarTodos, setMostrarTodos] = useState(false);
   const ordenados = useMemo(
@@ -144,6 +152,27 @@ function PresupuestoCard({ aviso, onVerDetalle }) {
                   <button type="button" className="pcp-link" onClick={() => onVerDetalle(aviso, propuesta)}>
                     Ver detalle del presupuesto
                   </button>
+                  {propuesta.id === aviso.profesionalElegido && propuesta.idConversacion ? (
+                    <button
+                      type="button"
+                      className="pcp-boton-elegir"
+                      onClick={() => onAbrirChat(propuesta.idConversacion)}
+                    >
+                      Abrir chat
+                    </button>
+                  ) : avisoActivo && !aviso.profesionalElegido && propuesta.estado === 'PENDIENTE' ? (
+                    <button
+                      type="button"
+                      className="pcp-boton-elegir"
+                      disabled={aceptandoId !== null}
+                      onClick={() => onAceptar(propuesta)}
+                    >
+                      {aceptandoId === propuesta.id ? 'Aceptando…' : 'Aceptar presupuesto'}
+                    </button>
+                  ) : null}
+                  {errorAceptacion?.id === propuesta.id && (
+                    <p className="pcp-error-aceptacion" role="alert">{errorAceptacion.mensaje}</p>
+                  )}
                 </div>
               </article>
             ))}
@@ -164,12 +193,14 @@ function PresupuestoCard({ aviso, onVerDetalle }) {
   );
 }
 
-export default function PresupuestosClientePage({ usuario, onUnauthorized }) {
+export default function PresupuestosClientePage({ usuario, onUnauthorized, onIrAChat }) {
   const [avisos, setAvisos] = useState(null);
   const [filtro, setFiltro] = useState('todos');
   const [detalle, setDetalle] = useState(null);
   const [error, setError] = useState('');
   const [intento, setIntento] = useState(0);
+  const [aceptandoId, setAceptandoId] = useState(null);
+  const [errorAceptacion, setErrorAceptacion] = useState(null);
 
   useEffect(() => {
     if (!usuario?.id_usuario) return undefined;
@@ -204,6 +235,30 @@ export default function PresupuestosClientePage({ usuario, onUnauthorized }) {
     filtro === 'todos'
     || (filtro === 'aceptados' ? Boolean(aviso.profesionalElegido) : !aviso.profesionalElegido)
   ));
+
+  const aceptar = async (propuesta) => {
+    setAceptandoId(propuesta.id);
+    setErrorAceptacion(null);
+    try {
+      const resultado = await presupuestosApi.aceptar(propuesta.id);
+      if (resultado.id_conversacion) {
+        onIrAChat?.(resultado.id_conversacion);
+      } else {
+        setErrorAceptacion({
+          id: propuesta.id,
+          mensaje: 'El presupuesto se aceptó, pero no se pudo abrir la conversación.',
+        });
+      }
+    } catch (err) {
+      if (err.status === 401) {
+        onUnauthorized?.();
+        return;
+      }
+      setErrorAceptacion({ id: propuesta.id, mensaje: err.message });
+    } finally {
+      setAceptandoId(null);
+    }
+  };
 
   return (
     <section className="pcp">
@@ -251,6 +306,10 @@ export default function PresupuestosClientePage({ usuario, onUnauthorized }) {
             <PresupuestoCard
               key={aviso.id}
               aviso={aviso}
+              onAceptar={aceptar}
+              onAbrirChat={onIrAChat}
+              aceptandoId={aceptandoId}
+              errorAceptacion={errorAceptacion}
               onVerDetalle={(avisoActual, propuesta) => setDetalle({ aviso: avisoActual, propuesta })}
             />
           )) : (

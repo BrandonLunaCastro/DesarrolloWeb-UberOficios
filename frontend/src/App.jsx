@@ -28,6 +28,7 @@ export default function App() {
   const [token, setToken] = useState(localStorage.getItem('jwt') || '');
 
   const [pantalla, setPantalla] = useState('feed');
+  const [chatInicial, setChatInicial] = useState(null);
   const [usuarioActual, setUsuarioActual] = useState(null);
   const [rolUsuario, setRolUsuario] = useState(null); // 'CLIENTE' | 'PRESTADOR' | null (cargando)
   const [vista, setVista] = useState(null); // vista elegida con "Cambiar a..."; si es null se usa el rol
@@ -110,7 +111,14 @@ if (token) {
       {vistaActual === null && <p aria-busy="true">Cargando…</p>}
       {vistaActual === 'CLIENTE' && pantalla === 'perfilCliente' && <PerfilClientePage onUnauthorized={handleLogout} />}
       {vistaActual === 'CLIENTE' && pantalla === 'presupuestos' && (
-        <PresupuestosClientePage usuario={usuarioActual} onUnauthorized={handleLogout} />
+        <PresupuestosClientePage
+          usuario={usuarioActual}
+          onUnauthorized={handleLogout}
+          onIrAChat={(idConversacion) => {
+            setChatInicial(idConversacion);
+            setPantalla('chat');
+          }}
+        />
       )}
       {vistaActual === 'CLIENTE' && pantalla !== 'perfilCliente' && pantalla !== 'presupuestos' && pantalla !== 'chat' && <InicioClientePage usuario={usuarioActual} onUnauthorized={handleLogout} />}
       {vistaActual !== null && vistaActual !== 'CLIENTE' && pantalla === 'feed' && (
@@ -123,7 +131,9 @@ if (token) {
       {vistaActual !== null && vistaActual !== 'CLIENTE' && pantalla === 'presupuestos' && (
         <PresupuestosPrestadorPage onUnauthorized={handleLogout} />
       )}
-      {vistaActual !== null && pantalla === 'chat' && <ChatPage onUnauthorized={handleLogout} />}
+      {vistaActual !== null && pantalla === 'chat' && (
+        <ChatPage conversacionInicial={chatInicial} onUnauthorized={handleLogout} />
+      )}
     </AppLayout>
   );
 }

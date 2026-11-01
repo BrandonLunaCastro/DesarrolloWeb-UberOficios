@@ -21,7 +21,8 @@ async function req(path, init = {}) {
 // ---------- Adaptadores: ÚNICO lugar que conoce los nombres de campos del back ----------
 // Si el modelo del back cambia, solo se tocan estas dos funciones.
 const normMsg = (m) => ({
-  id: m.id_mensaje, idConversacion: m.id_conversacion, idRemitente: m.id_remitente,
+  id: m.id_mensaje, idConversacion: m.conversacion_id ?? m.id_conversacion,
+  idRemitente: m.remitente_id ?? m.id_remitente,
   texto: m.contenido, fecha: m.fecha_envio,
 });
 const normConv = (c) => ({
@@ -96,12 +97,66 @@ const mock = {
 const real = {
   obtenerYo: () => req('/auth/me').then((u) => ({ id: u.id_usuario })),
   listarConversaciones: () => req('/conversaciones').then((l) => l.map(normConv)),
-  obtenerMensajes: (id) => req(`/conversaciones/${id}/mensajes`).then((l) => l.map(normMsg)),
+  obtenerMensajes: (id, afterId = 0) => req(`/conversaciones/${id}/mensajes?after_id=${afterId}`).then((l) => l.map(normMsg)),
   enviarMensaje: (id, texto) => req(`/conversaciones/${id}/mensajes`, { method: 'POST', body: JSON.stringify({ contenido: texto }) }).then(normMsg),
   eliminarConversacion: (id) => req(`/conversaciones/${id}`, { method: 'DELETE' }),
-  // TODO (tarea 7): WebSocket con reconexión. Debe llamar h.onMensaje(normMsg(...)) y h.onEstado('conectado' | 'reconectando' | 'desconectado'),
-  // y al reconectar pedir de nuevo el historial para recuperar lo perdido. Devuelve la función para cerrar la conexión.
-  suscribir: () => () => {},
+  suscribir: (id, h, lastMessageId = 0) => {
+    const token = localStorage.getItem('jwt');
+    let cursor = Number(lastMessageId) || 0;
+    let retryDelay = 1000;
+    let retryTimer;
+    let socket;
+    let stopped = false;
+
+    const conectar = () => {
+      if (stopped) return;
+      const url = new URL(`${BASE}/conversaciones/${id}/ws`);
+      url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
+      if (token) url.searchParams.set('token', token);
+      url.searchParams.set('after_id', String(cursor));
+
+      h.onEstado?.('reconectando');
+      socket = new WebSocket(url);
+      socket.onopen = () => {
+        retryDelay = 1000;
+        h.onEstado?.('conectado');
+      };
+      socket.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (data.type !== 'message' || !data.message) return;
+        const mensaje = normMsg(data.message);
+        cursor = Math.max(cursor, Number(mensaje.id) || 0);
+        h.onMensaje(mensaje);
+      };
+      socket.onclose = (event) => {
+        if (stopped) return;
+        if (event.code === 4401) {
+          h.onEstado?.('desconectado');
+          h.onError?.(Object.assign(new Error('La sesión no es válida.'), { status: 401 }));
+          return;
+        }
+        if (event.code === 4403 || event.code === 4404) {
+          h.onEstado?.('desconectado');
+          const status = event.code === 4403 ? 403 : 404;
+          const message = event.code === 4403
+            ? 'No tenés acceso a esta conversación.'
+            : 'La conversación ya no existe.';
+          h.onError?.(Object.assign(new Error(message), { status }));
+          return;
+        }
+        h.onEstado?.('reconectando');
+        retryTimer = setTimeout(conectar, retryDelay);
+        retryDelay = Math.min(retryDelay * 2, 30000);
+      };
+    };
+
+    conectar();
+    return () => {
+      stopped = true;
+      clearTimeout(retryTimer);
+      socket?.close(1000, 'Chat cerrado');
+    };
+  },
 };
 
 export const chatApi = USE_MOCK ? mock : real;
