@@ -1,5 +1,5 @@
 from fastapi import HTTPException
-from sqlalchemy import select, update
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -8,9 +8,11 @@ from app.models.Aviso import Aviso
 from app.models.Cliente import Cliente
 from app.models.PrestadorServicio import PrestadorServicio
 from app.models.conversacion import Conversacion
+from app.models.creditos import TipoTransaccionEnum
 from app.models.postulacion import Postulacion
 from app.models.usuario import Usuario
 from app.schemas.postulacion import PostulacionCreate, PostulacionListItem
+from app.services.creditos import registrar_transaccion
 
 
 COSTO_POSTULACION = 1
@@ -162,29 +164,6 @@ async def crear_postulacion(
     )
     if existente is not None:
         raise HTTPException(status_code=400, detail="Ya te postulaste a este aviso")
-    if prestador.saldo_creditos < COSTO_POSTULACION:
-        raise HTTPException(
-            status_code=400,
-            detail="No tenés créditos suficientes para postularte",
-        )
-
-    descuento = await db.execute(
-        update(PrestadorServicio)
-        .where(
-            PrestadorServicio.id_prestador == prestador.id_prestador,
-            PrestadorServicio.saldo_creditos >= COSTO_POSTULACION,
-        )
-        .values(
-            saldo_creditos=PrestadorServicio.saldo_creditos - COSTO_POSTULACION,
-        )
-    )
-    if descuento.rowcount != 1:
-        await db.rollback()
-        raise HTTPException(
-            status_code=400,
-            detail="No tenés créditos suficientes para postularte",
-        )
-
     postulacion = Postulacion(
         id_aviso=id_aviso,
         id_prestador=prestador.id_prestador,
@@ -194,6 +173,16 @@ async def crear_postulacion(
     db.add(postulacion)
 
     try:
+        await db.flush()
+        await registrar_transaccion(
+            db,
+            id_prestador=prestador.id_prestador,
+            monto=-COSTO_POSTULACION,
+            tipo=TipoTransaccionEnum.CONSUMO_POSTULACION,
+            referencia_id=postulacion.id_postulacion,
+            referencia_tipo="postulacion",
+            descripcion="Consumo de créditos por postulación",
+        )
         await db.commit()
     except IntegrityError:
         await db.rollback()
