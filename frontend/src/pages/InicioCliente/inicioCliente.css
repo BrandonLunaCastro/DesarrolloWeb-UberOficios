@@ -4,7 +4,7 @@
 .ic-hero h2{margin:0 0 4px;font-size:20px}.ic-hero p{margin:0 0 14px;font-size:13px;color:#dbeafe}
 .ic-bar{display:flex;align-items:center;gap:8px;background:#fff;border-radius:10px;padding:6px 6px 6px 14px}
 .ic-bar input{flex:1;min-width:0;border:0;outline:0;font:13px inherit;color:#0f172a;background:none}
-.ic-bar button{border:0;border-radius:6px;background:#0f172a;color:#fff;font:700 10px inherit;letter-spacing:.04em;padding:9px 12px;cursor:pointer}
+.ic-bar button{border:0;border-radius:6px;background:#00257c;color:#fff;font:700 10px inherit;letter-spacing:.04em;padding:9px 12px;cursor:pointer}
 .ic-bar button:focus-visible,.ic-rapidos button:focus-visible{outline:2px solid #2563eb;outline-offset:2px}
 .ic-sub{font-size:11px;letter-spacing:.04em;color:#475569;margin:22px 4px 10px}
 .ic-rapidos{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px}

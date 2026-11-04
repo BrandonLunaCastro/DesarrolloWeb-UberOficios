@@ -1,0 +1,12 @@
+.nt-panel{position:absolute;right:0;top:42px;width:min(340px,calc(100vw - 24px));max-height:70vh;overflow-y:auto;background:#fff;border-radius:12px;box-shadow:0 10px 30px #0f172a33;z-index:30;color:#0f172a;text-align:left}
+.nt-panel header{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid #e2e8f0;font-size:13px}
+.nt-panel ul{list-style:none;margin:0;padding:0}
+.nt-link{border:0;background:none;color:#2563eb;font:inherit;font-size:11px;cursor:pointer;padding:0}
+.nt-item{display:flex;align-items:flex-start;gap:10px;width:100%;padding:10px 14px;border:0;background:#fff;text-align:left;cursor:pointer;font:inherit}
+.nt-item:hover{background:#f8fafc}.nt-item.nueva{background:#eff6ff}.nt-item.nueva:hover{background:#dbeafe}
+.nt-ic{flex:none;width:28px;height:28px;border-radius:50%;background:#f1f5f9;display:grid;place-items:center}
+.nt-txt{flex:1;display:flex;flex-direction:column;gap:2px;font-size:12px;line-height:1.4}
+.nt-txt small{color:#64748b;font-size:11px}
+.nt-punto{flex:none;width:8px;height:8px;border-radius:50%;background:#2563eb;margin-top:6px}
+.nt-msg{padding:24px 16px;text-align:center;font-size:12px;color:#64748b}.nt-msg p{margin:0 0 6px}
+.nt-item:focus-visible,.nt-link:focus-visible{outline:2px solid #2563eb;outline-offset:-2px}
