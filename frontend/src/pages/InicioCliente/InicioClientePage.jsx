@@ -37,7 +37,7 @@ export default function InicioClientePage({ usuario, onUnauthorized }) {
         <div className="ic-bar">
           <input value={texto} onChange={(e) => setTexto(e.target.value)} aria-label="Qué necesitás"
             placeholder="Escribí acá lo que necesitás (ej. Fuga de agua)..." />
-          <button type="submit">PUBLICAR GRATIS</button>
+          <button type="submit">PUBLICAR</button>
         </div>
       </form>
 

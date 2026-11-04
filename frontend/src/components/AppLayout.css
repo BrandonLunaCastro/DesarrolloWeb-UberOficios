@@ -15,7 +15,7 @@
 .lay-item:hover{background:#f1f5f9}.lay-item.sm{padding:7px 10px}
 .lay-circ{width:28px;height:28px;border-radius:50%;background:#e2e8f0;display:grid;place-items:center;flex:none}
 .lay-menu hr{border:0;border-top:1px solid #e2e8f0;margin:6px 0}
-.lay-body{display:grid;grid-template-columns:200px minmax(0,720px) 260px;gap:20px;max-width:1200px;margin:0 auto;padding:16px}
+.lay-body{display:grid;grid-template-columns:200px minmax(0,720px);gap:20px;max-width:1200px;margin:0 auto;padding:16px}
 .lay-me{display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:14px}
 .lay-link{display:flex;align-items:center;gap:10px;padding:8px 6px;font-size:13px;cursor:pointer}
 .lay-link.active{border-radius:7px;background:#dbeafe;color:#2563eb;font-weight:600}

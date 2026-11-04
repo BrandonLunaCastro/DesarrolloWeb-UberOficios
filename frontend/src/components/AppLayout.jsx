@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import './AppLayout.css';
-import { Bell, ClipboardList, Home, LogOut, MessageSquare, Pencil, RefreshCw, Search, Settings, User } from 'lucide-react';
+import { ClipboardList, Home, LogOut, MessageSquare, RefreshCw, Settings, User } from 'lucide-react';
+import NotificationsMenu from './NotificationsMenu';
 
 const iniciales = (n = '', a = '') => `${n[0] ?? ''}${a[0] ?? ''}`.toUpperCase();
 
@@ -23,13 +24,9 @@ export default function AppLayout({ children, usuario, onLogout, onSwitchRole, v
   return (
     <div className="lay">
       <header className="lay-top">
-        <span className="lay-logo">UberOficios</span>
-        <label className="lay-search"><Search size={14} />
-          <input placeholder="Buscar servicios o profesionales..." aria-label="Buscar" /></label>
+        <span className="lay-logo">OficiosYa</span>
         <div className="lay-tools" ref={ref}>
-          <button className="lay-ic" aria-label="Editar"><Pencil size={15} /></button>
-          <button className="lay-ic" aria-label="Notificaciones"><Bell size={15} /><i className="lay-dot" /></button>
-          <button className="lay-av" aria-haspopup="menu" aria-expanded={menu} aria-label="Menú de usuario" onClick={() => setMenu(!menu)}>{ini}</button>
+         <NotificationsMenu onNavigate={onNavigate} onOpen={() => setMenu(false)} onUnauthorized={onLogout} />          <button className="lay-av" aria-haspopup="menu" aria-expanded={menu} aria-label="Menú de usuario" onClick={() => setMenu(!menu)}>{ini}</button>
           {menu && (
             <div className="lay-menu" role="menu">
               <div className="lay-cur"><span className="lay-av">{ini}</span><div><b>{nombre}</b><small>{esCliente ? 'Perfil de Cliente' : 'Perfil de Prestador'}</small></div></div>
@@ -53,7 +50,6 @@ export default function AppLayout({ children, usuario, onLogout, onSwitchRole, v
           <a className={`lay-link ${pantalla === 'chat' ? 'active' : ''}`} onClick={() => onNavigate?.('chat')}><MessageSquare size={16} color="#d97706" /> Mensajes</a>
         </nav>
         <main>{children}</main>
-        <aside className="lay-act"><h3>ACTIVIDAD RECIENTE</h3><p>No hay novedades por el momento.</p></aside>
       </div>
     </div>
   );
