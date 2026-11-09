@@ -23,6 +23,7 @@ async function req(path, init = {}) {
 const normMsg = (m) => ({
   id: m.id_mensaje, idConversacion: m.conversacion_id ?? m.id_conversacion,
   idRemitente: m.remitente_id ?? m.id_remitente,
+  identificadorUnico: m.identificador_unico ?? null,
   texto: m.contenido, fecha: m.fecha_envio,
 });
 const normConv = (c) => ({
@@ -66,9 +67,14 @@ const mock = {
     return db.conversaciones.map((c) => normConv({ ...c, ultimo_mensaje: db.mensajes[c.id_conversacion].at(-1) }));
   }),
   obtenerMensajes: (id) => demora(() => { if (modo() === 'error') fallo(); return db.mensajes[id].map(normMsg); }),
-  enviarMensaje: (id, texto) => demora(() => {
+  enviarMensaje: (id, texto, identificadorUnico) => demora(() => {
     if (modo() === 'errorEnvio') fallo();
+    const existente = db.mensajes[id].find(
+      (mensaje) => mensaje.identificador_unico === identificadorUnico,
+    );
+    if (existente) return normMsg(existente);
     const nuevo = { id_mensaje: ++seq, id_conversacion: id, id_remitente: YO, contenido: texto, fecha_envio: new Date().toISOString() };
+    nuevo.identificador_unico = identificadorUnico;
     db.mensajes[id].push(nuevo);
     // Simula una respuesta en tiempo real del otro participante
     const otro = db.conversaciones.find((c) => c.id_conversacion === id).otro_participante.id_usuario;
@@ -98,7 +104,10 @@ const real = {
   obtenerYo: () => req('/auth/me').then((u) => ({ id: u.id_usuario })),
   listarConversaciones: () => req('/conversaciones').then((l) => l.map(normConv)),
   obtenerMensajes: (id, afterId = 0) => req(`/conversaciones/${id}/mensajes?after_id=${afterId}`).then((l) => l.map(normMsg)),
-  enviarMensaje: (id, texto) => req(`/conversaciones/${id}/mensajes`, { method: 'POST', body: JSON.stringify({ contenido: texto }) }).then(normMsg),
+  enviarMensaje: (id, texto, identificadorUnico) => req(`/conversaciones/${id}/mensajes`, {
+    method: 'POST',
+    body: JSON.stringify({ contenido: texto, identificador_unico: identificadorUnico }),
+  }).then(normMsg),
   eliminarConversacion: (id) => req(`/conversaciones/${id}`, { method: 'DELETE' }),
   suscribir: (id, h, lastMessageId = 0) => {
     const token = localStorage.getItem('jwt');

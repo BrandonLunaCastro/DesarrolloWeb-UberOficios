@@ -1,5 +1,6 @@
 from fastapi import HTTPException
 from sqlalchemy import or_, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -137,7 +138,7 @@ async def crear_mensaje(
     id_conversacion: int,
     id_usuario: int,
     datos: MensajeCreate,
-) -> Mensaje:
+) -> tuple[Mensaje, bool]:
     await _obtener_conversacion_participante(
         db,
         id_conversacion=id_conversacion,
@@ -148,11 +149,30 @@ async def crear_mensaje(
         conversacion_id=id_conversacion,
         remitente_id=id_usuario,
         contenido=datos.contenido,
+        identificador_unico=datos.identificador_unico,
     )
     db.add(mensaje)
-    await db.commit()
+    try:
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        mensaje_existente = await db.scalar(
+            select(Mensaje).where(
+                Mensaje.conversacion_id == id_conversacion,
+                Mensaje.remitente_id == id_usuario,
+                Mensaje.identificador_unico == datos.identificador_unico,
+            )
+        )
+        if mensaje_existente is None:
+            raise
+        if mensaje_existente.contenido != datos.contenido:
+            raise HTTPException(
+                status_code=409,
+                detail="El identificador único ya fue usado para otro mensaje",
+            )
+        return mensaje_existente, False
     await db.refresh(mensaje)
-    return mensaje
+    return mensaje, True
 
 
 async def obtener_historial_mensajes(

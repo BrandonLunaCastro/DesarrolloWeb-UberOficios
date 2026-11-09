@@ -43,16 +43,17 @@ async def enviar_mensaje(
     db: AsyncSession = Depends(get_async_db),
     id_usuario: int = Depends(get_current_user_id),
 ):
-    mensaje = await crear_mensaje(
+    mensaje, creado = await crear_mensaje(
         db,
         id_conversacion=id_conversacion,
         id_usuario=id_usuario,
         datos=datos,
     )
-    await chat_connections.broadcast(
-        id_conversacion,
-        MensajeResponse.model_validate(mensaje).model_dump(mode="json"),
-    )
+    if creado:
+        await chat_connections.broadcast(
+            id_conversacion,
+            MensajeResponse.model_validate(mensaje).model_dump(mode="json"),
+        )
     return mensaje
 
 

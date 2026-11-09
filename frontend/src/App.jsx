@@ -27,7 +27,10 @@ export default function App() {
   const [error, setError] = useState('');
   const [token, setToken] = useState(localStorage.getItem('jwt') || '');
 
-  const [pantalla, setPantalla] = useState('feed');
+  const [pantalla, setPantalla] = useState(() =>
+    new URLSearchParams(window.location.search).has('compra_id')
+      ? 'perfilPrestador'
+      : 'feed');
   const [chatInicial, setChatInicial] = useState(null);
   const [usuarioActual, setUsuarioActual] = useState(null);
   const [rolUsuario, setRolUsuario] = useState(null); // 'CLIENTE' | 'PRESTADOR' | null (cargando)
