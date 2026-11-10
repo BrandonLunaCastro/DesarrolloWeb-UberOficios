@@ -44,4 +44,17 @@ fieldset{border:0;padding:0;margin:0}.chips{display:flex;flex-wrap:wrap;gap:6px;
 .estado-compra{display:flex;flex-direction:column;align-items:flex-start;gap:6px;margin-top:12px;padding:12px;border-radius:8px;background:#f1f5f9;font-size:12px}
 .estado-compra a{color:#2563eb}
 @media(max-width:560px){.paquetes-creditos{grid-template-columns:1fr}}
+/* Reputación y opiniones */
+.estrellas{position:relative;display:inline-flex;vertical-align:middle}
+.estrellas-base,.estrellas-fill{display:inline-flex;gap:1px}
+.estrellas-fill{position:absolute;left:0;top:0;overflow:hidden;white-space:nowrap}
+.estrellas svg{flex:none}
+.opiniones{padding-bottom:14px;margin-bottom:14px;border-bottom:1px solid #e2e8f0}
+.resumen-rating{display:flex;align-items:center;gap:12px;margin:10px 0}
+.resumen-rating .vacio{margin:2px 0 0}
+.rating-grande{font-size:32px;line-height:1;color:#d97706}
+.lista-opiniones{list-style:none;padding:0;margin:10px 0 0;display:flex;flex-direction:column;gap:10px}
+.opinion{border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px;font-size:13px}
+.opinion time{font-size:11px;color:#64748b}
+.opinion p{margin:6px 0 0;line-height:1.45}
 @media(max-width:560px){.head{flex-direction:column;align-items:flex-start;gap:10px}.previews{grid-template-columns:repeat(3,1fr)}}
