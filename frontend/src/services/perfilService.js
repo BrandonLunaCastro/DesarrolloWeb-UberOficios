@@ -23,7 +23,13 @@ const db = {
   prestador: { matricula: '55432', biografia: 'Especialista en instalaciones eléctricas domiciliarias. Trabajo rápido y con garantía. Matrícula N° 55432.', zona: 'Godoy Cruz', oficio: 'Electricista' },
   categoria: 'Electricista',
   zonas: ZONAS.slice(0, 2),
-  rating: { promedio: 4.9, total: 32 },
+  rating: { promedio: 4.5, total: 4 },
+  calificaciones: [
+    { id_calificacion: 4, puntuacion: 5, comentario: 'Muy prolijo y puntual. Dejó todo limpio.', fecha: '2026-10-28T15:00:00Z', cliente: { nombre: 'Lucía', apellido: 'Fernández' } },
+    { id_calificacion: 3, puntuacion: 4, comentario: 'Buen trabajo, tardó un poco más de lo acordado.', fecha: '2026-10-15T12:00:00Z', cliente: { nombre: 'Carlos', apellido: 'Rossi' } },
+    { id_calificacion: 2, puntuacion: 5, comentario: null, fecha: '2026-09-30T18:30:00Z', cliente: { nombre: 'Ana', apellido: 'Molina' } },
+    { id_calificacion: 1, puntuacion: 4, comentario: 'Recomendable, precio justo.', fecha: '2026-09-02T10:00:00Z', cliente: { nombre: 'Pedro', apellido: 'Gil' } },
+  ],
   fotos: ['#cbd5e1', '#475569', '#94a3b8', '#64748b', '#334155'].map((c, i) => ({ id_foto: i + 1, url_imagen: ph(c), descripcion: `Trabajo ${i + 1}` })),
 };
 const wait = (v) => new Promise((r) => setTimeout(() => r(structuredClone(v)), 400));
