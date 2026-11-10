@@ -5,7 +5,7 @@ import AvisoCard from './AvisoCard';
 import PostulacionModal from './PostulacionModal';
 import './feed.css';
 
-export default function FeedPage({ onIrAPerfil, onUnauthorized }) {
+export default function FeedPage({ onIrAPerfil, onUnauthorized, onRecargar }) {
   const [avisos, setAvisos] = useState(null); // null = cargando
   const [saldo, setSaldo] = useState(null);
   const [error, setError] = useState(null);
@@ -67,7 +67,7 @@ export default function FeedPage({ onIrAPerfil, onUnauthorized }) {
           <p>Tu Saldo Disponible</p>
           <div className="feed-num"><b>{saldo ?? '—'}</b><span>CRÉDITOS</span></div>
         </div>
-        <button className="feed-recargar"><Plus size={16} /> Recargar</button>
+        <button className="feed-recargar" onClick={onRecargar}><Plus size={16} /> Recargar</button>
       </div>
 
       <h2>Oportunidades cerca tuyo</h2>
