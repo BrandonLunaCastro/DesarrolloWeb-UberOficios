@@ -6,6 +6,8 @@ const API_URL = (import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000')
 const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
 let saldoMock = 10;
 const yaPostulados = new Set();
+// Lo usa creditosService en modo mock: al aprobarse una compra suma al mismo saldo que ven el feed y el formulario.
+export const mockSumarCreditos = (n) => { saldoMock += n; };
 const demora = (v) => new Promise((r) => setTimeout(() => r(v), 400));
 const falla = (msg, status) => new Promise((_, rej) => setTimeout(() => { const e = new Error(msg); e.status = status; rej(e); }, 400));
 

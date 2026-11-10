@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import './AppLayout.css';
-import { ClipboardList, Home, LogOut, MessageSquare, RefreshCw, Settings, User } from 'lucide-react';
+import { ClipboardList, Coins, Home, LogOut, MessageSquare, RefreshCw, Settings, User } from 'lucide-react';
 import NotificationsMenu from './NotificationsMenu';
 
 const iniciales = (n = '', a = '') => `${n[0] ?? ''}${a[0] ?? ''}`.toUpperCase();
@@ -47,6 +47,7 @@ export default function AppLayout({ children, usuario, onLogout, onSwitchRole, v
           <a className={`lay-link ${pantalla === 'feed' ? 'active' : ''}`} onClick={() => onNavigate?.('feed')}><Home size={16} color="#2563eb" /> Inicio</a>
           {!esCliente && <a className={`lay-link ${pantalla === 'perfilPrestador' ? 'active' : ''}`} onClick={() => onNavigate?.('perfilPrestador')}><User size={16} color="#7c3aed" /> Mi Perfil</a>}
           <a className={`lay-link ${pantalla === 'presupuestos' ? 'active' : ''}`} onClick={() => onNavigate?.('presupuestos')}><ClipboardList size={16} color="#059669" /> Mis Presupuestos</a>
+          {!esCliente && <a className={`lay-link ${pantalla === 'creditos' ? 'active' : ''}`} onClick={() => onNavigate?.('creditos')}><Coins size={16} color="#d97706" /> Mis Créditos</a>}
           <a className={`lay-link ${pantalla === 'chat' ? 'active' : ''}`} onClick={() => onNavigate?.('chat')}><MessageSquare size={16} color="#d97706" /> Mensajes</a>
         </nav>
         <main>{children}</main>

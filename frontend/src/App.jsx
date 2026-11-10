@@ -13,6 +13,7 @@ import PerfilClientePage from './pages/PerfilCliente/PerfilClientePage';
 import PresupuestosClientePage from './pages/PresupuestosCliente/PresupuestosClientePage';
 import PresupuestosPrestadorPage from './pages/PresupuestosPrestador/PresupuestosPrestadorPage';
 import { avisosApi } from './services/avisosService';
+import CreditosPage from './pages/Creditos/CreditosPage';
 
 export default function App() {
   const [mode, setMode] = useState('login'); // 'login' | 'register'
@@ -124,6 +125,7 @@ if (token) {
       {vistaActual !== null && vistaActual !== 'CLIENTE' && pantalla === 'feed' && (
         <FeedPage
           onIrAPerfil={() => setPantalla('perfilPrestador')}
+          onRecargar={() => setPantalla('creditos')}
           onUnauthorized={handleLogout}
         />
       )}
@@ -131,6 +133,7 @@ if (token) {
       {vistaActual !== null && vistaActual !== 'CLIENTE' && pantalla === 'presupuestos' && (
         <PresupuestosPrestadorPage onUnauthorized={handleLogout} />
       )}
+      {vistaActual !== null && vistaActual !== 'CLIENTE' && pantalla === 'creditos' && <CreditosPage onUnauthorized={handleLogout} />}
       {vistaActual !== null && pantalla === 'chat' && (
         <ChatPage conversacionInicial={chatInicial} onUnauthorized={handleLogout} />
       )}
@@ -181,7 +184,7 @@ if (token) {
 
             {role === 'provider' && (
               <div className="banner">
-                 ¡Al registrarte recibís 10 créditos gratis para enviar tus primeros presupuestos!
+                 ¡Al registrarte recibís 5 créditos gratis para enviar tus primeros presupuestos!
               </div>
             )}
           </>
