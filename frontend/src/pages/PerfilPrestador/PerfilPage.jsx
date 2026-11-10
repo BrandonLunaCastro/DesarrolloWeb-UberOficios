@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Calendar, MapPin, Pencil, Star } from 'lucide-react';
 import { perfilApi } from '../../services/perfilService';
 import EditarPerfilModal from './EditarPerfilModal';
+import CompraCreditos from './CompraCreditos';
 import './perfil.css';
 
 const iniciales = (n = '', a = '') => `${n[0] ?? ''}${a[0] ?? ''}`.toUpperCase();
@@ -43,6 +44,7 @@ export default function PerfilPage() {
           <div className="row"><h2>Fotos de trabajos</h2></div>
           <p className="vacio">La carga de fotos de trabajos todavía no está disponible.</p>
         </section>
+        <CompraCreditos />
       </div>
 
       {modal === 'editar' && <EditarPerfilModal perfil={perfil} onClose={() => setModal(null)} onSaved={setPerfil} />}

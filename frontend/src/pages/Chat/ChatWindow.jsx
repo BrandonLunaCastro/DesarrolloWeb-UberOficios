@@ -12,7 +12,6 @@ export default function ChatWindow({ conversacion, yoId, onVolver, onActividad, 
   const [texto, setTexto] = useState('');
   const [intento, setIntento] = useState(0);
   const lista = useRef(null);
-  const temporaryId = useRef(0);
   const [confirmando, setConfirmando] = useState(false);
   const [eliminando, setEliminando] = useState(false);
   const [errorEliminar, setErrorEliminar] = useState('');
@@ -49,12 +48,25 @@ export default function ChatWindow({ conversacion, yoId, onVolver, onActividad, 
 
   const reintentarCarga = () => { setMensajes(null); setError(null); setIntento((n) => n + 1); };
 
-  async function enviar(contenido, tmpId) {
-    const tmp = tmpId ?? `tmp-${++temporaryId.current}`;
-    const optimista = { id: tmp, idConversacion: id, idRemitente: yoId, texto: contenido, fecha: new Date().toISOString(), estado: 'enviando' };
-    setMensajes((prev) => (tmpId ? prev.map((m) => (m.id === tmp ? { ...m, estado: 'enviando' } : m)) : [...prev, optimista]));
+  async function enviar(contenido, identificadorUnico = globalThis.crypto.randomUUID()) {
+    const tmp = `tmp-${identificadorUnico}`;
+    const optimista = {
+      id: tmp,
+      idConversacion: id,
+      idRemitente: yoId,
+      identificadorUnico,
+      texto: contenido,
+      fecha: new Date().toISOString(),
+      estado: 'enviando',
+    };
+    setMensajes((prev) => {
+      const existe = prev.some((mensaje) => mensaje.id === tmp);
+      return existe
+        ? prev.map((mensaje) => (mensaje.id === tmp ? optimista : mensaje))
+        : [...prev, optimista];
+    });
     try {
-      const real = await chatApi.enviarMensaje(id, contenido);
+      const real = await chatApi.enviarMensaje(id, contenido, identificadorUnico);
       setMensajes((prev) => { const resto = prev.filter((m) => m.id !== tmp); return resto.some((m) => m.id === real.id) ? resto : [...resto, real]; });
       onActividad?.(id, real);
     } catch (e) {
@@ -122,7 +134,7 @@ export default function ChatWindow({ conversacion, yoId, onVolver, onActividad, 
             return (
               <Fragment key={m.id}>
                 {nuevoDia && <div className="chat-dia">{etiquetaDia(m.fecha)}</div>}
-                <MessageBubble mensaje={m} propio={m.idRemitente === yoId} onReintentar={() => enviar(m.texto, m.id)} />
+                <MessageBubble mensaje={m} propio={m.idRemitente === yoId} onReintentar={() => enviar(m.texto, m.identificadorUnico)} />
               </Fragment>
             );
           })

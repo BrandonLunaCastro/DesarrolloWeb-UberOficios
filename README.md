@@ -209,9 +209,17 @@ Ejemplo de estructura:
 
 ```env
 DATABASE_URL=URL_DE_LA_BASE_DE_DATOS
+MERCADOPAGO_ACCESS_TOKEN=TOKEN_PRIVADO_DE_MERCADO_PAGO
+MERCADOPAGO_WEBHOOK_SECRET=SECRETO_DE_FIRMA_DEL_WEBHOOK
+MERCADOPAGO_WEBHOOK_URL=https://URL_PUBLICA_DEL_BACKEND/creditos/pagos/webhook
+FRONTEND_URL=https://URL_PUBLICA_DEL_FRONTEND
 ```
 
 > No subir el archivo `.env` a GitHub.
+> Para iniciar compras y confirmar pagos hay que configurar las credenciales de
+> Mercado Pago, la URL pública del webhook y la URL de retorno del frontend.
+> Aplicar las migraciones desde `backend` con `alembic upgrade head`; la migración
+> agrega los paquetes Inicial, Popular y Profesional.
 
 El `.gitignore` debe contener:
 

@@ -5,6 +5,11 @@ from app.models.Cliente import Cliente
 from app.models.Categoria import Categoria
 from app.models.Aviso import Aviso
 from app.models.postulacion import Postulacion
-from app.models.creditos import BilleteraCredito, TransaccionCredito
+from app.models.creditos import (
+    BilleteraCredito,
+    CompraCredito,
+    PaqueteCredito,
+    TransaccionCredito,
+)
 from app.models.conversacion import Conversacion
 from app.models.mensaje import Mensaje

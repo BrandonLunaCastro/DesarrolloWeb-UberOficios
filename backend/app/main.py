@@ -5,6 +5,7 @@ from app.routes.auth import router as auth_router
 from app.routes.usuarios import router as usuarios_router
 from app.routes.avisos import router as avisos_router
 from app.routes.creditos import router as creditos_router
+from app.routes.compras_creditos import router as compras_creditos_router
 from app.routes.chat import router as chat_router
 from app.routes.presupuestos import router as presupuestos_router
 
@@ -15,6 +16,7 @@ app.include_router(auth_router)
 app.include_router(usuarios_router)
 app.include_router(avisos_router)
 app.include_router(creditos_router)
+app.include_router(compras_creditos_router)
 app.include_router(chat_router)
 app.include_router(presupuestos_router)
 

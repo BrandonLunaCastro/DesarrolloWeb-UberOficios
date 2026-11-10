@@ -7,8 +7,10 @@ from app.database import Base
 from app.models import (
     Aviso,
     Cliente,
+    CompraCredito,
     Conversacion,
     Mensaje,
+    PaqueteCredito,
     Postulacion,
     PrestadorServicio,
     Rol,

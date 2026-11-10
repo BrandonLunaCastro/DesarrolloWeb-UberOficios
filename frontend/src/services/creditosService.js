@@ -123,3 +123,15 @@ const real = {
 };
 
 export const creditosApi = USE_MOCK ? mock : real;
+export const listarPaquetesCreditos = () => request('/creditos/paquetes');
+
+export const iniciarCompraCreditos = (paqueteId) => request('/creditos/compras', {
+  method: 'POST',
+  body: JSON.stringify({ paquete_id: paqueteId }),
+});
+
+export const consultarCompraCreditos = (compraId) =>
+  request(`/creditos/compras/${compraId}`);
+
+export const reintentarCheckoutCreditos = (compraId) =>
+  request(`/creditos/compras/${compraId}/checkout`, { method: 'POST' });
