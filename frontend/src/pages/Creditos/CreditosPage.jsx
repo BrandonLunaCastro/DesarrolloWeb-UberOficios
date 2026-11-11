@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ArrowUpRight, Gift, RotateCcw, ShoppingCart } from 'lucide-react';
 import { creditosApi } from '../../services/creditosService';
 import './creditos.css';
@@ -13,14 +13,14 @@ const TIPOS = {
   devuelto: { label: 'Devueltos', Icono: RotateCcw }, // solo se muestra si hay devoluciones
 };
 const ESTADOS = { aprobada: 'Aprobada', pendiente: 'Pendiente', rechazada: 'Rechazada', cancelada: 'Cancelada' };
-const RESULTADO = {
-  aprobado: ['ok', 'Recibimos tu pago. Estamos acreditando tus créditos: el saldo se actualiza en instantes.'],
-  pendiente: ['pend', 'Tu pago está pendiente. Los créditos se acreditan cuando se confirme.'],
-  rechazado: ['err', 'El pago fue rechazado. Podés intentar de nuevo.'],
+const RESULTADO_COMPRA = {
+  APROBADA: ['ok', 'Pago aprobado. Tus créditos ya fueron acreditados.'],
+  PENDIENTE: ['pend', 'Tu pago está pendiente. Los créditos se acreditan cuando se confirme.'],
+  RECHAZADA: ['err', 'El pago fue rechazado. No se acreditaron créditos.'],
+  CANCELADA: ['err', 'La compra fue cancelada. No se acreditaron créditos.'],
 };
 
-// resultadoPago: 'aprobado' | 'pendiente' | 'rechazado' (cuando el checkout externo devuelve al usuario a la app)
-export default function CreditosPage({ onUnauthorized, resultadoPago = null }) {
+export default function CreditosPage({ compraIdRetorno = null, onUnauthorized }) {
   const [datos, setDatos] = useState(null); // { saldo, paquetes, movimientos, compras }
   const [error, setError] = useState(null);
   const [intento, setIntento] = useState(0);
@@ -30,19 +30,51 @@ export default function CreditosPage({ onUnauthorized, resultadoPago = null }) {
   const [enviando, setEnviando] = useState(false);
   const [errorCompra, setErrorCompra] = useState('');
   const [aviso, setAviso] = useState('');
+  const [compraRetorno, setCompraRetorno] = useState(null);
+  const [errorRetorno, setErrorRetorno] = useState('');
 
-  const traer = () =>
+  const traer = useCallback(() =>
     Promise.all([creditosApi.saldo(), creditosApi.paquetes(), creditosApi.movimientos(),
-      // si el historial de compras falla (o todavía no existe en el back), el resto de la pantalla sigue funcionando
-      creditosApi.compras().catch((e) => { if (e.status === 401) throw e; return null; })])
-      .then(([saldo, paquetes, movimientos, compras]) => ({ saldo, paquetes, movimientos, compras }));
+      creditosApi.compras()])
+      .then(([saldo, paquetes, movimientos, compras]) => ({ saldo, paquetes, movimientos, compras })), []);
 
   useEffect(() => {
     let vivo = true;
     traer().then((d) => vivo && setDatos(d)).catch((e) => { if (!vivo) return; if (e.status === 401) onUnauthorized?.(); setError(e); });
     return () => { vivo = false; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [intento]);
+  }, [intento, onUnauthorized, traer]);
+
+  useEffect(() => {
+    if (!compraIdRetorno || !/^\d+$/.test(compraIdRetorno)) return undefined;
+
+    let vivo = true;
+    let temporizador;
+    const consultar = async () => {
+      try {
+        const compra = await creditosApi.consultar(compraIdRetorno);
+        if (!vivo) return;
+        setCompraRetorno(compra);
+        setErrorRetorno('');
+        if (compra.estado === 'PENDIENTE') {
+          temporizador = window.setTimeout(consultar, 3000);
+          return;
+        }
+
+        const datosActualizados = await traer();
+        if (vivo) setDatos(datosActualizados);
+      } catch (e) {
+        if (!vivo) return;
+        if (e.status === 401) onUnauthorized?.();
+        setErrorRetorno(e.message);
+      }
+    };
+
+    consultar();
+    return () => {
+      vivo = false;
+      window.clearTimeout(temporizador);
+    };
+  }, [compraIdRetorno, onUnauthorized, traer]);
 
   // Mientras haya compras pendientes se consulta cada 3 s hasta que el back las confirme
   const hayPendientes = datos?.compras?.some((c) => c.estado === 'pendiente');
@@ -50,8 +82,7 @@ export default function CreditosPage({ onUnauthorized, resultadoPago = null }) {
     if (!hayPendientes) return undefined;
     const t = setInterval(() => traer().then(setDatos).catch(() => {}), 3000);
     return () => clearInterval(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hayPendientes]);
+  }, [hayPendientes, traer]);
 
   const reintentar = () => { setDatos(null); setError(null); setIntento((n) => n + 1); };
 
@@ -81,7 +112,10 @@ export default function CreditosPage({ onUnauthorized, resultadoPago = null }) {
   const { saldo, paquetes, movimientos, compras } = datos;
   const totales = Object.keys(TIPOS).map((t) => [t, movimientos.filter((m) => m.tipo === t).reduce((s, m) => s + Math.abs(m.cantidad), 0)]).filter(([t, n]) => t !== 'devuelto' || n > 0);
   const visibles = movimientos.filter((m) => filtro === 'todos' || m.tipo === filtro);
-  const res = RESULTADO[resultadoPago];
+  const res = compraRetorno ? RESULTADO_COMPRA[compraRetorno.estado] : null;
+  const errorCompraId = compraIdRetorno && !/^\d+$/.test(compraIdRetorno)
+    ? 'El identificador de compra recibido no es válido.'
+    : '';
   // Ahorro frente al paquete con el crédito más caro (el más chico), como en el diseño de paquetes
   const base = paquetes.length ? Math.max(...paquetes.map((p) => p.precio / p.creditos)) : 0;
   const ahorroDe = (p) => (base ? Math.round((1 - p.precio / p.creditos / base) * 100) : 0);
@@ -93,6 +127,7 @@ export default function CreditosPage({ onUnauthorized, resultadoPago = null }) {
       </div>
 
       {res && <p className={`cre-aviso cre-${res[0]}`} role="status">{res[1]}</p>}
+      {(errorRetorno || errorCompraId) && <p className="cre-aviso cre-err" role="alert">{errorRetorno || errorCompraId}</p>}
       {aviso && <p className="cre-aviso cre-ok" role="status">{aviso}</p>}
 
       <h2>Comprar créditos</h2>

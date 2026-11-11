@@ -24,6 +24,7 @@ class CompraCreditoResponse(BaseModel):
 
     id: int
     paquete_id: int
+    paquete_nombre: str | None = None
     cantidad_creditos: int
     precio_centavos: int
     moneda: str

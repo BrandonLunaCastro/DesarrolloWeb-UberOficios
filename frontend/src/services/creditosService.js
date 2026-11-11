@@ -89,6 +89,15 @@ const mock = {
   paquetes: () => demora(() => { if (modo() === 'error') falla(); return PAQUETES.map(normPaquete); }),
   movimientos: () => demora(() => (modo() === 'vacio' ? [] : [...movs].reverse().map(normMov)), 300),
   compras: () => demora(() => (modo() === 'vacio' ? [] : [...compras].reverse().map(normCompra)), 300),
+  consultar: (compraId) => demora(() => {
+    const compra = compras.find((item) => item.id === Number(compraId));
+    if (!compra) {
+      const error = new Error('No se encontró la compra.');
+      error.status = 404;
+      throw error;
+    }
+    return compra;
+  }),
   comprar: (idPaquete) => demora(() => {
     if (modo() === 'errorCompra') falla('No pudimos iniciar la compra. Intentá de nuevo.');
     const p = PAQUETES.find((x) => x.id === idPaquete);
@@ -109,29 +118,28 @@ const mock = {
 //   ✅ GET /auth/me/saldo        saldo
 //   ✅ GET /creditos/paquetes    paquetes activos (id, nombre, cantidad_creditos, precio_centavos, moneda)
 //   ✅ GET /creditos/movimientos historial (transaccion_credito)
-//   ⏳ GET /creditos/compras     compras del prestador            ← no está en ninguna tarea
-//   ⏳ POST /creditos/compras    { paquete_id } -> { id, estado, url_pago }  ← tarea "compra de créditos"
 // Los créditos los acredita SIEMPRE el back al confirmarse el pago; el front solo muestra lo que el back informa.
 const real = {
   saldo: obtenerSaldo,
   paquetes: () => req('/creditos/paquetes').then((l) => l.map(normPaquete)),
   movimientos: () => req('/creditos/movimientos').then((l) => l.map(normMov)),
   compras: () => req('/creditos/compras').then((l) => l.map(normCompra)),
+  consultar: (compraId) => req(`/creditos/compras/${compraId}`),
   comprar: (idPaquete) =>
     req('/creditos/compras', { method: 'POST', body: JSON.stringify({ paquete_id: idPaquete }) })
       .then((r) => ({ ...r, url_pago: r.url_pago ?? r.init_point ?? null })),
 };
 
 export const creditosApi = USE_MOCK ? mock : real;
-export const listarPaquetesCreditos = () => request('/creditos/paquetes');
+export const listarPaquetesCreditos = () => req('/creditos/paquetes');
 
-export const iniciarCompraCreditos = (paqueteId) => request('/creditos/compras', {
+export const iniciarCompraCreditos = (paqueteId) => req('/creditos/compras', {
   method: 'POST',
   body: JSON.stringify({ paquete_id: paqueteId }),
 });
 
 export const consultarCompraCreditos = (compraId) =>
-  request(`/creditos/compras/${compraId}`);
+  req(`/creditos/compras/${compraId}`);
 
 export const reintentarCheckoutCreditos = (compraId) =>
-  request(`/creditos/compras/${compraId}/checkout`, { method: 'POST' });
+  req(`/creditos/compras/${compraId}/checkout`, { method: 'POST' });

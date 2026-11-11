@@ -2,7 +2,7 @@ import asyncio
 import os
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -120,6 +120,39 @@ async def iniciar_compra_creditos(
     await db.commit()
     await db.refresh(compra)
     return await _iniciar_checkout(db, compra)
+
+
+@router.get("/compras", response_model=list[CompraCreditoResponse])
+async def listar_compras_creditos(
+    limite: int = Query(default=100, ge=1, le=500),
+    desplazamiento: int = Query(default=0, ge=0),
+    db: AsyncSession = Depends(get_async_db),
+    id_usuario: int = Depends(get_current_user_id),
+):
+    prestador = await _obtener_prestador(db, id_usuario)
+    resultado = await db.execute(
+        select(CompraCredito, PaqueteCredito.nombre.label("paquete_nombre"))
+        .join(PaqueteCredito, PaqueteCredito.id == CompraCredito.paquete_id)
+        .where(CompraCredito.prestador_id == prestador.id_prestador)
+        .order_by(CompraCredito.fecha_creacion.desc(), CompraCredito.id.desc())
+        .limit(limite)
+        .offset(desplazamiento)
+    )
+    return [
+        {
+            "id": compra.id,
+            "paquete_id": compra.paquete_id,
+            "paquete_nombre": paquete_nombre,
+            "cantidad_creditos": compra.cantidad_creditos,
+            "precio_centavos": compra.precio_centavos,
+            "moneda": compra.moneda,
+            "estado": compra.estado,
+            "url_pago": compra.url_pago,
+            "fecha_creacion": compra.fecha_creacion,
+            "fecha_acreditacion": compra.fecha_acreditacion,
+        }
+        for compra, paquete_nombre in resultado.all()
+    ]
 
 
 @router.post(

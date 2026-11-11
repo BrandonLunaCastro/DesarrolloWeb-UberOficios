@@ -27,10 +27,11 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [token, setToken] = useState(localStorage.getItem('jwt') || '');
+  const compraIdRetorno = new URLSearchParams(window.location.search).get('compra_id');
 
   const [pantalla, setPantalla] = useState(() =>
-    new URLSearchParams(window.location.search).has('compra_id')
-      ? 'perfilPrestador'
+    compraIdRetorno
+      ? 'creditos'
       : 'feed');
   const [chatInicial, setChatInicial] = useState(null);
   const [usuarioActual, setUsuarioActual] = useState(null);
@@ -136,7 +137,9 @@ if (token) {
       {vistaActual !== null && vistaActual !== 'CLIENTE' && pantalla === 'presupuestos' && (
         <PresupuestosPrestadorPage onUnauthorized={handleLogout} />
       )}
-      {vistaActual !== null && vistaActual !== 'CLIENTE' && pantalla === 'creditos' && <CreditosPage onUnauthorized={handleLogout} />}
+      {vistaActual !== null && vistaActual !== 'CLIENTE' && pantalla === 'creditos' && (
+        <CreditosPage compraIdRetorno={compraIdRetorno} onUnauthorized={handleLogout} />
+      )}
       {vistaActual !== null && pantalla === 'chat' && (
         <ChatPage conversacionInicial={chatInicial} onUnauthorized={handleLogout} />
       )}
