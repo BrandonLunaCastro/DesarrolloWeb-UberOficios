@@ -15,6 +15,7 @@ import PresupuestosPrestadorPage from './pages/PresupuestosPrestador/Presupuesto
 import { avisosApi } from './services/avisosService';
 import CreditosPage from './pages/Creditos/CreditosPage';
 
+
 export default function App() {
   const [mode, setMode] = useState('login'); // 'login' | 'register'
   const [role, setRole] = useState('client'); // 'client' | 'provider'
@@ -140,7 +141,7 @@ if (token) {
       {vistaActual !== null && pantalla === 'chat' && (
         <ChatPage conversacionInicial={chatInicial} onUnauthorized={handleLogout} />
       )}
-    </AppLayout>
+      </AppLayout>
   );
 }
   return (
