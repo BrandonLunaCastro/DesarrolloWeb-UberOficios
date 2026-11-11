@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Check, ChevronDown, Clock3, MapPin, X } from 'lucide-react';
+import { Check, ChevronDown, Clock3, MapPin, Star, X } from 'lucide-react';
 import { avisosApi } from '../../services/avisosService';
 import { presupuestosApi } from '../../services/presupuestosService';
+import CalificarPrestadorModal from '../Calificacion/CalificarPrestadorModal';
 import './presupuestosCliente.css';
 
 const normalizarEstado = (estado = '') => estado.trim().toUpperCase();
@@ -64,6 +65,8 @@ function agruparPresupuestos(avisos, postulaciones) {
       estadoAviso: normalizarEstado(aviso.estado),
       profesionales: propuestas,
       profesionalElegido: aceptada?.id,
+      // Si el back informa que el trabajo ya fue calificado (campo `calificado` o `calificacion`), se oculta el botón
+      calificado: Boolean(aviso.calificado ?? aviso.calificacion),
     };
   });
 }
@@ -80,6 +83,8 @@ function PresupuestoCard({
   onVerDetalle,
   onAceptar,
   onAbrirChat,
+  onCalificar,
+  calificados,
   aceptandoId,
   errorAceptacion,
 }) {
@@ -92,6 +97,9 @@ function PresupuestoCard({
   const visibles = mostrarTodos ? ordenados : ordenados.slice(0, 5);
   const elegido = aviso.profesionales.find((propuesta) => propuesta.id === aviso.profesionalElegido);
   const avisoActivo = aviso.estadoAviso === 'ABIERTO';
+  // Solo se puede calificar un trabajo finalizado (el back lo valida igualmente)
+  const finalizado = aviso.estadoAviso.startsWith('FINALIZ');
+  const yaCalificado = aviso.calificado || calificados.has(aviso.id);
 
   return (
     <article className="pcp-aviso">
@@ -101,7 +109,7 @@ function PresupuestoCard({
           <h3>{aviso.titulo}</h3>
         </div>
         <span className={`pcp-estado ${elegido ? 'aceptado' : avisoActivo ? 'por-elegir' : 'cerrado'}`}>
-          {elegido ? 'Aceptado' : avisoActivo ? 'Activa' : aviso.estadoAviso}
+          {finalizado ? 'Finalizado' : elegido ? 'Aceptado' : avisoActivo ? 'Activa' : aviso.estadoAviso}
         </span>
       </div>
       <p className="pcp-descripcion">{aviso.descripcion}</p>
@@ -170,6 +178,15 @@ function PresupuestoCard({
                       {aceptandoId === propuesta.id ? 'Aceptando…' : 'Aceptar presupuesto'}
                     </button>
                   ) : null}
+                  {propuesta.id === aviso.profesionalElegido && finalizado && (
+                    yaCalificado ? (
+                      <span className="pcp-propuesta-aceptada"><Star size={12} /> Ya calificaste este trabajo</span>
+                    ) : (
+                      <button type="button" className="pcp-boton-elegir" onClick={() => onCalificar(aviso, propuesta)}>
+                        <Star size={13} /> Calificar prestador
+                      </button>
+                    )
+                  )}
                   {errorAceptacion?.id === propuesta.id && (
                     <p className="pcp-error-aceptacion" role="alert">{errorAceptacion.mensaje}</p>
                   )}
@@ -201,6 +218,8 @@ export default function PresupuestosClientePage({ usuario, onUnauthorized, onIrA
   const [intento, setIntento] = useState(0);
   const [aceptandoId, setAceptandoId] = useState(null);
   const [errorAceptacion, setErrorAceptacion] = useState(null);
+  const [calificando, setCalificando] = useState(null); // { aviso, propuesta } abierto en el modal
+  const [calificados, setCalificados] = useState(() => new Set()); // avisos calificados en esta sesión
 
   useEffect(() => {
     if (!usuario?.id_usuario) return undefined;
@@ -308,6 +327,8 @@ export default function PresupuestosClientePage({ usuario, onUnauthorized, onIrA
               aviso={aviso}
               onAceptar={aceptar}
               onAbrirChat={onIrAChat}
+              onCalificar={(avisoActual, propuesta) => setCalificando({ aviso: avisoActual, propuesta })}
+              calificados={calificados}
               aceptandoId={aceptandoId}
               errorAceptacion={errorAceptacion}
               onVerDetalle={(avisoActual, propuesta) => setDetalle({ aviso: avisoActual, propuesta })}
@@ -338,6 +359,20 @@ export default function PresupuestosClientePage({ usuario, onUnauthorized, onIrA
             )}
           </section>
         </div>
+      )}
+
+      {calificando && (
+        <CalificarPrestadorModal
+          idAviso={calificando.aviso.id}
+          nombrePrestador={calificando.propuesta.nombre}
+          detalle={calificando.aviso.titulo}
+          onClose={() => setCalificando(null)}
+          onSuccess={() => {
+            setCalificados((actual) => new Set(actual).add(calificando.aviso.id));
+            setIntento((actual) => actual + 1); // vuelve a pedir los datos por si el back ya informa "calificado"
+          }}
+          onUnauthorized={onUnauthorized}
+        />
       )}
     </section>
   );
