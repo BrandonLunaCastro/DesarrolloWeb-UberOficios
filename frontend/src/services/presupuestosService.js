@@ -22,10 +22,18 @@ async function request(endpoint) {
 }
 
 async function aceptarPresupuesto(idPostulacion) {
+  return enviarPost(`/presupuestos/${idPostulacion}/aceptar`);
+}
+
+async function enviarPost(endpoint, body) {
   const token = localStorage.getItem('jwt');
-  const response = await fetch(`${API_URL}/presupuestos/${idPostulacion}/aceptar`, {
+  const response = await fetch(`${API_URL}${endpoint}`, {
     method: 'POST',
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(body ? { 'Content-Type': 'application/json' } : {}),
+    },
+    body: body ? JSON.stringify(body) : undefined,
   });
   const data = await response.json().catch(() => null);
 
@@ -46,4 +54,8 @@ export const presupuestosApi = {
   listarParaCliente: (idCliente) => request(`/clientes/${idCliente}/presupuestos`),
   listarParaPrestador: (idPrestador) => request(`/prestadores/${idPrestador}/presupuestos`),
   aceptar: aceptarPresupuesto,
+  calificar: (idPostulacion, datos) => enviarPost('/calificaciones', {
+    id_postulacion: idPostulacion,
+    ...datos,
+  }),
 };

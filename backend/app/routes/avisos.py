@@ -1,7 +1,7 @@
 import unicodedata
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy import func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session, joinedload
 
@@ -16,6 +16,7 @@ from app.models.usuario import Usuario
 from app.schemas.aviso import AvisoCreate
 from app.schemas.postulacion import PostulacionCreate, PostulacionResponse
 from app.services.postulaciones import crear_postulacion
+from app.services.notificaciones import crear_notificacion
 
 
 router = APIRouter(prefix="/avisos", tags=["Avisos"])
@@ -216,3 +217,46 @@ async def postularse_a_aviso(
         id_usuario=usuario.id_usuario,
         datos=datos,
     )
+
+
+@router.post("/{id_aviso}/finalizar")
+async def finalizar_aviso(
+    id_aviso: int,
+    db: AsyncSession = Depends(get_async_db),
+    usuario: Usuario = Depends(get_current_user_async),
+):
+    if (usuario.rol.nombre or "").strip().upper() != "CLIENTE":
+        raise HTTPException(status_code=403, detail="Solo un cliente puede finalizar un trabajo")
+
+    aviso = await db.scalar(
+        select(Aviso).where(Aviso.id_aviso == id_aviso).with_for_update()
+    )
+    if aviso is None:
+        raise HTTPException(status_code=404, detail="Trabajo no encontrado")
+    if aviso.id_cliente != usuario.id_usuario:
+        raise HTTPException(status_code=403, detail="No tienes permiso para finalizar este trabajo")
+    if aviso.estado == EstadoAvisoEnum.FINALIZADO:
+        return {"id_aviso": aviso.id_aviso, "estado": aviso.estado.value}
+    if aviso.estado != EstadoAvisoEnum.EN_PROCESO:
+        raise HTTPException(status_code=409, detail="Solo se puede finalizar un trabajo en proceso")
+
+    postulacion_aceptada = await db.scalar(
+        select(Postulacion).where(
+            Postulacion.id_aviso == aviso.id_aviso,
+            Postulacion.estado == "ACEPTADO",
+        )
+    )
+    if postulacion_aceptada is None:
+        raise HTTPException(status_code=409, detail="El trabajo no tiene un presupuesto aceptado")
+
+    aviso.estado = EstadoAvisoEnum.FINALIZADO
+    prestador = await db.get(PrestadorServicio, postulacion_aceptada.id_prestador)
+    if prestador is not None:
+        crear_notificacion(
+            db,
+            id_usuario=prestador.id_usuario,
+            tipo="aviso",
+            mensaje=f'El cliente finalizó el trabajo "{aviso.titulo}".',
+        )
+    await db.commit()
+    return {"id_aviso": aviso.id_aviso, "estado": aviso.estado.value}

@@ -11,6 +11,7 @@ from app.models.conversacion import Conversacion
 from app.models.creditos import TipoTransaccionEnum
 from app.models.postulacion import Postulacion
 from app.models.usuario import Usuario
+from app.services.notificaciones import crear_notificacion
 from app.schemas.postulacion import PostulacionCreate, PostulacionListItem
 from app.services.creditos import registrar_transaccion
 
@@ -37,6 +38,7 @@ async def listar_postulaciones_por_prestador(
             selectinload(Postulacion.aviso).selectinload(Aviso.cliente),
             selectinload(Postulacion.prestador).selectinload(PrestadorServicio.usuario),
             selectinload(Postulacion.conversacion),
+            selectinload(Postulacion.calificacion),
         )
         .where(Postulacion.id_prestador == id_prestador)
         .order_by(Postulacion.fecha_postulacion.desc())
@@ -55,6 +57,11 @@ async def listar_postulaciones_por_prestador(
                 id_conversacion=(
                     postulacion.conversacion.id_conversacion
                     if postulacion.conversacion
+                    else None
+                ),
+                id_calificacion=(
+                    postulacion.calificacion.id_calificacion
+                    if postulacion.calificacion
                     else None
                 ),
                 presupuesto=postulacion.presupuesto,
@@ -89,6 +96,7 @@ async def listar_postulaciones_por_cliente(
             selectinload(Postulacion.aviso).selectinload(Aviso.cliente),
             selectinload(Postulacion.prestador).selectinload(PrestadorServicio.usuario),
             selectinload(Postulacion.conversacion),
+            selectinload(Postulacion.calificacion),
         )
         .join(Aviso, Postulacion.id_aviso == Aviso.id_aviso)
         .where(Aviso.id_cliente == id_cliente)
@@ -109,6 +117,11 @@ async def listar_postulaciones_por_cliente(
                 id_conversacion=(
                     postulacion.conversacion.id_conversacion
                     if postulacion.conversacion
+                    else None
+                ),
+                id_calificacion=(
+                    postulacion.calificacion.id_calificacion
+                    if postulacion.calificacion
                     else None
                 ),
                 presupuesto=postulacion.presupuesto,
@@ -148,6 +161,7 @@ async def crear_postulacion(
     prestador = await db.scalar(
         select(PrestadorServicio)
         .where(PrestadorServicio.id_usuario == id_usuario)
+        .options(selectinload(PrestadorServicio.usuario))
         .with_for_update()
     )
     if prestador is None or not prestador.activo:
@@ -182,6 +196,18 @@ async def crear_postulacion(
             referencia_id=postulacion.id_postulacion,
             referencia_tipo="postulacion",
             descripcion="Consumo de créditos por postulación",
+        )
+        nombre_prestador = " ".join(
+            parte for parte in [prestador.usuario.nombre, prestador.usuario.apellido] if parte
+        )
+        crear_notificacion(
+            db,
+            id_usuario=aviso.id_cliente,
+            tipo="presupuesto",
+            mensaje=(
+                f"{nombre_prestador or 'Un prestador'} envió un presupuesto "
+                f'para "{aviso.titulo}".'
+            ),
         )
         await db.commit()
     except IntegrityError:
@@ -296,6 +322,14 @@ async def aceptar_postulacion(
         id_postulacion=postulacion.id_postulacion,
     )
     db.add(conversacion)
+    prestador = await db.get(PrestadorServicio, postulacion.id_prestador)
+    if prestador is not None:
+        crear_notificacion(
+            db,
+            id_usuario=prestador.id_usuario,
+            tipo="presupuesto",
+            mensaje=f'El cliente aceptó tu presupuesto para "{aviso.titulo}".',
+        )
     await db.commit()
     await db.refresh(postulacion)
     await db.refresh(conversacion)

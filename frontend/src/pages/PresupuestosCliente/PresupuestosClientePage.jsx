@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Check, ChevronDown, Clock3, MapPin, X } from 'lucide-react';
+import { Check, ChevronDown, Clock3, MapPin, Star, X } from 'lucide-react';
 import { avisosApi } from '../../services/avisosService';
 import { presupuestosApi } from '../../services/presupuestosService';
 import './presupuestosCliente.css';
@@ -42,6 +42,7 @@ function agruparPresupuestos(avisos, postulaciones) {
       return {
         id: postulacion.id_postulacion,
         idConversacion: postulacion.id_conversacion,
+        idCalificacion: postulacion.id_calificacion,
         nombre,
         iniciales: iniciales(nombre),
         oficio: postulacion.oficio_prestador || aviso.oficio,
@@ -80,8 +81,12 @@ function PresupuestoCard({
   onVerDetalle,
   onAceptar,
   onAbrirChat,
+  onFinalizar,
+  onCalificar,
   aceptandoId,
+  finalizandoId,
   errorAceptacion,
+  errorFinalizacion,
 }) {
   const [orden, setOrden] = useState('precio');
   const [mostrarTodos, setMostrarTodos] = useState(false);
@@ -100,8 +105,8 @@ function PresupuestoCard({
           <span className="pcp-categoria">{aviso.categoria}</span>
           <h3>{aviso.titulo}</h3>
         </div>
-        <span className={`pcp-estado ${elegido ? 'aceptado' : avisoActivo ? 'por-elegir' : 'cerrado'}`}>
-          {elegido ? 'Aceptado' : avisoActivo ? 'Activa' : aviso.estadoAviso}
+        <span className={`pcp-estado ${aviso.estadoAviso === 'FINALIZADO' ? 'finalizado' : elegido ? 'aceptado' : avisoActivo ? 'por-elegir' : 'cerrado'}`}>
+          {aviso.estadoAviso === 'FINALIZADO' ? 'Finalizado' : elegido ? 'Aceptado' : avisoActivo ? 'Activa' : aviso.estadoAviso}
         </span>
       </div>
       <p className="pcp-descripcion">{aviso.descripcion}</p>
@@ -152,14 +157,40 @@ function PresupuestoCard({
                   <button type="button" className="pcp-link" onClick={() => onVerDetalle(aviso, propuesta)}>
                     Ver detalle del presupuesto
                   </button>
-                  {propuesta.id === aviso.profesionalElegido && propuesta.idConversacion ? (
-                    <button
-                      type="button"
-                      className="pcp-boton-elegir"
-                      onClick={() => onAbrirChat(propuesta.idConversacion)}
-                    >
-                      Abrir chat
-                    </button>
+                  {propuesta.id === aviso.profesionalElegido ? (
+                    <>
+                      {propuesta.idConversacion && (
+                        <button
+                          type="button"
+                          className="pcp-boton-elegir"
+                          onClick={() => onAbrirChat(propuesta.idConversacion)}
+                        >
+                          Abrir chat
+                        </button>
+                      )}
+                      {aviso.estadoAviso === 'EN_PROCESO' && (
+                        <button
+                          type="button"
+                          className="pcp-boton-finalizar"
+                          disabled={finalizandoId === aviso.id}
+                          onClick={() => onFinalizar(aviso)}
+                        >
+                          {finalizandoId === aviso.id ? 'Finalizando…' : 'Finalizar trabajo'}
+                        </button>
+                      )}
+                      {aviso.estadoAviso === 'FINALIZADO' && !propuesta.idCalificacion && (
+                        <button
+                          type="button"
+                          className="pcp-boton-calificar"
+                          onClick={() => onCalificar(aviso, propuesta)}
+                        >
+                          <Star size={13} /> Calificar
+                        </button>
+                      )}
+                      {aviso.estadoAviso === 'FINALIZADO' && propuesta.idCalificacion && (
+                        <span className="pcp-trabajo-calificado">Trabajo calificado</span>
+                      )}
+                    </>
                   ) : avisoActivo && !aviso.profesionalElegido && propuesta.estado === 'PENDIENTE' ? (
                     <button
                       type="button"
@@ -172,6 +203,9 @@ function PresupuestoCard({
                   ) : null}
                   {errorAceptacion?.id === propuesta.id && (
                     <p className="pcp-error-aceptacion" role="alert">{errorAceptacion.mensaje}</p>
+                  )}
+                  {errorFinalizacion?.id === aviso.id && (
+                    <p className="pcp-error-aceptacion" role="alert">{errorFinalizacion.mensaje}</p>
                   )}
                 </div>
               </article>
@@ -193,6 +227,53 @@ function PresupuestoCard({
   );
 }
 
+function CalificacionModal({ aviso, propuesta, enviando, error, onEnviar, onCerrar }) {
+  const [puntuacion, setPuntuacion] = useState(0);
+  const [comentario, setComentario] = useState('');
+
+  const enviar = (event) => {
+    event.preventDefault();
+    onEnviar({ puntuacion, comentario: comentario.trim() });
+  };
+
+  return (
+    <div className="pcp-modal-fondo" onMouseDown={(event) => event.target === event.currentTarget && onCerrar()}>
+      <form className="pcp-modal pcp-modal-calificacion" role="dialog" aria-modal="true" aria-labelledby="pcp-rating-titulo" onSubmit={enviar}>
+        <button type="button" className="pcp-cerrar" aria-label="Cerrar calificación" onClick={onCerrar}><X size={18} /></button>
+        <span className="pcp-categoria">TRABAJO FINALIZADO</span>
+        <h2 id="pcp-rating-titulo">Calificar a {propuesta.nombre}</h2>
+        <p>{aviso.titulo}</p>
+        <fieldset className="pcp-rating-estrellas">
+          <legend>Tu calificación</legend>
+          {[1, 2, 3, 4, 5].map((valor) => (
+            <button
+              key={valor}
+              type="button"
+              aria-label={`${valor} ${valor === 1 ? 'estrella' : 'estrellas'}`}
+              aria-pressed={puntuacion === valor}
+              className={puntuacion >= valor ? 'seleccionada' : ''}
+              onClick={() => setPuntuacion(valor)}
+            >
+              <Star size={27} fill={puntuacion >= valor ? 'currentColor' : 'none'} />
+            </button>
+          ))}
+        </fieldset>
+        <label className="pcp-rating-comentario">
+          Comentario <span>(opcional)</span>
+          <textarea maxLength={2000} rows={4} value={comentario} onChange={(event) => setComentario(event.target.value)} />
+        </label>
+        {error && <p className="pcp-error-aceptacion" role="alert">{error}</p>}
+        <div className="pcp-rating-acciones">
+          <button type="button" className="pcp-rating-cancelar" onClick={onCerrar}>Cancelar</button>
+          <button type="submit" className="pcp-boton-calificar" disabled={!puntuacion || enviando}>
+            {enviando ? 'Enviando…' : 'Enviar calificación'}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
 export default function PresupuestosClientePage({ usuario, onUnauthorized, onIrAChat }) {
   const [avisos, setAvisos] = useState(null);
   const [filtro, setFiltro] = useState('todos');
@@ -201,6 +282,11 @@ export default function PresupuestosClientePage({ usuario, onUnauthorized, onIrA
   const [intento, setIntento] = useState(0);
   const [aceptandoId, setAceptandoId] = useState(null);
   const [errorAceptacion, setErrorAceptacion] = useState(null);
+  const [finalizandoId, setFinalizandoId] = useState(null);
+  const [errorFinalizacion, setErrorFinalizacion] = useState(null);
+  const [calificando, setCalificando] = useState(null);
+  const [enviandoCalificacion, setEnviandoCalificacion] = useState(false);
+  const [errorCalificacion, setErrorCalificacion] = useState('');
 
   useEffect(() => {
     if (!usuario?.id_usuario) return undefined;
@@ -260,6 +346,41 @@ export default function PresupuestosClientePage({ usuario, onUnauthorized, onIrA
     }
   };
 
+  const finalizar = async (aviso) => {
+    setFinalizandoId(aviso.id);
+    setErrorFinalizacion(null);
+    try {
+      await avisosApi.finalizar(aviso.id);
+      setIntento((actual) => actual + 1);
+    } catch (err) {
+      if (err.status === 401) {
+        onUnauthorized?.();
+        return;
+      }
+      setErrorFinalizacion({ id: aviso.id, mensaje: err.message });
+    } finally {
+      setFinalizandoId(null);
+    }
+  };
+
+  const calificar = async ({ puntuacion, comentario }) => {
+    setEnviandoCalificacion(true);
+    setErrorCalificacion('');
+    try {
+      await presupuestosApi.calificar(calificando.propuesta.id, { puntuacion, comentario });
+      setCalificando(null);
+      setIntento((actual) => actual + 1);
+    } catch (err) {
+      if (err.status === 401) {
+        onUnauthorized?.();
+        return;
+      }
+      setErrorCalificacion(err.message);
+    } finally {
+      setEnviandoCalificacion(false);
+    }
+  };
+
   return (
     <section className="pcp">
       <header className="pcp-titulo">
@@ -308,8 +429,15 @@ export default function PresupuestosClientePage({ usuario, onUnauthorized, onIrA
               aviso={aviso}
               onAceptar={aceptar}
               onAbrirChat={onIrAChat}
+              onFinalizar={finalizar}
+              onCalificar={(aviso, propuesta) => {
+                setErrorCalificacion('');
+                setCalificando({ aviso, propuesta });
+              }}
               aceptandoId={aceptandoId}
+              finalizandoId={finalizandoId}
               errorAceptacion={errorAceptacion}
+              errorFinalizacion={errorFinalizacion}
               onVerDetalle={(avisoActual, propuesta) => setDetalle({ aviso: avisoActual, propuesta })}
             />
           )) : (
@@ -338,6 +466,16 @@ export default function PresupuestosClientePage({ usuario, onUnauthorized, onIrA
             )}
           </section>
         </div>
+      )}
+      {calificando && (
+        <CalificacionModal
+          aviso={calificando.aviso}
+          propuesta={calificando.propuesta}
+          enviando={enviandoCalificacion}
+          error={errorCalificacion}
+          onEnviar={calificar}
+          onCerrar={() => setCalificando(null)}
+        />
       )}
     </section>
   );

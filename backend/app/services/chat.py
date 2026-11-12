@@ -12,6 +12,7 @@ from app.models.mensaje import Mensaje
 from app.models.postulacion import Postulacion
 from app.schemas.chat import MensajeCreate
 from app.models.usuario import Usuario
+from app.services.notificaciones import crear_notificacion
 
 
 async def listar_conversaciones(
@@ -139,7 +140,7 @@ async def crear_mensaje(
     id_usuario: int,
     datos: MensajeCreate,
 ) -> tuple[Mensaje, bool]:
-    await _obtener_conversacion_participante(
+    conversacion = await _obtener_conversacion_participante(
         db,
         id_conversacion=id_conversacion,
         id_usuario=id_usuario,
@@ -152,6 +153,31 @@ async def crear_mensaje(
         identificador_unico=datos.identificador_unico,
     )
     db.add(mensaje)
+    id_usuario_cliente = await db.scalar(
+        select(Cliente.id_usuario)
+        .join(Conversacion, Conversacion.id_cliente == Cliente.id_cliente)
+        .where(Conversacion.id_conversacion == id_conversacion)
+    )
+    id_usuario_prestador = await db.scalar(
+        select(PrestadorServicio.id_usuario)
+        .where(PrestadorServicio.id_prestador == conversacion.id_prestador)
+    )
+    id_destinatario = (
+        id_usuario_prestador
+        if id_usuario_cliente == id_usuario
+        else id_usuario_cliente
+    )
+    remitente = await db.get(Usuario, id_usuario)
+    if id_destinatario is not None and remitente is not None:
+        nombre_remitente = " ".join(
+            parte for parte in [remitente.nombre, remitente.apellido] if parte
+        )
+        crear_notificacion(
+            db,
+            id_usuario=id_destinatario,
+            tipo="mensaje",
+            mensaje=f"{nombre_remitente or 'Tienes'} te envió un mensaje.",
+        )
     try:
         await db.commit()
     except IntegrityError:

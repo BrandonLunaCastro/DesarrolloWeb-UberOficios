@@ -8,6 +8,8 @@ from app.routes.creditos import router as creditos_router
 from app.routes.compras_creditos import router as compras_creditos_router
 from app.routes.chat import router as chat_router
 from app.routes.presupuestos import router as presupuestos_router
+from app.routes.calificaciones import router as calificaciones_router
+from app.routes.notificaciones import router as notificaciones_router
 
 
 app = FastAPI()
@@ -19,6 +21,8 @@ app.include_router(creditos_router)
 app.include_router(compras_creditos_router)
 app.include_router(chat_router)
 app.include_router(presupuestos_router)
+app.include_router(calificaciones_router)
+app.include_router(notificaciones_router)
 
 
 @app.get("/health")
