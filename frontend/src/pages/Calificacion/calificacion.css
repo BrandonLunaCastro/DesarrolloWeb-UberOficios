@@ -1,0 +1,29 @@
+.cal-bg{position:fixed;inset:0;background:#0f172a99;display:grid;place-items:center;padding:16px;z-index:60}
+.cal{background:#fff;border-radius:12px;padding:20px;width:min(440px,100%);max-height:90vh;overflow:auto;font-family:Inter,system-ui,sans-serif;color:#0f172a;text-align:left;display:flex;flex-direction:column;gap:8px}
+.cal header{display:flex;justify-content:space-between;align-items:center;gap:8px}.cal h3{margin:0;font-size:16px}
+.cal-x{display:grid;place-items:center;width:28px;height:28px;border:0;border-radius:50%;background:none;cursor:pointer}
+.cal form{display:flex;flex-direction:column;gap:8px}
+.cal-sub{margin:0;font-size:13px;color:#64748b;line-height:1.5}
+.cal-grupo{border:0;margin:6px 0 4px;padding:0;text-align:center}.cal-grupo legend{width:100%;padding:0;font-size:13px;font-weight:600;margin-bottom:8px}
+.cal-estrellas{display:flex;justify-content:center;gap:6px}
+.cal-estrella{position:relative;display:grid;place-items:center;padding:2px;border-radius:8px;cursor:pointer}
+.cal-estrella input{position:absolute;inset:0;opacity:0;margin:0;cursor:pointer}
+.cal-estrella:has(input:focus-visible){outline:2px solid #2563eb;outline-offset:2px}
+.cal-estrella svg{pointer-events:none}
+.cal-solo-lector{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.cal-etiqueta{margin:6px 0 0;font-size:12px;color:#475569;min-height:18px}
+.cal-lbl{font-size:13px;font-weight:600;margin-top:4px}
+.cal textarea{padding:10px 12px;border:1px solid #cbd5e1;border-radius:8px;font:13px inherit;resize:vertical;color:#0f172a}
+.cal textarea:focus-visible{outline:2px solid #2563eb;outline-offset:2px}
+.cal-cont{align-self:flex-end;font-size:11px;color:#64748b}
+.cal-err{margin:0;font-size:12px;color:#dc2626}
+.cal-acc{display:flex;justify-content:flex-end;gap:8px;margin-top:4px}
+.cal-btn{border:0;border-radius:8px;background:#2563eb;color:#fff;font:600 13px inherit;padding:10px 16px;cursor:pointer}
+.cal-sec{border:1px solid #cbd5e1;border-radius:8px;background:#fff;color:#0f172a;font:600 13px inherit;padding:10px 16px;cursor:pointer}
+.cal button:disabled{opacity:.55;cursor:not-allowed}
+.cal button:focus-visible{outline:2px solid #2563eb;outline-offset:2px}
+.cal-ok{display:flex;flex-direction:column;align-items:center;gap:8px;padding:8px 0;text-align:center}
+.cal-ok p{margin:0;font-size:14px}.cal-ok .cal-sub{font-size:13px}
+.cal-check{display:grid;place-items:center;width:48px;height:48px;border-radius:50%;background:#dcfce7;color:#166534}
+.cal-fija{display:flex;gap:4px}
+@media(max-width:420px){.cal-estrellas{gap:2px}}

@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { Check, ChevronDown, Clock3, MapPin, Star, X } from 'lucide-react';
 import { avisosApi } from '../../services/avisosService';
 import { presupuestosApi } from '../../services/presupuestosService';
+import CalificarPrestadorModal from '../Calificacion/CalificarPrestadorModal';
+import { finalizarTrabajo } from '../../services/calificacionService';
 import './presupuestosCliente.css';
 
 const normalizarEstado = (estado = '') => estado.trim().toUpperCase();
@@ -65,6 +67,8 @@ function agruparPresupuestos(avisos, postulaciones) {
       estadoAviso: normalizarEstado(aviso.estado),
       profesionales: propuestas,
       profesionalElegido: aceptada?.id,
+      // Si el back informa que el trabajo ya fue calificado (campo `calificado` o `calificacion`), se oculta el botón
+      calificado: Boolean(aviso.calificado ?? aviso.calificacion),
     };
   });
 }
@@ -81,8 +85,9 @@ function PresupuestoCard({
   onVerDetalle,
   onAceptar,
   onAbrirChat,
-  onFinalizar,
   onCalificar,
+  onFinalizar,
+  calificados,
   aceptandoId,
   finalizandoId,
   errorAceptacion,
@@ -97,6 +102,10 @@ function PresupuestoCard({
   const visibles = mostrarTodos ? ordenados : ordenados.slice(0, 5);
   const elegido = aviso.profesionales.find((propuesta) => propuesta.id === aviso.profesionalElegido);
   const avisoActivo = aviso.estadoAviso === 'ABIERTO';
+  // Solo se puede calificar un trabajo finalizado (el back lo valida igualmente)
+  const finalizado = aviso.estadoAviso.startsWith('FINALIZ');
+  const enProceso = aviso.estadoAviso === 'EN_PROCESO'; // el cliente ya aceptó un presupuesto
+  const yaCalificado = aviso.calificado || calificados.has(aviso.id);
 
   return (
     <article className="pcp-aviso">
@@ -201,6 +210,20 @@ function PresupuestoCard({
                       {aceptandoId === propuesta.id ? 'Aceptando…' : 'Aceptar presupuesto'}
                     </button>
                   ) : null}
+                  {propuesta.id === aviso.profesionalElegido && enProceso && (
+                    <button type="button" className="pcp-boton-elegir" onClick={() => onFinalizar(aviso)}>
+                      <Check size={13} /> Finalizar trabajo
+                    </button>
+                  )}
+                  {propuesta.id === aviso.profesionalElegido && finalizado && (
+                    yaCalificado ? (
+                      <span className="pcp-propuesta-aceptada"><Star size={12} /> Ya calificaste este trabajo</span>
+                    ) : (
+                      <button type="button" className="pcp-boton-elegir" onClick={() => onCalificar(aviso, propuesta)}>
+                        <Star size={13} /> Calificar prestador
+                      </button>
+                    )
+                  )}
                   {errorAceptacion?.id === propuesta.id && (
                     <p className="pcp-error-aceptacion" role="alert">{errorAceptacion.mensaje}</p>
                   )}
@@ -282,11 +305,11 @@ export default function PresupuestosClientePage({ usuario, onUnauthorized, onIrA
   const [intento, setIntento] = useState(0);
   const [aceptandoId, setAceptandoId] = useState(null);
   const [errorAceptacion, setErrorAceptacion] = useState(null);
-  const [finalizandoId, setFinalizandoId] = useState(null);
-  const [errorFinalizacion, setErrorFinalizacion] = useState(null);
-  const [calificando, setCalificando] = useState(null);
-  const [enviandoCalificacion, setEnviandoCalificacion] = useState(false);
-  const [errorCalificacion, setErrorCalificacion] = useState('');
+  const [calificando, setCalificando] = useState(null); // { aviso, propuesta } abierto en el modal
+  const [calificados, setCalificados] = useState(() => new Set()); // avisos calificados en esta sesión
+  const [confirmandoFin, setConfirmandoFin] = useState(null); // aviso que se está por finalizar
+  const [finalizando, setFinalizando] = useState(false);
+  const [errorFinalizar, setErrorFinalizar] = useState('');
 
   useEffect(() => {
     if (!usuario?.id_usuario) return undefined;
@@ -346,38 +369,23 @@ export default function PresupuestosClientePage({ usuario, onUnauthorized, onIrA
     }
   };
 
-  const finalizar = async (aviso) => {
-    setFinalizandoId(aviso.id);
-    setErrorFinalizacion(null);
+  const finalizar = async () => {
+    const { id } = confirmandoFin;
+    setFinalizando(true);
+    setErrorFinalizar('');
     try {
-      await avisosApi.finalizar(aviso.id);
-      setIntento((actual) => actual + 1);
+      await finalizarTrabajo(id);
+      setAvisos((actuales) => actuales?.map((aviso) => (aviso.id === id ? { ...aviso, estadoAviso: 'FINALIZADO' } : aviso)));
+      setConfirmandoFin(null);
+      setIntento((actual) => actual + 1); // vuelve a pedir los datos al back
     } catch (err) {
       if (err.status === 401) {
         onUnauthorized?.();
         return;
       }
-      setErrorFinalizacion({ id: aviso.id, mensaje: err.message });
+      setErrorFinalizar(err.message);
     } finally {
-      setFinalizandoId(null);
-    }
-  };
-
-  const calificar = async ({ puntuacion, comentario }) => {
-    setEnviandoCalificacion(true);
-    setErrorCalificacion('');
-    try {
-      await presupuestosApi.calificar(calificando.propuesta.id, { puntuacion, comentario });
-      setCalificando(null);
-      setIntento((actual) => actual + 1);
-    } catch (err) {
-      if (err.status === 401) {
-        onUnauthorized?.();
-        return;
-      }
-      setErrorCalificacion(err.message);
-    } finally {
-      setEnviandoCalificacion(false);
+      setFinalizando(false);
     }
   };
 
@@ -429,11 +437,9 @@ export default function PresupuestosClientePage({ usuario, onUnauthorized, onIrA
               aviso={aviso}
               onAceptar={aceptar}
               onAbrirChat={onIrAChat}
-              onFinalizar={finalizar}
-              onCalificar={(aviso, propuesta) => {
-                setErrorCalificacion('');
-                setCalificando({ aviso, propuesta });
-              }}
+              onCalificar={(avisoActual, propuesta) => setCalificando({ aviso: avisoActual, propuesta })}
+              onFinalizar={(avisoActual) => { setErrorFinalizar(''); setConfirmandoFin(avisoActual); }}
+              calificados={calificados}
               aceptandoId={aceptandoId}
               finalizandoId={finalizandoId}
               errorAceptacion={errorAceptacion}
@@ -467,15 +473,36 @@ export default function PresupuestosClientePage({ usuario, onUnauthorized, onIrA
           </section>
         </div>
       )}
+
       {calificando && (
-        <CalificacionModal
-          aviso={calificando.aviso}
-          propuesta={calificando.propuesta}
-          enviando={enviandoCalificacion}
-          error={errorCalificacion}
-          onEnviar={calificar}
-          onCerrar={() => setCalificando(null)}
+        <CalificarPrestadorModal
+          idPostulacion={calificando.propuesta.id}
+          nombrePrestador={calificando.propuesta.nombre}
+          detalle={calificando.aviso.titulo}
+          onClose={() => setCalificando(null)}
+          onSuccess={() => {
+            setCalificados((actual) => new Set(actual).add(calificando.aviso.id));
+            setIntento((actual) => actual + 1); // vuelve a pedir los datos por si el back ya informa "calificado"
+          }}
+          onUnauthorized={onUnauthorized}
         />
+      )}
+
+      {confirmandoFin && (
+        <div className="pcp-modal-fondo" onMouseDown={(event) => event.target === event.currentTarget && !finalizando && setConfirmandoFin(null)}>
+          <section className="pcp-modal" role="alertdialog" aria-modal="true" aria-labelledby="pcp-fin-titulo">
+            <h2 id="pcp-fin-titulo">¿Finalizar este trabajo?</h2>
+            <p className="pcp-modal-aviso">{confirmandoFin.titulo}</p>
+            <p>Le avisaremos al prestador. Después vas a poder calificarlo.</p>
+            {errorFinalizar && <p className="pcp-error-aceptacion" role="alert">{errorFinalizar}</p>}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 12 }}>
+              <button type="button" className="pcp-link" disabled={finalizando} onClick={() => setConfirmandoFin(null)}>Cancelar</button>
+              <button type="button" className="pcp-boton-elegir" disabled={finalizando} onClick={finalizar}>
+                {finalizando ? 'Finalizando…' : 'Sí, finalizar'}
+              </button>
+            </div>
+          </section>
+        </div>
       )}
     </section>
   );
