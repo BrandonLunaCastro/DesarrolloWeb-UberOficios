@@ -28,7 +28,9 @@ export default function CreditosPage({ compraIdRetorno = null, onUnauthorized })
   const [filtro, setFiltro] = useState('todos');
   const [seleccion, setSeleccion] = useState(null);
   const [enviando, setEnviando] = useState(false);
+  const [reintentandoCompraId, setReintentandoCompraId] = useState(null);
   const [errorCompra, setErrorCompra] = useState('');
+  const [errorCheckout, setErrorCheckout] = useState('');
   const [aviso, setAviso] = useState('');
   const [compraRetorno, setCompraRetorno] = useState(null);
   const [errorRetorno, setErrorRetorno] = useState('');
@@ -89,6 +91,7 @@ export default function CreditosPage({ compraIdRetorno = null, onUnauthorized })
   async function confirmarCompra() {
     setEnviando(true);
     setErrorCompra('');
+    setErrorCheckout('');
     try {
       const r = await creditosApi.comprar(seleccion.id);
       if (r?.url_pago) { window.location.assign(r.url_pago); return; } // checkout externo
@@ -98,9 +101,34 @@ export default function CreditosPage({ compraIdRetorno = null, onUnauthorized })
       traer().then(setDatos).catch(() => {});
     } catch (e) {
       if (e.status === 401) onUnauthorized?.();
-      setErrorCompra(e.message);
+      if (e.compraId) {
+        setSeleccion(null);
+        setTab('compras');
+        setErrorCheckout(e.message);
+        traer().then(setDatos).catch(() => {});
+      } else {
+        setErrorCompra(e.message);
+      }
     } finally {
       setEnviando(false);
+    }
+  }
+
+  async function reintentarPago(compraId) {
+    setReintentandoCompraId(compraId);
+    setErrorCheckout('');
+    try {
+      const compra = await creditosApi.reintentarCheckout(compraId);
+      if (compra?.url_pago) {
+        window.location.assign(compra.url_pago);
+        return;
+      }
+      setErrorCheckout('No se recibió un enlace de pago. Intentá nuevamente.');
+    } catch (e) {
+      if (e.status === 401) onUnauthorized?.();
+      setErrorCheckout(e.message);
+    } finally {
+      setReintentandoCompraId(null);
     }
   }
 
@@ -129,6 +157,7 @@ export default function CreditosPage({ compraIdRetorno = null, onUnauthorized })
       {res && <p className={`cre-aviso cre-${res[0]}`} role="status">{res[1]}</p>}
       {(errorRetorno || errorCompraId) && <p className="cre-aviso cre-err" role="alert">{errorRetorno || errorCompraId}</p>}
       {aviso && <p className="cre-aviso cre-ok" role="status">{aviso}</p>}
+      {errorCheckout && <p className="cre-aviso cre-err" role="alert">{errorCheckout}</p>}
 
       <h2>Comprar créditos</h2>
       {paquetes.length === 0 ? (
@@ -197,6 +226,18 @@ export default function CreditosPage({ compraIdRetorno = null, onUnauthorized })
               <span className="cre-der">
                 <b>{peso.format(c.monto)}</b>
                 <small className={`cre-estado cre-e-${c.estado}`}>{ESTADOS[c.estado]}</small>
+                {c.estado === 'pendiente' && c.url_pago && (
+                  <a href={c.url_pago}>Continuar con el pago</a>
+                )}
+                {c.estado === 'pendiente' && !c.url_pago && (
+                  <button
+                    className="cre-btn"
+                    onClick={() => reintentarPago(c.id)}
+                    disabled={reintentandoCompraId === c.id}
+                  >
+                    {reintentandoCompraId === c.id ? 'Preparando…' : 'Reintentar pago'}
+                  </button>
+                )}
               </span>
             </li>
           ))}

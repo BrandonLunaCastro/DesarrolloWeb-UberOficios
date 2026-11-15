@@ -221,6 +221,18 @@ FRONTEND_URL=https://URL_PUBLICA_DEL_FRONTEND
 > Aplicar las migraciones desde `backend` con `alembic upgrade head`; la migración
 > agrega los paquetes Inicial, Popular y Profesional.
 
+En Mercado Pago, configurar una notificación de tipo **Pagos** apuntando a
+`https://URL_PUBLICA_DEL_BACKEND/creditos/pagos/webhook` y copiar su clave
+secreta de firma en `MERCADOPAGO_WEBHOOK_SECRET`. El webhook debe ser público y
+usar HTTPS; `localhost` no es accesible desde Mercado Pago. Para probar, usar
+credenciales y cuentas de prueba de Mercado Pago; para producción, reemplazar
+el access token de prueba por el token de producción. No mezclar credenciales de
+prueba con cuentas reales.
+
+`FRONTEND_URL` debe ser el origen público del frontend (sin una ruta específica);
+ese origen se usa tanto para volver del checkout como para autorizar CORS. En el
+frontend, configurar `VITE_API_URL` con la URL base pública del backend.
+
 El `.gitignore` debe contener:
 
 ```gitignore

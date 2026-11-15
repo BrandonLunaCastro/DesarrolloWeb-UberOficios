@@ -13,8 +13,12 @@ async function req(path, init = {}) {
   const data = await res.json().catch(() => null);
   if (!res.ok) {
     const detail = data?.detail;
-    const err = new Error(Array.isArray(detail) ? detail.map((i) => i.msg).join('. ') : detail || `Error ${res.status}`);
+    const mensaje = detail && typeof detail === 'object' && !Array.isArray(detail)
+      ? detail.mensaje
+      : detail;
+    const err = new Error(Array.isArray(detail) ? detail.map((i) => i.msg).join('. ') : mensaje || detail || `Error ${res.status}`);
     err.status = res.status;
+    if (detail && typeof detail === 'object' && !Array.isArray(detail)) err.compraId = detail.compra_id;
     throw err;
   }
   return data;
@@ -53,6 +57,7 @@ const normCompra = (c) => ({
   id: c.id, paquete: c.paquete_nombre ?? c.nombre_paquete ?? 'Paquete', creditos: c.cantidad_creditos,
   monto: c.precio_centavos / 100, moneda: c.moneda ?? 'ARS',
   estado: ESTADO[String(c.estado ?? '').toLowerCase()] ?? 'pendiente', fecha: c.fecha_creacion ?? c.fecha_compra,
+  url_pago: c.url_pago ?? null,
 });
 
 // ---------- MOCK (misma forma que el back real) ----------
@@ -98,6 +103,15 @@ const mock = {
     }
     return compra;
   }),
+  reintentarCheckout: (compraId) => demora(() => {
+    const compra = compras.find((item) => item.id === Number(compraId));
+    if (!compra || compra.estado !== 'PENDIENTE') {
+      const error = new Error('La compra ya no está pendiente.');
+      error.status = 409;
+      throw error;
+    }
+    return compra;
+  }),
   comprar: (idPaquete) => demora(() => {
     if (modo() === 'errorCompra') falla('No pudimos iniciar la compra. Intentá de nuevo.');
     const p = PAQUETES.find((x) => x.id === idPaquete);
@@ -125,6 +139,7 @@ const real = {
   movimientos: () => req('/creditos/movimientos').then((l) => l.map(normMov)),
   compras: () => req('/creditos/compras').then((l) => l.map(normCompra)),
   consultar: (compraId) => req(`/creditos/compras/${compraId}`),
+  reintentarCheckout: (compraId) => req(`/creditos/compras/${compraId}/checkout`, { method: 'POST' }),
   comprar: (idPaquete) =>
     req('/creditos/compras', { method: 'POST', body: JSON.stringify({ paquete_id: idPaquete }) })
       .then((r) => ({ ...r, url_pago: r.url_pago ?? r.init_point ?? null })),
@@ -142,4 +157,4 @@ export const consultarCompraCreditos = (compraId) =>
   req(`/creditos/compras/${compraId}`);
 
 export const reintentarCheckoutCreditos = (compraId) =>
-  req(`/creditos/compras/${compraId}/checkout`, { method: 'POST' });
+  creditosApi.reintentarCheckout(compraId);
