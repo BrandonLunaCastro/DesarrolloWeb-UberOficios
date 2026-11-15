@@ -8,14 +8,14 @@ const MAX_COMENTARIO = 500;
 
 /**
  * Props:
- *  - idAviso: number             (solicitud / trabajo que se califica)
+ *  - idPostulacion: number       (presupuesto aceptado que se califica)
  *  - nombrePrestador: string
  *  - detalle?: string            (por ejemplo, el oficio o el título del aviso)
  *  - onClose: () => void
  *  - onSuccess?: (calificacion) => void   (para marcar el trabajo como calificado / refrescar la lista)
  *  - onUnauthorized?: () => void
  */
-export default function CalificarPrestadorModal({ idAviso, nombrePrestador, detalle, onClose, onSuccess, onUnauthorized }) {
+export default function CalificarPrestadorModal({ idPostulacion, nombrePrestador, detalle, onClose, onSuccess, onUnauthorized }) {
   const [puntuacion, setPuntuacion] = useState(0);
   const [hover, setHover] = useState(0);
   const [comentario, setComentario] = useState('');
@@ -37,7 +37,7 @@ export default function CalificarPrestadorModal({ idAviso, nombrePrestador, deta
     setEnviando(true);
     setError('');
     try {
-      const r = await calificacionApi.calificar(idAviso, { puntuacion, comentario });
+      const r = await calificacionApi.calificar(idPostulacion, { puntuacion, comentario });
       setEnviada(true);
       onSuccess?.(r);
     } catch (err) {
