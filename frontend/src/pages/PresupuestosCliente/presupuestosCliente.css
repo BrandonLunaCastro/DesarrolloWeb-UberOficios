@@ -58,5 +58,23 @@
 .pcp-modal-meta svg{color:#f59e0b;flex:none}
 .pcp-contacto{display:flex;align-items:center;gap:6px;padding:10px;border-radius:8px;background:#ecfdf5;color:#047857!important}
 .pcp-cerrar{position:absolute;top:14px;right:14px;display:grid;place-items:center;width:30px;height:30px;border:0;border-radius:50%;background:#f1f5f9;color:#475569;cursor:pointer}
+.pcp-estado.finalizado{background:#e0f2fe;color:#0369a1}
+.pcp-boton-finalizar,.pcp-boton-calificar{display:inline-flex;justify-content:center;align-items:center;gap:6px;min-height:30px;padding:7px 12px;border:1px solid #0f766e;border-radius:6px;background:#fff;color:#0f766e;font-size:10px;font-weight:700;cursor:pointer}
+.pcp-boton-finalizar:hover,.pcp-boton-calificar:hover{background:#f0fdfa}
+.pcp-boton-finalizar:disabled,.pcp-boton-calificar:disabled{opacity:.6;cursor:wait}
+.pcp-trabajo-calificado{padding:7px 0;color:#047857;font-size:10px;font-weight:700;text-align:center}
+.pcp-modal-calificacion h2{margin-top:12px}
+.pcp-modal-calificacion>p{margin:4px 0 16px}
+.pcp-rating-estrellas{display:flex;gap:7px;margin:0 0 16px;padding:0;border:0}
+.pcp-rating-estrellas legend{width:100%;margin-bottom:7px;color:#334155;font-size:12px;font-weight:700}
+.pcp-rating-estrellas button{display:grid;place-items:center;width:38px;height:38px;border:1px solid #e2e8f0;border-radius:6px;background:#fff;color:#cbd5e1;cursor:pointer}
+.pcp-rating-estrellas button.seleccionada{border-color:#f59e0b;background:#fffbeb;color:#d97706}
+.pcp-rating-estrellas button:focus-visible,.pcp-rating-acciones button:focus-visible{outline:2px solid #0f766e;outline-offset:2px}
+.pcp-rating-comentario{display:grid;gap:6px;color:#334155;font-size:12px;font-weight:700}
+.pcp-rating-comentario span{color:#64748b;font-weight:400}
+.pcp-rating-comentario textarea{width:100%;resize:vertical;padding:9px;border:1px solid #cbd5e1;border-radius:6px;color:#0f172a;font:inherit;font-weight:400}
+.pcp-rating-acciones{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+.pcp-rating-acciones button{min-height:34px;padding:7px 12px;border-radius:6px;font:inherit;font-size:11px;font-weight:700;cursor:pointer}
+.pcp-rating-cancelar{border:1px solid #cbd5e1;background:#fff;color:#475569}
 @media(min-width:700px){.pcp-profesional{grid-template-columns:30px minmax(0,1fr) 150px;align-items:start}.pcp-acciones{flex-direction:column;align-items:stretch;margin-top:0}.pcp-boton-elegir{width:100%}.pcp-link{width:100%;text-align:center}}
 @media(max-width:500px){.pcp-presupuestos-cabecera{align-items:flex-start;flex-direction:column}.pcp-orden{align-self:flex-end}}

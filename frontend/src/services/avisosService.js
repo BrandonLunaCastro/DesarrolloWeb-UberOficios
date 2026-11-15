@@ -77,6 +77,7 @@ export const avisosApi = USE_MOCK
       saldo: obtenerSaldo,
       // POST /avisos -> 201. Body (AvisoCreate): oficio, descripcion, zona (obligatorios), telefono (opcional).
       crear: (datos) => req('/avisos', { method: 'POST', body: JSON.stringify(datos) }),
+      finalizar: (idAviso) => req(`/avisos/${idAviso}/finalizar`, { method: 'POST' }),
       // GET /auth/me -> { nombre, apellido, telefono, rol: 'CLIENTE' | 'PRESTADOR', ... }
       me: obtenerMe,
     };

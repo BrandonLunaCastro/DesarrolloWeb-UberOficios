@@ -17,6 +17,7 @@ class PostulacionListItem(BaseModel):
     id_prestador: int
     id_cliente: int | None = None
     id_conversacion: int | None = None
+    id_calificacion: int | None = None
     presupuesto: Decimal
     comentario: str | None = None
     fecha_postulacion: datetime

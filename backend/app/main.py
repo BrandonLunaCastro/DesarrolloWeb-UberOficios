@@ -1,3 +1,6 @@
+import os
+from urllib.parse import urlsplit
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -8,6 +11,8 @@ from app.routes.creditos import router as creditos_router
 from app.routes.compras_creditos import router as compras_creditos_router
 from app.routes.chat import router as chat_router
 from app.routes.presupuestos import router as presupuestos_router
+from app.routes.calificaciones import router as calificaciones_router
+from app.routes.notificaciones import router as notificaciones_router
 
 
 app = FastAPI()
@@ -19,6 +24,19 @@ app.include_router(creditos_router)
 app.include_router(compras_creditos_router)
 app.include_router(chat_router)
 app.include_router(presupuestos_router)
+app.include_router(calificaciones_router)
+app.include_router(notificaciones_router)
+
+origenes_permitidos = {
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "https://uberoficios-frontend.onrender.com",
+}
+frontend_url = os.getenv("FRONTEND_URL")
+if frontend_url:
+    frontend = urlsplit(frontend_url)
+    if frontend.scheme and frontend.netloc:
+        origenes_permitidos.add(f"{frontend.scheme}://{frontend.netloc}")
 
 
 @app.get("/health")
@@ -28,11 +46,7 @@ def health_check():
 
 app = CORSMiddleware(
     app=app,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "https://uberoficios-frontend.onrender.com",
-    ],
+    allow_origins=sorted(origenes_permitidos),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

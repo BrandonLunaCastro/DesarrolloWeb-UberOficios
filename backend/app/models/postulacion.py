@@ -50,3 +50,8 @@ class Postulacion(Base):
         back_populates="postulacion",
         uselist=False,
     )
+    calificacion = relationship(
+        "Calificacion",
+        back_populates="postulacion",
+        uselist=False,
+    )

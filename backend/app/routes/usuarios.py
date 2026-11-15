@@ -1,9 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import func
+from sqlalchemy.orm import joinedload
 from sqlalchemy.orm import Session
 
 from app.auth import get_current_user
 from app.database import get_db
 from app.models.PrestadorServicio import PrestadorServicio
+from app.models.calificacion import Calificacion
 from app.models.usuario import Usuario
 from app.schemas.perfil import PerfilUpdate
 
@@ -28,6 +31,18 @@ def obtener_perfil(
         )
 
     zona = prestador.zona.strip() if prestador.zona else ""
+    calificaciones = (
+        db.query(Calificacion)
+        .options(joinedload(Calificacion.cliente))
+        .filter(Calificacion.id_prestador == prestador.id_prestador)
+        .order_by(Calificacion.fecha.desc())
+        .all()
+    )
+    promedio = (
+        db.query(func.avg(Calificacion.puntuacion))
+        .filter(Calificacion.id_prestador == prestador.id_prestador)
+        .scalar()
+    )
     return {
         "usuario": {
             "id_usuario": usuario.id_usuario,
@@ -48,9 +63,22 @@ def obtener_perfil(
         "categoria": prestador.oficio or "Oficio sin definir",
         "zonas": [{"nombre": zona}] if zona else [],
         "rating": {
-            "promedio": float(prestador.prom_calificacion or 0),
-            "total": 0,
+            "promedio": float(promedio or 0),
+            "total": len(calificaciones),
         },
+        "calificaciones": [
+            {
+                "id_calificacion": calificacion.id_calificacion,
+                "puntuacion": calificacion.puntuacion,
+                "comentario": calificacion.comentario,
+                "fecha": calificacion.fecha,
+                "cliente": {
+                    "nombre": calificacion.cliente.nombre,
+                    "apellido": calificacion.cliente.apellido,
+                },
+            }
+            for calificacion in calificaciones
+        ],
         "fotos": [],
     }
 
