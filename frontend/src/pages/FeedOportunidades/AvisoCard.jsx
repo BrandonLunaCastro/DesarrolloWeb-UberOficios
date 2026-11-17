@@ -12,6 +12,7 @@ export default function AvisoCard({ aviso, saldo, onPostular }) {
     zona,
     urgencia,
     postulados,
+    ya_postulado: yaPostulado,
     presupuesto_minimo: minimo,
     presupuesto_maximo: maximo,
     costo_creditos = COSTO_POSTULACION,
@@ -36,9 +37,13 @@ export default function AvisoCard({ aviso, saldo, onPostular }) {
         {postulados != null
           ? <span className="aviso-post"><Users size={16} /> <b>{postulados}</b> {postulados === 1 ? 'postulado' : 'postulados'}</span>
           : <span />}
-        <button className="aviso-btn" disabled={sinSaldo} title={sinSaldo ? 'No tenés créditos suficientes' : ''} onClick={() => onPostular?.(aviso)}>
-          Postularme <span className="aviso-costo">{costo_creditos}<i /></span>
-        </button>
+        {yaPostulado ? (
+          <span className="aviso-ya-postulado" role="status">Ya te postulaste</span>
+        ) : (
+          <button className="aviso-btn" disabled={sinSaldo} title={sinSaldo ? 'No tenés créditos suficientes' : ''} onClick={() => onPostular?.(aviso)}>
+            Postularme <span className="aviso-costo">{costo_creditos}<i /></span>
+          </button>
+        )}
       </footer>
     </article>
   );

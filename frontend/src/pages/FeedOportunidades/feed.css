@@ -19,6 +19,7 @@
 .aviso-rango b{color:#0f172a}
 .aviso footer{display:flex;justify-content:space-between;align-items:center;margin-top:14px;padding-top:12px;border-top:1px solid #e2e8f0}
 .aviso-post{display:flex;align-items:center;gap:6px;font-size:13px;color:#475569}.aviso-post b{color:#0f172a}
+.aviso-ya-postulado{display:inline-flex;align-items:center;padding:10px 12px;border-radius:8px;background:#dcfce7;color:#15803d;font-size:13px;font-weight:700}
 .aviso-btn{display:inline-flex;align-items:center;gap:8px;border:0;border-radius:8px;background:#dbeafe;color:#2563eb;font:700 14px inherit;padding:10px 16px;cursor:pointer}
 .aviso-btn:disabled{opacity:.5;cursor:not-allowed}
 .aviso-costo{display:inline-flex;align-items:center;gap:4px;background:#fff;border-radius:999px;padding:2px 8px;font-size:11px;color:#0f172a}

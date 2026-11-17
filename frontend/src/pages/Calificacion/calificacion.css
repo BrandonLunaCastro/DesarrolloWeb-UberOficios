@@ -1,0 +1,26 @@
+.cal-bg{position:fixed;inset:0;z-index:60;display:grid;place-items:center;padding:16px;background:#0f172a99}
+.cal{display:flex;flex-direction:column;gap:8px;width:min(440px,100%);max-height:90vh;overflow:auto;padding:20px;border-radius:12px;background:#fff;color:#0f172a;text-align:left;font-family:Inter,system-ui,sans-serif}
+.cal header{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.cal h3{margin:0;font-size:16px}
+.cal-x{display:grid;place-items:center;width:28px;height:28px;border:0;border-radius:50%;background:none;color:#475569;cursor:pointer}
+.cal form{display:flex;flex-direction:column;gap:8px}
+.cal-sub{margin:0;font-size:13px;color:#64748b;line-height:1.5}
+.cal-grupo{margin:6px 0 4px;padding:0;border:0;text-align:center}
+.cal-grupo legend{width:100%;margin-bottom:8px;padding:0;font-size:13px;font-weight:600}
+.cal-estrellas{display:flex;justify-content:center;gap:6px}
+.cal-estrella{display:grid;place-items:center;width:40px;height:40px;padding:2px;border:1px solid #e2e8f0;border-radius:8px;background:#fff;color:#cbd5e1;cursor:pointer}
+.cal-estrella.seleccionada{border-color:#f59e0b;background:#fffbeb;color:#d97706}
+.cal-estrella:hover:not(:disabled){background:#fffbeb;color:#d97706}
+.cal-etiqueta{min-height:18px;margin:6px 0 0;color:#64748b;font-size:12px}
+.cal-lbl{margin-top:4px;font-size:13px;font-weight:600}
+.cal textarea{width:100%;box-sizing:border-box;resize:vertical;padding:10px 12px;border:1px solid #cbd5e1;border-radius:8px;color:#0f172a;font:inherit;font-size:13px}
+.cal textarea:focus-visible{outline:2px solid #2563eb;outline-offset:2px}
+.cal-cont{align-self:flex-end;color:#64748b;font-size:11px}
+.cal-err{margin:0;color:#dc2626;font-size:12px}
+.cal-acc{display:flex;justify-content:flex-end;gap:8px;margin-top:4px}
+.cal-btn,.cal-sec{padding:10px 16px;border-radius:8px;font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.cal-btn{border:0;background:#2563eb;color:#fff}
+.cal-sec{border:1px solid #cbd5e1;background:#fff;color:#0f172a}
+.cal button:disabled{opacity:.55;cursor:not-allowed}
+.cal button:focus-visible{outline:2px solid #2563eb;outline-offset:2px}
+@media(max-width:420px){.cal-estrellas{gap:2px}}

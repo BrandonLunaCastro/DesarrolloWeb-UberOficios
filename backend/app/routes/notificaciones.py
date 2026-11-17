@@ -1,13 +1,39 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query, WebSocket, WebSocketDisconnect
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.async_database import get_async_db
-from app.auth import get_current_user_id
+from app.auth import get_current_user_id, get_user_id_from_token
 from app.models.notificacion import Notificacion
+from app.services.notificaciones_realtime import notification_connections
 
 
 router = APIRouter(prefix="/notificaciones", tags=["Notificaciones"])
+
+
+@router.websocket("/ws")
+async def conectar_notificaciones(
+    websocket: WebSocket,
+    token: str | None = Query(default=None),
+):
+    await websocket.accept()
+    if not token:
+        await websocket.close(code=4401, reason="Autenticación requerida")
+        return
+    try:
+        id_usuario = get_user_id_from_token(token)
+    except HTTPException:
+        await websocket.close(code=4401, reason="Token inválido")
+        return
+
+    notification_connections.connect(id_usuario, websocket)
+    try:
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        pass
+    finally:
+        notification_connections.disconnect(id_usuario, websocket)
 
 
 @router.get("")

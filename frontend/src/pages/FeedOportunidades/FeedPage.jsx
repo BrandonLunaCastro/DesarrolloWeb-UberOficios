@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Plus } from 'lucide-react';
 import { avisosApi } from '../../services/avisosService';
+import { notificacionesApi } from '../../services/notificacionesService';
 import AvisoCard from './AvisoCard';
 import PostulacionModal from './PostulacionModal';
 import './feed.css';
@@ -18,6 +19,25 @@ export default function FeedPage({ onIrAPerfil, onUnauthorized, onRecargar }) {
     avisosApi.saldo().then((s) => vivo && setSaldo(s)).catch(() => {}); // si falla, el banner muestra "—"
     return () => { vivo = false; };
   }, [intento]);
+
+  useEffect(() => {
+    let vivo = true;
+    const cancelarRealtime = notificacionesApi.suscribir((evento) => {
+      if (evento.type !== 'aviso_nuevo' && evento.type !== 'conectado') return;
+      avisosApi.listarPorZona()
+        .then((lista) => {
+          if (!vivo) return;
+          setAvisos(lista);
+          setError(null);
+        })
+        .catch((err) => {
+          if (!vivo) return;
+          if (err.status === 401) onUnauthorized?.();
+          else setError(err);
+        });
+    });
+    return () => { vivo = false; cancelarRealtime(); };
+  }, [onUnauthorized]);
 
   const reintentar = () => { setAvisos(null); setError(null); setIntento((n) => n + 1); };
   const sinZona = error?.status === 400;
@@ -58,6 +78,7 @@ export default function FeedPage({ onIrAPerfil, onUnauthorized, onRecargar }) {
     }
     avisosApi.saldo().then(setSaldo).catch(() => {});
     avisosApi.listarPorZona().then(setAvisos).catch(() => {});
+    setPostulando(null);
   };
 
   return (

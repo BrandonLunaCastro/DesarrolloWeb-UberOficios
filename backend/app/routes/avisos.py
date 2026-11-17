@@ -1,6 +1,6 @@
 import unicodedata
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session, joinedload
@@ -17,6 +17,7 @@ from app.schemas.aviso import AvisoCreate
 from app.schemas.postulacion import PostulacionCreate, PostulacionResponse
 from app.services.postulaciones import crear_postulacion
 from app.services.notificaciones import crear_notificacion
+from app.services.notificaciones_realtime import notification_connections
 
 
 router = APIRouter(prefix="/avisos", tags=["Avisos"])
@@ -72,6 +73,18 @@ def listar_avisos_por_zona(
         .order_by(Aviso.fecha_publicacion.desc())
         .all()
     )
+    ids_avisos = [aviso.id_aviso for aviso in avisos]
+    avisos_postulados = {
+        id_aviso
+        for (id_aviso,) in (
+            db.query(Postulacion.id_aviso)
+            .filter(
+                Postulacion.id_prestador == prestador.id_prestador,
+                Postulacion.id_aviso.in_(ids_avisos),
+            )
+            .all()
+        )
+    }
     resumenes = {
         id_aviso: {
             "presupuesto_minimo": minimo,
@@ -108,6 +121,7 @@ def listar_avisos_por_zona(
             "presupuesto_minimo": resumenes.get(aviso.id_aviso, {}).get("presupuesto_minimo"),
             "presupuesto_maximo": resumenes.get(aviso.id_aviso, {}).get("presupuesto_maximo"),
             "postulados": resumenes.get(aviso.id_aviso, {}).get("postulados", 0),
+            "ya_postulado": aviso.id_aviso in avisos_postulados,
         }
         for aviso in avisos
     ]
@@ -143,6 +157,7 @@ def listar_mis_avisos(
 @router.post("", status_code=201)
 def crear_aviso(
     datos: AvisoCreate,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     id_usuario: int = Depends(get_current_user_id),
 ):
@@ -177,8 +192,37 @@ def crear_aviso(
         estado=EstadoAvisoEnum.ABIERTO,
     )
     db.add(aviso)
+    db.flush()
+
+    id_usuarios_prestadores = [
+        fila[0]
+        for fila in (
+            db.query(PrestadorServicio.id_usuario)
+            .filter(
+                PrestadorServicio.zona.is_not(None),
+                func.lower(func.trim(PrestadorServicio.zona))
+                == func.lower(func.trim(aviso.ubicacion)),
+            )
+            .distinct()
+            .all()
+        )
+    ]
+    for id_usuario_prestador in id_usuarios_prestadores:
+        crear_notificacion(
+            db,
+            id_usuario=id_usuario_prestador,
+            tipo="aviso",
+            mensaje=f'Se publicó un nuevo aviso en tu zona: "{aviso.titulo}".',
+        )
+
     db.commit()
     db.refresh(aviso)
+    if id_usuarios_prestadores:
+        background_tasks.add_task(
+            notification_connections.broadcast,
+            id_usuarios_prestadores,
+            {"type": "aviso_nuevo", "id_aviso": aviso.id_aviso},
+        )
 
     return {
         "mensaje": "Solicitud de trabajo creada correctamente",

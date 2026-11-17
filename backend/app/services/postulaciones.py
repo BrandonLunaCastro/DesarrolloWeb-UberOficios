@@ -1,5 +1,5 @@
 from fastapi import HTTPException
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -12,6 +12,7 @@ from app.models.creditos import TipoTransaccionEnum
 from app.models.postulacion import Postulacion
 from app.models.usuario import Usuario
 from app.services.notificaciones import crear_notificacion
+from app.services.notificaciones_realtime import notification_connections
 from app.schemas.postulacion import PostulacionCreate, PostulacionListItem
 from app.services.creditos import registrar_transaccion
 
@@ -223,6 +224,14 @@ async def crear_postulacion(
         raise
 
     await db.refresh(postulacion)
+    await notification_connections.broadcast(
+        [aviso.id_cliente],
+        {
+            "type": "presupuesto_nuevo",
+            "id_aviso": aviso.id_aviso,
+            "id_postulacion": postulacion.id_postulacion,
+        },
+    )
     return postulacion
 
 

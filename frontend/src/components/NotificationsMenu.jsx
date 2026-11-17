@@ -3,10 +3,10 @@ import { Bell, Briefcase, ClipboardList, MessageSquare } from 'lucide-react';
 import { notificacionesApi } from '../services/notificacionesService';
 import './NotificationsMenu.css';
 
-// destino = pantalla a la que lleva (la que se pasa a onNavigate). "presupuesto" todavía no tiene pantalla.
+// destino = pantalla a la que lleva (la que se pasa a onNavigate).
 const TIPOS = {
   mensaje: { Icono: MessageSquare, color: '#d97706', destino: 'chat' },
-  presupuesto: { Icono: ClipboardList, color: '#059669' },
+  presupuesto: { Icono: ClipboardList, color: '#059669', destino: 'presupuestos' },
   aviso: { Icono: Briefcase, color: '#2563eb', destino: 'feed' },
 };
 
@@ -34,8 +34,15 @@ export default function NotificationsMenu({ onNavigate, onOpen, onUnauthorized }
         .then((l) => { if (vivo) { setLista(l); setError(null); } })
         .catch((e) => { if (!vivo) return; if (e.status === 401) onUnauthorized?.(); setError(e); });
     cargar();
+    const cancelarRealtime = notificacionesApi.suscribir((evento) => {
+      if (
+        evento.type === 'aviso_nuevo'
+        || evento.type === 'presupuesto_nuevo'
+        || evento.type === 'conectado'
+      ) cargar();
+    });
     const t = setInterval(cargar, 60000);
-    return () => { vivo = false; clearInterval(t); };
+    return () => { vivo = false; clearInterval(t); cancelarRealtime(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
