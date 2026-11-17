@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { chatApi } from '../../services/chatService';
+import { notificacionesApi } from '../../services/notificacionesService';
 import ConversationList from './ConversationList';
 import ChatWindow from './ChatWindow';
 import './chat.css';
@@ -14,11 +15,17 @@ export default function ChatPage({ conversacionInicial = null, onUnauthorized })
   useEffect(() => {
     let vivo = true;
     Promise.all([chatApi.obtenerYo(), chatApi.listarConversaciones()])
-      .then(([u, l]) => { if (vivo) { setYo(u); setConvs(l); } })
+      .then(([u, l]) => { if (vivo) { setYo(u); setConvs(l); setError(null); } })
       .catch((e) => { if (!vivo) return; if (e.status === 401) onUnauthorized?.(); setError(e); });
     return () => { vivo = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [intento]);
+
+  useEffect(() => notificacionesApi.suscribir((evento) => {
+    if (evento.type === 'mensaje_nuevo' || evento.type === 'conectado') {
+      setIntento((actual) => actual + 1);
+    }
+  }), []);
 
   const reintentar = () => { setConvs(null); setError(null); setIntento((n) => n + 1); };
 
@@ -30,7 +37,7 @@ export default function ChatPage({ conversacionInicial = null, onUnauthorized })
       return [{ ...c, ultimo: { texto: msg.texto, fecha: msg.fecha } }, ...prev.filter((x) => x.id !== idConv)];
     });
 
-  const eliminada = (idConv) => { setConvs((prev) => prev.filter((c) => c.id !== idConv)); setAbierta(null); };
+  const ocultada = (idConv) => { setConvs((prev) => prev.filter((c) => c.id !== idConv)); setAbierta(null); };
 
   const conv = convs?.find((c) => c.id === abierta);
 
@@ -38,7 +45,7 @@ export default function ChatPage({ conversacionInicial = null, onUnauthorized })
     <section className={`chat ${conv ? 'chat--abierta' : ''}`}>
       <ConversationList convs={convs} error={error} activa={abierta} onAbrir={setAbierta} onReintentar={reintentar} />
       {conv && yo ? (
-        <ChatWindow key={conv.id} conversacion={conv} yoId={yo.id} onVolver={() => setAbierta(null)} onActividad={actividad} onEliminada={eliminada} onUnauthorized={onUnauthorized} />
+        <ChatWindow key={conv.id} conversacion={conv} yoId={yo.id} onVolver={() => setAbierta(null)} onActividad={actividad} onOcultada={ocultada} onUnauthorized={onUnauthorized} />
       ) : (
         <div className="chat-panel chat-sinsel"><p>Elegí una conversación para ver los mensajes.</p></div>
       )}

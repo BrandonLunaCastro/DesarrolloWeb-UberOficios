@@ -38,6 +38,7 @@ export default function NotificationsMenu({ onNavigate, onOpen, onUnauthorized }
       if (
         evento.type === 'aviso_nuevo'
         || evento.type === 'presupuesto_nuevo'
+        || evento.type === 'mensaje_nuevo'
         || evento.type === 'conectado'
       ) cargar();
     });

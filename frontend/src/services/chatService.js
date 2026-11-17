@@ -85,7 +85,7 @@ const mock = {
     }, 1800);
     return normMsg(nuevo);
   }, 400),
-  eliminarConversacion: (id) => demora(() => {
+  ocultarConversacion: (id) => demora(() => {
     if (modo() === 'errorEliminar') fallo();
     db.conversaciones = db.conversaciones.filter((c) => c.id_conversacion !== id);
     delete db.mensajes[id];
@@ -108,7 +108,7 @@ const real = {
     method: 'POST',
     body: JSON.stringify({ contenido: texto, identificador_unico: identificadorUnico }),
   }).then(normMsg),
-  eliminarConversacion: (id) => req(`/conversaciones/${id}`, { method: 'DELETE' }),
+  ocultarConversacion: (id) => req(`/conversaciones/${id}`, { method: 'DELETE' }),
   suscribir: (id, h, lastMessageId = 0) => {
     const token = localStorage.getItem('jwt');
     let cursor = Number(lastMessageId) || 0;

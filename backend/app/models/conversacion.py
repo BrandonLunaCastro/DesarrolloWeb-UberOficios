@@ -1,4 +1,4 @@
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, UniqueConstraint, func
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, UniqueConstraint, func
 from sqlalchemy.orm import relationship
 
 from app.database import Base
@@ -41,6 +41,18 @@ class Conversacion(Base):
         nullable=False,
         server_default=func.now(),
         onupdate=func.now(),
+    )
+    oculta_para_cliente = Column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default="false",
+    )
+    oculta_para_prestador = Column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default="false",
     )
 
     cliente = relationship("Cliente", back_populates="conversaciones")

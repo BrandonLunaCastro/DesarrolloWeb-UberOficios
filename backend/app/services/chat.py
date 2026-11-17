@@ -1,5 +1,5 @@
 from fastapi import HTTPException
-from sqlalchemy import or_, select
+from sqlalchemy import and_, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -13,6 +13,7 @@ from app.models.postulacion import Postulacion
 from app.schemas.chat import MensajeCreate
 from app.models.usuario import Usuario
 from app.services.notificaciones import crear_notificacion
+from app.services.notificaciones_realtime import notification_connections
 
 
 async def listar_conversaciones(
@@ -30,9 +31,19 @@ async def listar_conversaciones(
     )
     condiciones = []
     if id_cliente is not None:
-        condiciones.append(Conversacion.id_cliente == id_cliente)
+        condiciones.append(
+            and_(
+                Conversacion.id_cliente == id_cliente,
+                Conversacion.oculta_para_cliente.is_(False),
+            )
+        )
     if id_prestador is not None:
-        condiciones.append(Conversacion.id_prestador == id_prestador)
+        condiciones.append(
+            and_(
+                Conversacion.id_prestador == id_prestador,
+                Conversacion.oculta_para_prestador.is_(False),
+            )
+        )
     if not condiciones:
         return []
 
@@ -133,6 +144,37 @@ async def _obtener_conversacion_participante(
     )
 
 
+async def ocultar_conversacion(
+    db: AsyncSession,
+    *,
+    id_conversacion: int,
+    id_usuario: int,
+) -> None:
+    conversacion = await _obtener_conversacion_participante(
+        db,
+        id_conversacion=id_conversacion,
+        id_usuario=id_usuario,
+    )
+    id_cliente = await db.scalar(
+        select(Cliente.id_cliente).where(Cliente.id_usuario == id_usuario)
+    )
+    if id_cliente == conversacion.id_cliente:
+        conversacion.oculta_para_cliente = True
+    else:
+        id_prestador = await db.scalar(
+            select(PrestadorServicio.id_prestador).where(
+                PrestadorServicio.id_usuario == id_usuario
+            )
+        )
+        if id_prestador != conversacion.id_prestador:
+            raise HTTPException(
+                status_code=403,
+                detail="No tenés permiso para eliminar esta conversación",
+            )
+        conversacion.oculta_para_prestador = True
+    await db.commit()
+
+
 async def crear_mensaje(
     db: AsyncSession,
     *,
@@ -167,6 +209,10 @@ async def crear_mensaje(
         if id_usuario_cliente == id_usuario
         else id_usuario_cliente
     )
+    if id_destinatario is not None and id_destinatario == id_usuario_cliente:
+        conversacion.oculta_para_cliente = False
+    elif id_destinatario is not None and id_destinatario == id_usuario_prestador:
+        conversacion.oculta_para_prestador = False
     remitente = await db.get(Usuario, id_usuario)
     if id_destinatario is not None and remitente is not None:
         nombre_remitente = " ".join(
@@ -198,6 +244,14 @@ async def crear_mensaje(
             )
         return mensaje_existente, False
     await db.refresh(mensaje)
+    if id_destinatario is not None:
+        await notification_connections.broadcast(
+            [id_destinatario],
+            {
+                "type": "mensaje_nuevo",
+                "id_conversacion": id_conversacion,
+            },
+        )
     return mensaje, True
 
 

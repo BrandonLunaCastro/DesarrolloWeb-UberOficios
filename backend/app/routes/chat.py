@@ -15,6 +15,7 @@ from app.schemas.chat import MensajeCreate, MensajeResponse
 from app.services.chat import (
     _obtener_conversacion_participante,
     crear_mensaje,
+    ocultar_conversacion,
     listar_conversaciones,
     obtener_historial_mensajes,
 )
@@ -30,6 +31,20 @@ async def consultar_conversaciones(
     id_usuario: int = Depends(get_current_user_id),
 ):
     return await listar_conversaciones(db, id_usuario=id_usuario)
+
+
+@router.delete("/{id_conversacion}")
+async def desactivar_conversacion(
+    id_conversacion: int,
+    db: AsyncSession = Depends(get_async_db),
+    id_usuario: int = Depends(get_current_user_id),
+):
+    await ocultar_conversacion(
+        db,
+        id_conversacion=id_conversacion,
+        id_usuario=id_usuario,
+    )
+    return {"desactivada": True}
 
 
 @router.post(

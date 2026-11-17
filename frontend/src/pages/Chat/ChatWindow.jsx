@@ -4,7 +4,7 @@ import { chatApi } from '../../services/chatService';
 import MessageBubble from './MessageBubble';
 import { etiquetaDia, iniciales } from './utils';
 
-export default function ChatWindow({ conversacion, yoId, onVolver, onActividad, onEliminada, onUnauthorized }) {
+export default function ChatWindow({ conversacion, yoId, onVolver, onActividad, onOcultada, onUnauthorized }) {
   const id = conversacion.id;
   const [mensajes, setMensajes] = useState(null); // null = cargando
   const [error, setError] = useState(null);
@@ -13,8 +13,8 @@ export default function ChatWindow({ conversacion, yoId, onVolver, onActividad, 
   const [intento, setIntento] = useState(0);
   const lista = useRef(null);
   const [confirmando, setConfirmando] = useState(false);
-  const [eliminando, setEliminando] = useState(false);
-  const [errorEliminar, setErrorEliminar] = useState('');
+  const [ocultando, setOcultando] = useState(false);
+  const [errorOcultar, setErrorOcultar] = useState('');
 
   useEffect(() => {
     let vivo = true;
@@ -75,16 +75,16 @@ export default function ChatWindow({ conversacion, yoId, onVolver, onActividad, 
     }
   }
 
-  async function eliminar() {
-    setEliminando(true);
-    setErrorEliminar('');
+  async function ocultar() {
+    setOcultando(true);
+    setErrorOcultar('');
     try {
-      await chatApi.eliminarConversacion(id);
-      onEliminada?.(id);
+      await chatApi.ocultarConversacion(id);
+      onOcultada?.(id);
     } catch (e) {
       if (e.status === 401) onUnauthorized?.();
-      setErrorEliminar(e.message);
-      setEliminando(false);
+      setErrorOcultar(e.message);
+      setOcultando(false);
     }
   }
 
@@ -108,7 +108,7 @@ export default function ChatWindow({ conversacion, yoId, onVolver, onActividad, 
           <small>{conversacion.oficio}</small>
         </div>
         {conversacion.estado === 'en_proceso' && <span className="chat-badge">En proceso</span>}
-        <button className="chat-icono" onClick={() => { setErrorEliminar(''); setConfirmando(true); }} aria-label="Eliminar conversación"><Trash2 size={16} /></button>
+        <button className="chat-icono" onClick={() => { setErrorOcultar(''); setConfirmando(true); }} aria-label="Desactivar conversación"><Trash2 size={16} /></button>
       </header>
       <p className="chat-nota"><Info size={13} /> Acordá el precio y los detalles por acá. El pago no se realiza por este medio.</p>
 
@@ -148,14 +148,14 @@ export default function ChatWindow({ conversacion, yoId, onVolver, onActividad, 
       </form>
 
       {confirmando && (
-        <div className="chat-confirm-bg" role="alertdialog" aria-modal="true" aria-labelledby="ce-t" onClick={() => !eliminando && setConfirmando(false)}>
+        <div className="chat-confirm-bg" role="alertdialog" aria-modal="true" aria-labelledby="ce-t" onClick={() => !ocultando && setConfirmando(false)}>
           <div className="chat-confirm" onClick={(e) => e.stopPropagation()}>
-            <h3 id="ce-t">¿Eliminar esta conversación?</h3>
-            <p>Se va a borrar el chat con {conversacion.otro.nombre}. Esta acción no se puede deshacer.</p>
-            {errorEliminar && <p className="chat-err" role="alert">{errorEliminar}</p>}
+            <h3 id="ce-t">¿Desactivar esta conversación?</h3>
+            <p>Se ocultará de tu lista, pero {conversacion.otro.nombre} conservará el chat. Si recibís un mensaje nuevo, volverá a aparecer.</p>
+            {errorOcultar && <p className="chat-err" role="alert">{errorOcultar}</p>}
             <div className="chat-confirm-acc">
-              <button className="chat-btn-sec" onClick={() => setConfirmando(false)} disabled={eliminando}>Cancelar</button>
-              <button className="chat-btn chat-btn-peligro" onClick={eliminar} disabled={eliminando}>{eliminando ? 'Eliminando…' : 'Eliminar'}</button>
+              <button className="chat-btn-sec" onClick={() => setConfirmando(false)} disabled={ocultando}>Cancelar</button>
+              <button className="chat-btn chat-btn-peligro" onClick={ocultar} disabled={ocultando}>{ocultando ? 'Desactivando…' : 'Desactivar'}</button>
             </div>
           </div>
         </div>
