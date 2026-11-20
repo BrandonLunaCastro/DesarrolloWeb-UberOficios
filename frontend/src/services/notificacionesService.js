@@ -87,7 +87,14 @@ async function req(path, init = {}) {
 }
 
 // Adaptador: único lugar que conoce los nombres de campos del back.
-const norm = (n) => ({ id: n.id_notificacion, tipo: n.tipo, texto: n.mensaje, fecha: n.fecha_creacion, leida: n.leida });
+const norm = (n) => ({
+  id: n.id_notificacion,
+  idPostulacion: n.id_postulacion,
+  tipo: n.tipo,
+  texto: n.mensaje,
+  fecha: n.fecha_creacion,
+  leida: n.leida,
+});
 
 // ---------- MOCK ----------
 const hace = (min) => new Date(Date.now() - min * 60000).toISOString();

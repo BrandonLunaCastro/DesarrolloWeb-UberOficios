@@ -111,6 +111,20 @@ export default function PerfilPage() {
                   </div>
                   <Estrellas valor={c.puntuacion} size={13} />
                   {c.comentario && <p>{c.comentario}</p>}
+                  {c.url_comprobante && (
+                    <a
+                      className="opinion-comprobante"
+                      href={c.url_comprobante}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <img
+                        src={c.url_comprobante}
+                        alt="Foto comprobante del trabajo"
+                        loading="lazy"
+                      />
+                    </a>
+                  )}
                 </li>
               ))}
             </ul>

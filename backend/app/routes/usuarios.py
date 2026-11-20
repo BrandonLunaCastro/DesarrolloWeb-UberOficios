@@ -71,6 +71,7 @@ def obtener_perfil(
                 "id_calificacion": calificacion.id_calificacion,
                 "puntuacion": calificacion.puntuacion,
                 "comentario": calificacion.comentario,
+                "url_comprobante": calificacion.url_comprobante,
                 "fecha": calificacion.fecha,
                 "cliente": {
                     "nombre": calificacion.cliente.nombre,

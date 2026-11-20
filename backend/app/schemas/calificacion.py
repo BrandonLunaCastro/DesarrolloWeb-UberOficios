@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class CalificacionCreate(BaseModel):
@@ -10,9 +10,12 @@ class CalificacionCreate(BaseModel):
 
 
 class CalificacionResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id_calificacion: int
     id_postulacion: int
     id_prestador: int
     puntuacion: int
     comentario: str | None
+    url_comprobante: str | None
     fecha: datetime

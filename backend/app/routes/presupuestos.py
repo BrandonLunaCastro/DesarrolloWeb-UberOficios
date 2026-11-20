@@ -12,14 +12,41 @@ from app.models.usuario import Usuario
 from app.schemas.postulacion import (
     AceptarPostulacionResponse,
     PostulacionListItem,
+    PostulacionPresupuestoUpdate,
+    PostulacionResponse,
 )
 from app.services.postulaciones import (
     aceptar_postulacion,
+    actualizar_presupuesto,
     listar_postulaciones_por_cliente,
     listar_postulaciones_por_prestador,
 )
 
 router = APIRouter(tags=["Presupuestos"])
+
+
+@router.put(
+    "/presupuestos/{id_postulacion}/presupuesto",
+    response_model=PostulacionResponse,
+)
+async def editar_presupuesto(
+    id_postulacion: int,
+    datos: PostulacionPresupuestoUpdate,
+    db: AsyncSession = Depends(get_async_db),
+    usuario_actual: Usuario = Depends(get_current_user),
+):
+    if (usuario_actual.rol.nombre or "").strip().upper() != "PRESTADOR":
+        raise HTTPException(
+            status_code=403,
+            detail="Solo un prestador puede modificar su presupuesto",
+        )
+
+    return await actualizar_presupuesto(
+        db,
+        id_postulacion=id_postulacion,
+        id_usuario=usuario_actual.id_usuario,
+        presupuesto=datos.presupuesto,
+    )
 
 
 @router.post(

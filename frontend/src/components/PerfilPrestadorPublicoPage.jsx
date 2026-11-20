@@ -117,6 +117,17 @@ export default function PerfilPrestadorPublicoPage({ idPrestador, onVolver }) {
                         <Estrellas valor={calificacion.puntuacion} />
                       </div>
                       {calificacion.comentario && <p>{calificacion.comentario}</p>}
+                      {calificacion.url_comprobante && (
+                        <a
+                          className="perfil-publico-comprobante"
+                          href={calificacion.url_comprobante}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          <img src={calificacion.url_comprobante} alt="Foto comprobante del trabajo" />
+                          <span>Ver foto comprobante</span>
+                        </a>
+                      )}
                     </li>
                   ))}
                 </ul>

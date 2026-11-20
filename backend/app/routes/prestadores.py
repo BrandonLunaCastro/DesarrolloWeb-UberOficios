@@ -17,41 +17,17 @@ from app.services.portfolio_storage import (
     delete_portfolio_image,
     upload_portfolio_image,
 )
+from app.services.image_validation import (
+    MAX_IMAGE_SIZE_BYTES,
+    ImageValidationError,
+    validar_imagen,
+)
 
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/prestadores", tags=["Prestadores"])
 
 MAX_FOTOS_POR_SUBIDA = 12
-MAX_BYTES_POR_FOTO = 5 * 1024 * 1024
-FIRMAS_IMAGEN = {
-    "image/jpeg": lambda data: data.startswith(b"\xff\xd8\xff"),
-    "image/png": lambda data: data.startswith(b"\x89PNG\r\n\x1a\n"),
-    "image/webp": lambda data: (
-        len(data) >= 12 and data[:4] == b"RIFF" and data[8:12] == b"WEBP"
-    ),
-}
-
-
-def _validar_imagen(archivo: UploadFile, contenido: bytes) -> None:
-    if not contenido:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"{archivo.filename or 'Archivo'}: la imagen está vacía.",
-        )
-    valida_firma = FIRMAS_IMAGEN.get(archivo.content_type or "")
-    if valida_firma is None or not valida_firma(contenido):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"{archivo.filename or 'Archivo'}: solo se permiten imágenes JPG, PNG o WebP válidas.",
-        )
-    if len(contenido) > MAX_BYTES_POR_FOTO:
-        raise HTTPException(
-            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail=f"{archivo.filename or 'Archivo'}: supera el límite de 5 MB.",
-        )
-
-
 def _obtener_prestador(db: Session, id_usuario: int) -> PrestadorServicio:
     prestador = (
         db.query(PrestadorServicio)
@@ -127,6 +103,7 @@ def obtener_perfil_publico_prestador(
                 "id_calificacion": calificacion.id_calificacion,
                 "puntuacion": calificacion.puntuacion,
                 "comentario": calificacion.comentario,
+                "url_comprobante": calificacion.url_comprobante,
                 "fecha": calificacion.fecha,
                 "cliente": {
                     "nombre": calificacion.cliente.nombre,
@@ -181,8 +158,18 @@ def subir_fotos_portafolio(
     prestador = _obtener_prestador(db, id_usuario)
     contenidos = []
     for archivo in fotos:
-        contenido = archivo.file.read(MAX_BYTES_POR_FOTO + 1)
-        _validar_imagen(archivo, contenido)
+        contenido = archivo.file.read(MAX_IMAGE_SIZE_BYTES + 1)
+        try:
+            validar_imagen(
+                contenido,
+                archivo.content_type,
+                archivo.filename or "Archivo",
+            )
+        except ImageValidationError as error:
+            raise HTTPException(
+                status_code=error.status_code,
+                detail=error.detail,
+            ) from error
         contenidos.append(contenido)
 
     registros = []

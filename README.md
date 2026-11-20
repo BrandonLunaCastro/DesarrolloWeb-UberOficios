@@ -219,9 +219,10 @@ CLOUDINARY_API_SECRET=TU_API_SECRET
 ```
 
 > No subir el archivo `.env` a GitHub.
-> Para habilitar el portafolio, configurar las tres variables de Cloudinary en
-> el `.env` local y en el entorno del backend desplegado. Aplicar las migraciones
-> con `alembic upgrade head` desde `backend`. Las claves de Cloudinary deben
+> Para habilitar el portafolio y las fotos comprobantes de calificación,
+> configurar las tres variables de Cloudinary en el `.env` local y en el
+> entorno del backend desplegado. Aplicar las migraciones con
+> `alembic upgrade head` desde `backend`. Las claves de Cloudinary deben
 > permanecer solo en el backend.
 
 ## Portafolio de fotos del prestador
@@ -235,6 +236,18 @@ imágenes se guardan en Cloudinary y su URL e identificador se conservan en
 Los clientes autenticados pueden consultar `GET /prestadores/{id_prestador}/perfil`
 para revisar la información pública, fotos de trabajos y calificaciones de un
 prestador.
+
+## Vigencia de avisos y calificaciones
+
+Los avisos permanecen abiertos durante 72 horas desde su publicación; las
+postulaciones no tienen cupo máximo. Al vencer, dejan de aceptar postulaciones,
+presupuestos y cambios de importe. El prestador puede cambiar su importe vigente
+sin límite de veces mientras el aviso siga abierto y su propuesta esté pendiente.
+
+Al finalizar un trabajo, el panel principal del cliente muestra una calificación
+pendiente hasta que envíe su puntuación de 1 a 5 estrellas. El comentario y la
+foto comprobante son opcionales; las fotos comprobantes se guardan en Cloudinary
+y se muestran públicamente junto a la opinión del prestador.
 > Para iniciar compras y confirmar pagos hay que configurar las credenciales de
 > Mercado Pago, la URL pública del webhook y la URL de retorno del frontend.
 > Aplicar las migraciones desde `backend` con `alembic upgrade head`; la migración
