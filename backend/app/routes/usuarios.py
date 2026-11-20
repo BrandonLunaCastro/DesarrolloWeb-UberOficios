@@ -71,6 +71,7 @@ def obtener_perfil(
                 "id_calificacion": calificacion.id_calificacion,
                 "puntuacion": calificacion.puntuacion,
                 "comentario": calificacion.comentario,
+                "url_comprobante": calificacion.url_comprobante,
                 "fecha": calificacion.fecha,
                 "cliente": {
                     "nombre": calificacion.cliente.nombre,
@@ -79,7 +80,14 @@ def obtener_perfil(
             }
             for calificacion in calificaciones
         ],
-        "fotos": [],
+        "fotos": [
+            {
+                "id_foto": foto.id_foto,
+                "url_imagen": foto.url_imagen,
+                "descripcion": foto.descripcion,
+            }
+            for foto in prestador.fotos_portafolio
+        ],
     }
 
 

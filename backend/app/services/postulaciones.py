@@ -1,10 +1,12 @@
+from decimal import Decimal
+
 from fastapi import HTTPException
 from sqlalchemy import select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models.Aviso import Aviso
+from app.models.Aviso import Aviso, EstadoAvisoEnum
 from app.models.Cliente import Cliente
 from app.models.PrestadorServicio import PrestadorServicio
 from app.models.conversacion import Conversacion
@@ -15,6 +17,10 @@ from app.services.notificaciones import crear_notificacion
 from app.services.notificaciones_realtime import notification_connections
 from app.schemas.postulacion import PostulacionCreate, PostulacionListItem
 from app.services.creditos import registrar_transaccion
+from app.services.vencimiento_avisos import (
+    aviso_vencido,
+    expirar_avisos_vencidos_async,
+)
 
 
 COSTO_POSTULACION = 1
@@ -25,6 +31,7 @@ async def listar_postulaciones_por_prestador(
     *,
     id_prestador: int,
 ) -> list[PostulacionListItem]:
+    await expirar_avisos_vencidos_async(db)
     prestador = await db.scalar(
         select(PrestadorServicio)
         .where(PrestadorServicio.id_prestador == id_prestador)
@@ -77,6 +84,7 @@ async def listar_postulaciones_por_prestador(
                 nombre_cliente=cliente.nombre if cliente else None,
                 apellido_cliente=cliente.apellido if cliente else None,
                 zona_aviso=aviso.ubicacion if aviso else None,
+                estado_aviso=aviso.estado.value if aviso else None,
             )
         )
     return items
@@ -87,6 +95,7 @@ async def listar_postulaciones_por_cliente(
     *,
     id_cliente: int,
 ) -> list[PostulacionListItem]:
+    await expirar_avisos_vencidos_async(db)
     cliente = await db.get(Usuario, id_cliente)
     if cliente is None:
         raise HTTPException(status_code=404, detail="Cliente no encontrado")
@@ -137,6 +146,7 @@ async def listar_postulaciones_por_cliente(
                 nombre_cliente=cliente.nombre if cliente else None,
                 apellido_cliente=cliente.apellido if cliente else None,
                 zona_aviso=aviso.ubicacion if aviso else None,
+                estado_aviso=aviso.estado.value if aviso else None,
             )
         )
     return items
@@ -156,6 +166,15 @@ async def crear_postulacion(
     )
     if aviso is None:
         raise HTTPException(status_code=404, detail="Aviso no encontrado")
+    if aviso.estado == EstadoAvisoEnum.ABIERTO and aviso_vencido(
+        aviso.fecha_publicacion
+    ):
+        aviso.estado = EstadoAvisoEnum.EXPIRADO
+        await db.commit()
+        raise HTTPException(
+            status_code=410,
+            detail="El aviso venció: solo se aceptan postulaciones durante 72 horas.",
+        )
     if (aviso.estado or "").strip().upper() != "ABIERTO":
         raise HTTPException(status_code=400, detail="El aviso no está abierto")
 
@@ -235,6 +254,77 @@ async def crear_postulacion(
     return postulacion
 
 
+async def actualizar_presupuesto(
+    db: AsyncSession,
+    *,
+    id_postulacion: int,
+    id_usuario: int,
+    presupuesto: Decimal,
+) -> Postulacion:
+    postulacion_inicial = await db.scalar(
+        select(Postulacion).where(Postulacion.id_postulacion == id_postulacion)
+    )
+    if postulacion_inicial is None:
+        raise HTTPException(status_code=404, detail="Presupuesto no encontrado")
+
+    aviso = await db.scalar(
+        select(Aviso)
+        .where(Aviso.id_aviso == postulacion_inicial.id_aviso)
+        .with_for_update()
+    )
+    if aviso is None:
+        raise HTTPException(status_code=404, detail="Aviso no encontrado")
+    postulacion = await db.scalar(
+        select(Postulacion)
+        .where(Postulacion.id_postulacion == id_postulacion)
+        .with_for_update()
+    )
+    if postulacion is None:
+        raise HTTPException(status_code=404, detail="Presupuesto no encontrado")
+    prestador = await db.scalar(
+        select(PrestadorServicio).where(
+            PrestadorServicio.id_prestador == postulacion.id_prestador
+        )
+    )
+    if prestador is None or prestador.id_usuario != id_usuario:
+        raise HTTPException(
+            status_code=403,
+            detail="No tienes permiso para modificar este presupuesto.",
+        )
+    if aviso.estado == EstadoAvisoEnum.ABIERTO and aviso_vencido(
+        aviso.fecha_publicacion
+    ):
+        aviso.estado = EstadoAvisoEnum.EXPIRADO
+        await db.commit()
+        raise HTTPException(
+            status_code=409,
+            detail="El aviso venció; ya no puedes modificar el presupuesto.",
+        )
+    if aviso.estado != EstadoAvisoEnum.ABIERTO:
+        raise HTTPException(
+            status_code=409,
+            detail="Solo puedes modificar el presupuesto mientras el aviso esté abierto.",
+        )
+    if postulacion.estado != "PENDIENTE":
+        raise HTTPException(
+            status_code=409,
+            detail="Solo puedes modificar una propuesta pendiente.",
+        )
+
+    postulacion.presupuesto = presupuesto
+    await db.commit()
+    await db.refresh(postulacion)
+    await notification_connections.broadcast(
+        [aviso.id_cliente],
+        {
+            "type": "presupuesto_actualizado",
+            "id_aviso": aviso.id_aviso,
+            "id_postulacion": postulacion.id_postulacion,
+        },
+    )
+    return postulacion
+
+
 async def aceptar_postulacion(
     db: AsyncSession,
     *,
@@ -259,6 +349,15 @@ async def aceptar_postulacion(
         raise HTTPException(
             status_code=403,
             detail="No tenés permiso para aceptar presupuestos de este aviso",
+        )
+    if aviso.estado == EstadoAvisoEnum.ABIERTO and aviso_vencido(
+        aviso.fecha_publicacion
+    ):
+        aviso.estado = EstadoAvisoEnum.EXPIRADO
+        await db.commit()
+        raise HTTPException(
+            status_code=409,
+            detail="El aviso venció; ya no se pueden aceptar presupuestos.",
         )
 
     postulacion = await db.scalar(

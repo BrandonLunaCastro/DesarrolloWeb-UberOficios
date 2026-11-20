@@ -7,9 +7,11 @@ def crear_notificacion(
     id_usuario: int,
     tipo: str,
     mensaje: str,
+    id_postulacion: int | None = None,
 ) -> Notificacion:
     notificacion = Notificacion(
         id_usuario=id_usuario,
+        id_postulacion=id_postulacion,
         tipo=tipo,
         mensaje=mensaje,
     )

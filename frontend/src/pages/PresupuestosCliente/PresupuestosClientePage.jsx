@@ -3,6 +3,8 @@ import { Check, ChevronDown, Clock3, MapPin, Star, X } from 'lucide-react';
 import { avisosApi } from '../../services/avisosService';
 import { notificacionesApi } from '../../services/notificacionesService';
 import { presupuestosApi } from '../../services/presupuestosService';
+import PerfilPrestadorPublicoPage from '../../components/PerfilPrestadorPublicoPage';
+import CalificacionModal from '../Calificacion/CalificacionModal';
 import '../Calificacion/calificacion.css';
 import './presupuestosCliente.css';
 
@@ -43,6 +45,7 @@ function agruparPresupuestos(avisos, postulaciones) {
         .join(' ') || 'Prestador';
       return {
         id: postulacion.id_postulacion,
+        idPrestador: postulacion.id_prestador,
         idConversacion: postulacion.id_conversacion,
         idCalificacion: postulacion.id_calificacion,
         nombre,
@@ -81,6 +84,7 @@ const formatoPrecio = (precio) => `$ ${precio.toLocaleString('es-AR')}`;
 function PresupuestoCard({
   aviso,
   onVerDetalle,
+  onVerPerfil,
   onAceptar,
   onAbrirChat,
   onFinalizar,
@@ -99,6 +103,11 @@ function PresupuestoCard({
   const visibles = mostrarTodos ? ordenados : ordenados.slice(0, 5);
   const elegido = aviso.profesionales.find((propuesta) => propuesta.id === aviso.profesionalElegido);
   const avisoActivo = aviso.estadoAviso === 'ABIERTO';
+  const etiquetaEstado = aviso.estadoAviso === 'FINALIZADO'
+    ? 'Completado'
+    : aviso.estadoAviso === 'EXPIRADO'
+      ? 'Expirado'
+      : elegido ? 'Aceptado' : avisoActivo ? 'Activa' : aviso.estadoAviso;
 
   return (
     <article className="pcp-aviso">
@@ -108,7 +117,7 @@ function PresupuestoCard({
           <h3>{aviso.titulo}</h3>
         </div>
         <span className={`pcp-estado ${aviso.estadoAviso === 'FINALIZADO' ? 'finalizado' : elegido ? 'aceptado' : avisoActivo ? 'por-elegir' : 'cerrado'}`}>
-          {aviso.estadoAviso === 'FINALIZADO' ? 'Finalizado' : elegido ? 'Aceptado' : avisoActivo ? 'Activa' : aviso.estadoAviso}
+          {etiquetaEstado}
         </span>
       </div>
       <p className="pcp-descripcion">{aviso.descripcion}</p>
@@ -140,10 +149,17 @@ function PresupuestoCard({
           <div className="pcp-lista">
             {visibles.map((propuesta) => (
               <article className="pcp-profesional" key={propuesta.id}>
-                <span className="pcp-avatar">{propuesta.iniciales}</span>
                 <div className="pcp-profesional-info">
                   <div className="pcp-nombre-fila">
-                    <b>{propuesta.nombre}</b>
+                    <button
+                      type="button"
+                      className="pcp-identidad-perfil"
+                      aria-label={`Ver perfil de ${propuesta.nombre}`}
+                      onClick={() => onVerPerfil(propuesta.idPrestador)}
+                    >
+                      <span className="pcp-avatar">{propuesta.iniciales}</span>
+                      <b>{propuesta.nombre}</b>
+                    </button>
                     <span className="pcp-oficio">{propuesta.oficio}</span>
                     {propuesta.id === aviso.profesionalElegido && (
                       <span className="pcp-propuesta-aceptada"><Check size={12} /> Aceptada</span>
@@ -229,66 +245,6 @@ function PresupuestoCard({
   );
 }
 
-function CalificacionModal({ aviso, propuesta, enviando, error, onEnviar, onCerrar }) {
-  const [puntuacion, setPuntuacion] = useState(0);
-  const [comentario, setComentario] = useState('');
-
-  const enviar = (event) => {
-    event.preventDefault();
-    onEnviar({ puntuacion, comentario: comentario.trim() });
-  };
-
-  return (
-    <div className="cal-bg" onMouseDown={(event) => event.target === event.currentTarget && onCerrar()}>
-      <section className="cal" role="dialog" aria-modal="true" aria-labelledby="cal-t">
-        <header>
-          <h3 id="cal-t">Calificar a {propuesta.nombre}</h3>
-          <button type="button" className="cal-x" aria-label="Cerrar calificación" onClick={onCerrar}>
-            <X size={18} />
-          </button>
-        </header>
-        <p className="cal-sub">{aviso.titulo}</p>
-        <form onSubmit={enviar} noValidate>
-          <fieldset className="cal-grupo">
-            <legend>Tu calificación</legend>
-            <div className="cal-estrellas">
-              {[1, 2, 3, 4, 5].map((valor) => (
-                <button
-                  key={valor}
-                  type="button"
-                  className={`cal-estrella${puntuacion >= valor ? ' seleccionada' : ''}`}
-                  aria-label={`${valor} ${valor === 1 ? 'estrella' : 'estrellas'}`}
-                  aria-pressed={puntuacion === valor}
-                  onClick={() => setPuntuacion(valor)}
-                >
-                  <Star size={30} fill={puntuacion >= valor ? 'currentColor' : 'none'} />
-                </button>
-              ))}
-            </div>
-            <p className="cal-etiqueta">Elegí una puntuación de 1 a 5</p>
-          </fieldset>
-          <label htmlFor="cal-comentario" className="cal-lbl">Comentario (opcional)</label>
-          <textarea
-            id="cal-comentario"
-            rows={4}
-            maxLength={2000}
-            value={comentario}
-            onChange={(event) => setComentario(event.target.value)}
-          />
-          <div className="cal-cont">{comentario.length}/2000</div>
-          {error && <p className="cal-err" role="alert">{error}</p>}
-          <div className="cal-acc">
-            <button type="button" className="cal-sec" onClick={onCerrar}>Cancelar</button>
-            <button className="cal-btn" disabled={!puntuacion || enviando}>
-              {enviando ? 'Enviando…' : 'Enviar calificación'}
-            </button>
-          </div>
-        </form>
-      </section>
-    </div>
-  );
-}
-
 export default function PresupuestosClientePage({ usuario, onUnauthorized, onIrAChat }) {
   const [avisos, setAvisos] = useState(null);
   const [filtro, setFiltro] = useState('todos');
@@ -302,6 +258,7 @@ export default function PresupuestosClientePage({ usuario, onUnauthorized, onIrA
   const [calificando, setCalificando] = useState(null);
   const [enviandoCalificacion, setEnviandoCalificacion] = useState(false);
   const [errorCalificacion, setErrorCalificacion] = useState('');
+  const [idPerfilPrestador, setIdPerfilPrestador] = useState(null);
 
   useEffect(() => {
     if (!usuario?.id_usuario) return undefined;
@@ -329,7 +286,12 @@ export default function PresupuestosClientePage({ usuario, onUnauthorized, onIrA
 
   useEffect(() => {
     const cancelarRealtime = notificacionesApi.suscribir((evento) => {
-      if (evento.type === 'presupuesto_nuevo' || evento.type === 'conectado') {
+      if (
+        evento.type === 'presupuesto_nuevo'
+        || evento.type === 'presupuesto_actualizado'
+        || evento.type === 'calificacion_pendiente_nueva'
+        || evento.type === 'conectado'
+      ) {
         setIntento((actual) => actual + 1);
       }
     });
@@ -345,6 +307,16 @@ export default function PresupuestosClientePage({ usuario, onUnauthorized, onIrA
     filtro === 'todos'
     || (filtro === 'aceptados' ? Boolean(aviso.profesionalElegido) : !aviso.profesionalElegido)
   ));
+
+  if (idPerfilPrestador !== null) {
+    return (
+      <PerfilPrestadorPublicoPage
+        key={idPerfilPrestador}
+        idPrestador={idPerfilPrestador}
+        onVolver={() => setIdPerfilPrestador(null)}
+      />
+    );
+  }
 
   const aceptar = async (propuesta) => {
     setAceptandoId(propuesta.id);
@@ -387,11 +359,15 @@ export default function PresupuestosClientePage({ usuario, onUnauthorized, onIrA
     }
   };
 
-  const calificar = async ({ puntuacion, comentario }) => {
+  const calificar = async ({ puntuacion, comentario, fotoComprobante }) => {
     setEnviandoCalificacion(true);
     setErrorCalificacion('');
     try {
-      await presupuestosApi.calificar(calificando.propuesta.id, { puntuacion, comentario });
+      await presupuestosApi.calificar(calificando.propuesta.id, {
+        puntuacion,
+        comentario,
+        fotoComprobante,
+      });
       setCalificando(null);
       setIntento((actual) => actual + 1);
     } catch (err) {
@@ -452,6 +428,7 @@ export default function PresupuestosClientePage({ usuario, onUnauthorized, onIrA
               key={aviso.id}
               aviso={aviso}
               onAceptar={aceptar}
+              onVerPerfil={setIdPerfilPrestador}
               onAbrirChat={onIrAChat}
               onFinalizar={finalizar}
               onCalificar={(aviso, propuesta) => {

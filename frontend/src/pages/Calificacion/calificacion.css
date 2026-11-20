@@ -16,6 +16,9 @@
 .cal textarea{width:100%;box-sizing:border-box;resize:vertical;padding:10px 12px;border:1px solid #cbd5e1;border-radius:8px;color:#0f172a;font:inherit;font-size:13px}
 .cal textarea:focus-visible{outline:2px solid #2563eb;outline-offset:2px}
 .cal-cont{align-self:flex-end;color:#64748b;font-size:11px}
+.cal-foto-input{width:100%;font:inherit;font-size:12px;color:#475569}
+.cal-foto-preview{display:flex;align-items:center;gap:12px}
+.cal-foto-preview img{width:96px;height:72px;object-fit:cover;border-radius:8px;border:1px solid #e2e8f0}
 .cal-err{margin:0;color:#dc2626;font-size:12px}
 .cal-acc{display:flex;justify-content:flex-end;gap:8px;margin-top:4px}
 .cal-btn,.cal-sec{padding:10px 16px;border-radius:8px;font:inherit;font-size:13px;font-weight:600;cursor:pointer}

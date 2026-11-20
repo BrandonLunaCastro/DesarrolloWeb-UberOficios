@@ -30,6 +30,11 @@ class PostulacionListItem(BaseModel):
     nombre_cliente: str | None = None
     apellido_cliente: str | None = None
     zona_aviso: str | None = None
+    estado_aviso: str | None = None
+
+
+class PostulacionPresupuestoUpdate(BaseModel):
+    presupuesto: Decimal = Field(gt=0, max_digits=12, decimal_places=2)
 
 
 class PostulacionResponse(BaseModel):

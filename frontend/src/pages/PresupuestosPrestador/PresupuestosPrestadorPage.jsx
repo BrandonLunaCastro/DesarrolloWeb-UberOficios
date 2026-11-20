@@ -34,6 +34,7 @@ function transformarPostulacion(postulacion) {
 
   return {
     id: postulacion.id_postulacion,
+    idAviso: postulacion.id_aviso,
     oficio: postulacion.oficio_prestador || 'Servicio',
     titulo: postulacion.titulo_aviso || 'Aviso',
     cliente,
@@ -43,6 +44,7 @@ function transformarPostulacion(postulacion) {
     presupuesto: Number(postulacion.presupuesto),
     estado: normalizarEstado(postulacion.estado),
     estadoOriginal: postulacion.estado,
+    estadoAviso: String(postulacion.estado_aviso || '').toUpperCase(),
     enviado: fechaLegible(postulacion.fecha_postulacion),
   };
 }
@@ -71,17 +73,67 @@ function PresupuestoModal({ presupuesto, onCerrar }) {
   );
 }
 
-function EstadoPresupuesto({ estado, estadoOriginal }) {
+function EstadoPresupuesto({ estado, estadoOriginal, estadoAviso }) {
   const labels = {
-    pendiente: 'Pendiente de respuesta',
+    pendiente: estadoAviso === 'EXPIRADO'
+      ? 'Aviso expirado'
+      : estadoAviso && estadoAviso !== 'ABIERTO' ? 'Aviso cerrado' : 'Pendiente de respuesta',
     aceptado: 'Aceptado',
     'no-seleccionado': 'No seleccionado',
     otro: estadoOriginal || 'Estado desconocido',
   };
-  return <span className={`pp-estado ${estado}`}>{labels[estado]}</span>;
+  const clase = estado === 'pendiente' && estadoAviso && estadoAviso !== 'ABIERTO'
+    ? 'aviso-cerrado'
+    : estado;
+  return <span className={`pp-estado ${clase}`}>{labels[estado]}</span>;
 }
 
-function PresupuestoCard({ presupuesto, onVer }) {
+function EditarPresupuestoModal({ presupuesto, guardando, error, onGuardar, onCerrar }) {
+  const [monto, setMonto] = useState(String(presupuesto.presupuesto));
+
+  const guardar = (event) => {
+    event.preventDefault();
+    const valor = Number(monto);
+    if (Number.isFinite(valor) && valor > 0) onGuardar(valor);
+  };
+
+  return (
+    <div className="pp-modal-fondo" onMouseDown={(event) => event.target === event.currentTarget && onCerrar()}>
+      <section className="pp-modal" role="dialog" aria-modal="true" aria-labelledby="pp-editar-titulo">
+        <button type="button" className="pp-cerrar" aria-label="Cerrar" onClick={onCerrar}><X size={18} /></button>
+        <span className="pp-kicker">EDITAR PROPUESTA</span>
+        <h2 id="pp-editar-titulo">{presupuesto.titulo}</h2>
+        <p>El cliente verá el importe vigente de tu presupuesto.</p>
+        <form className="pp-editar-form" onSubmit={guardar}>
+          <label htmlFor="pp-nuevo-presupuesto">Nuevo importe</label>
+          <input
+            id="pp-nuevo-presupuesto"
+            type="number"
+            min="0.01"
+            step="0.01"
+            required
+            value={monto}
+            onChange={(event) => setMonto(event.target.value)}
+            disabled={guardando}
+          />
+          {error && <p className="pp-error-edicion" role="alert">{error}</p>}
+          <div className="pp-modal-acciones">
+            <button type="button" className="pp-btn-secundario" onClick={onCerrar} disabled={guardando}>
+              Cancelar
+            </button>
+            <button type="submit" className="pp-btn-primario" disabled={guardando}>
+              {guardando ? 'Guardando…' : 'Guardar importe'}
+            </button>
+          </div>
+        </form>
+      </section>
+    </div>
+  );
+}
+
+function PresupuestoCard({ presupuesto, onVer, onEditar }) {
+  const puedeEditar = presupuesto.estado === 'pendiente' && presupuesto.estadoAviso === 'ABIERTO';
+
   return (
     <article className={`pp-card ${presupuesto.estado === 'aceptado' ? 'aceptado' : ''}`}>
       <div className="pp-card-cabecera">
@@ -90,7 +142,11 @@ function PresupuestoCard({ presupuesto, onVer }) {
           <h3>{presupuesto.titulo}</h3>
         </div>
         <div className="pp-card-precio">
-          <EstadoPresupuesto estado={presupuesto.estado} estadoOriginal={presupuesto.estadoOriginal} />
+          <EstadoPresupuesto
+            estado={presupuesto.estado}
+            estadoOriginal={presupuesto.estadoOriginal}
+            estadoAviso={presupuesto.estadoAviso}
+          />
           <strong>{formatearPrecio(presupuesto.presupuesto)}</strong>
         </div>
       </div>
@@ -103,6 +159,11 @@ function PresupuestoCard({ presupuesto, onVer }) {
       <div className="pp-card-pie">
         <div className="pp-fechas"><span>Enviado {presupuesto.enviado}</span></div>
         <div className="pp-acciones">
+          {puedeEditar && (
+            <button type="button" className="pp-btn-secundario" onClick={() => onEditar(presupuesto)}>
+              Editar importe
+            </button>
+          )}
           <button type="button" className="pp-btn-secundario" onClick={() => onVer(presupuesto)}>
             Ver presupuesto
           </button>
@@ -117,6 +178,9 @@ export default function PresupuestosPrestadorPage({ onUnauthorized }) {
   const [saldo, setSaldo] = useState(null);
   const [filtro, setFiltro] = useState('todos');
   const [detalle, setDetalle] = useState(null);
+  const [edicion, setEdicion] = useState(null);
+  const [guardandoEdicion, setGuardandoEdicion] = useState(false);
+  const [errorEdicion, setErrorEdicion] = useState('');
   const [errorPresupuestos, setErrorPresupuestos] = useState('');
   const [errorSaldo, setErrorSaldo] = useState('');
   const [intento, setIntento] = useState(0);
@@ -176,6 +240,26 @@ export default function PresupuestosPrestadorPage({ onUnauthorized }) {
     setIntento((actual) => actual + 1);
   };
 
+  const guardarPresupuesto = async (monto) => {
+    setGuardandoEdicion(true);
+    setErrorEdicion('');
+    try {
+      await presupuestosApi.actualizarPresupuesto(edicion.id, monto);
+      setPresupuestos((items) => items.map((item) => (
+        item.id === edicion.id ? { ...item, presupuesto: monto } : item
+      )));
+      setEdicion(null);
+    } catch (error) {
+      if (error.status === 401) {
+        onUnauthorized?.();
+        return;
+      }
+      setErrorEdicion(error.message);
+    } finally {
+      setGuardandoEdicion(false);
+    }
+  };
+
   return (
     <section className="pp">
       <header className="pp-titulo">
@@ -229,6 +313,10 @@ export default function PresupuestosPrestadorPage({ onUnauthorized }) {
               key={presupuesto.id}
               presupuesto={presupuesto}
               onVer={setDetalle}
+              onEditar={(item) => {
+                setErrorEdicion('');
+                setEdicion(item);
+              }}
             />
           )) : (
             <p className="pp-vacio">
@@ -241,6 +329,15 @@ export default function PresupuestosPrestadorPage({ onUnauthorized }) {
       )}
 
       {detalle && <PresupuestoModal presupuesto={detalle} onCerrar={() => setDetalle(null)} />}
+      {edicion && (
+        <EditarPresupuestoModal
+          presupuesto={edicion}
+          guardando={guardandoEdicion}
+          error={errorEdicion}
+          onGuardar={guardarPresupuesto}
+          onCerrar={() => setEdicion(null)}
+        />
+      )}
     </section>
   );
 }

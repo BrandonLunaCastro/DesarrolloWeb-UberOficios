@@ -13,6 +13,7 @@ from app.routes.chat import router as chat_router
 from app.routes.presupuestos import router as presupuestos_router
 from app.routes.calificaciones import router as calificaciones_router
 from app.routes.notificaciones import router as notificaciones_router
+from app.routes.prestadores import router as prestadores_router
 
 
 app = FastAPI()
@@ -26,6 +27,7 @@ app.include_router(chat_router)
 app.include_router(presupuestos_router)
 app.include_router(calificaciones_router)
 app.include_router(notificaciones_router)
+app.include_router(prestadores_router)
 
 origenes_permitidos = {
     "http://localhost:5173",

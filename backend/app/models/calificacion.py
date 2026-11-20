@@ -4,6 +4,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Integer,
+    String,
     Text,
     UniqueConstraint,
     func,
@@ -38,6 +39,8 @@ class Calificacion(Base):
     )
     puntuacion = Column(Integer, nullable=False)
     comentario = Column(Text, nullable=True)
+    url_comprobante = Column(String(2048), nullable=True)
+    public_id_comprobante = Column(String(255), nullable=True)
     fecha = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
     cliente = relationship("Usuario")

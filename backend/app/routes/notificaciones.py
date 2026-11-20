@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.async_database import get_async_db
 from app.auth import get_current_user_id, get_user_id_from_token
+from app.models.calificacion import Calificacion
 from app.models.notificacion import Notificacion
 from app.services.notificaciones_realtime import notification_connections
 
@@ -59,6 +60,7 @@ async def marcar_todas_leidas(
         .where(
             Notificacion.id_usuario == id_usuario,
             Notificacion.leida.is_(False),
+            Notificacion.tipo != "calificacion_pendiente",
         )
         .values(leida=True)
     )
@@ -80,6 +82,18 @@ async def marcar_notificacion_leida(
     )
     if notificacion is None:
         raise HTTPException(status_code=404, detail="Notificación no encontrada")
+
+    if notificacion.tipo == "calificacion_pendiente":
+        calificacion = await db.scalar(
+            select(Calificacion.id_calificacion).where(
+                Calificacion.id_postulacion == notificacion.id_postulacion
+            )
+        )
+        if calificacion is None:
+            raise HTTPException(
+                status_code=409,
+                detail="La notificación permanece pendiente hasta que califiques el trabajo.",
+            )
 
     notificacion.leida = True
     await db.commit()

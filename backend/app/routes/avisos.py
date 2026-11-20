@@ -18,6 +18,7 @@ from app.schemas.postulacion import PostulacionCreate, PostulacionResponse
 from app.services.postulaciones import crear_postulacion
 from app.services.notificaciones import crear_notificacion
 from app.services.notificaciones_realtime import notification_connections
+from app.services.vencimiento_avisos import expirar_avisos_vencidos
 
 
 router = APIRouter(prefix="/avisos", tags=["Avisos"])
@@ -45,6 +46,7 @@ def listar_avisos_por_zona(
     db: Session = Depends(get_db),
     id_usuario: int = Depends(get_current_user_id),
 ):
+    expirar_avisos_vencidos(db)
     prestador = (
         db.query(PrestadorServicio)
         .filter(PrestadorServicio.id_usuario == id_usuario)
@@ -86,16 +88,10 @@ def listar_avisos_por_zona(
         )
     }
     resumenes = {
-        id_aviso: {
-            "presupuesto_minimo": minimo,
-            "presupuesto_maximo": maximo,
-            "postulados": cantidad,
-        }
-        for id_aviso, minimo, maximo, cantidad in (
+        id_aviso: {"postulados": cantidad}
+        for id_aviso, cantidad in (
             db.query(
                 Postulacion.id_aviso,
-                func.min(Postulacion.presupuesto),
-                func.max(Postulacion.presupuesto),
                 func.count(Postulacion.id_postulacion),
             )
             .join(Aviso, Aviso.id_aviso == Postulacion.id_aviso)
@@ -118,8 +114,6 @@ def listar_avisos_por_zona(
             "telefono": aviso.cliente.telefono,
             "estado": aviso.estado.value.lower(),
             "fecha_creacion": aviso.fecha_publicacion,
-            "presupuesto_minimo": resumenes.get(aviso.id_aviso, {}).get("presupuesto_minimo"),
-            "presupuesto_maximo": resumenes.get(aviso.id_aviso, {}).get("presupuesto_maximo"),
             "postulados": resumenes.get(aviso.id_aviso, {}).get("postulados", 0),
             "ya_postulado": aviso.id_aviso in avisos_postulados,
         }
@@ -132,6 +126,7 @@ def listar_mis_avisos(
     db: Session = Depends(get_db),
     id_usuario: int = Depends(get_current_user_id),
 ):
+    expirar_avisos_vencidos(db)
     avisos = (
         db.query(Aviso)
         .options(joinedload(Aviso.categoria))
@@ -295,6 +290,13 @@ async def finalizar_aviso(
 
     aviso.estado = EstadoAvisoEnum.FINALIZADO
     prestador = await db.get(PrestadorServicio, postulacion_aceptada.id_prestador)
+    crear_notificacion(
+        db,
+        id_usuario=usuario.id_usuario,
+        id_postulacion=postulacion_aceptada.id_postulacion,
+        tipo="calificacion_pendiente",
+        mensaje=f"Calificá el trabajo realizado para «{aviso.titulo}».",
+    )
     if prestador is not None:
         crear_notificacion(
             db,
@@ -303,4 +305,12 @@ async def finalizar_aviso(
             mensaje=f'El cliente finalizó el trabajo "{aviso.titulo}".',
         )
     await db.commit()
+    await notification_connections.broadcast(
+        [usuario.id_usuario],
+        {
+            "type": "calificacion_pendiente_nueva",
+            "id_aviso": aviso.id_aviso,
+            "id_postulacion": postulacion_aceptada.id_postulacion,
+        },
+    )
     return {"id_aviso": aviso.id_aviso, "estado": aviso.estado.value}

@@ -3,6 +3,7 @@ import { chatApi } from '../../services/chatService';
 import { notificacionesApi } from '../../services/notificacionesService';
 import ConversationList from './ConversationList';
 import ChatWindow from './ChatWindow';
+import PerfilPrestadorPublicoPage from '../../components/PerfilPrestadorPublicoPage';
 import './chat.css';
 
 export default function ChatPage({ conversacionInicial = null, onUnauthorized }) {
@@ -11,6 +12,7 @@ export default function ChatPage({ conversacionInicial = null, onUnauthorized })
   const [error, setError] = useState(null);
   const [abierta, setAbierta] = useState(conversacionInicial);
   const [intento, setIntento] = useState(0);
+  const [idPerfilPrestador, setIdPerfilPrestador] = useState(null);
 
   useEffect(() => {
     let vivo = true;
@@ -41,11 +43,21 @@ export default function ChatPage({ conversacionInicial = null, onUnauthorized })
 
   const conv = convs?.find((c) => c.id === abierta);
 
+  if (idPerfilPrestador !== null) {
+    return (
+      <PerfilPrestadorPublicoPage
+        key={idPerfilPrestador}
+        idPrestador={idPerfilPrestador}
+        onVolver={() => setIdPerfilPrestador(null)}
+      />
+    );
+  }
+
   return (
     <section className={`chat ${conv ? 'chat--abierta' : ''}`}>
       <ConversationList convs={convs} error={error} activa={abierta} onAbrir={setAbierta} onReintentar={reintentar} />
       {conv && yo ? (
-        <ChatWindow key={conv.id} conversacion={conv} yoId={yo.id} onVolver={() => setAbierta(null)} onActividad={actividad} onOcultada={ocultada} onUnauthorized={onUnauthorized} />
+        <ChatWindow key={conv.id} conversacion={conv} yoId={yo.id} onVolver={() => setAbierta(null)} onActividad={actividad} onOcultada={ocultada} onUnauthorized={onUnauthorized} onVerPerfil={setIdPerfilPrestador} />
       ) : (
         <div className="chat-panel chat-sinsel"><p>Elegí una conversación para ver los mensajes.</p></div>
       )}

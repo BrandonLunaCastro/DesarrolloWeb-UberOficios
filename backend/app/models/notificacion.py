@@ -15,6 +15,12 @@ class Notificacion(Base):
         ForeignKey("usuario.id_usuario", ondelete="CASCADE"),
         nullable=False,
     )
+    id_postulacion = Column(
+        Integer,
+        ForeignKey("postulacion.id_postulacion", ondelete="CASCADE"),
+        nullable=True,
+        index=True,
+    )
     tipo = Column(String(30), nullable=False)
     mensaje = Column(Text, nullable=False)
     fecha_creacion = Column(

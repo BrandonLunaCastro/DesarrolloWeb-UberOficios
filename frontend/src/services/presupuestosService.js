@@ -25,6 +25,19 @@ async function aceptarPresupuesto(idPostulacion) {
   return enviarPost(`/presupuestos/${idPostulacion}/aceptar`);
 }
 
+async function actualizarPresupuesto(idPostulacion, presupuesto) {
+  const token = localStorage.getItem('jwt');
+  const response = await fetch(`${API_URL}/presupuestos/${idPostulacion}/presupuesto`, {
+    method: 'PUT',
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ presupuesto }),
+  });
+  return leerRespuesta(response);
+}
+
 async function enviarPost(endpoint, body) {
   const token = localStorage.getItem('jwt');
   const response = await fetch(`${API_URL}${endpoint}`, {
@@ -35,6 +48,10 @@ async function enviarPost(endpoint, body) {
     },
     body: body ? JSON.stringify(body) : undefined,
   });
+  return leerRespuesta(response);
+}
+
+async function leerRespuesta(response) {
   const data = await response.json().catch(() => null);
 
   if (!response.ok) {
@@ -50,12 +67,28 @@ async function enviarPost(endpoint, body) {
   return data;
 }
 
+async function calificar(idPostulacion, datos) {
+  const token = localStorage.getItem('jwt');
+  const formulario = new FormData();
+  formulario.set('id_postulacion', idPostulacion);
+  formulario.set('puntuacion', datos.puntuacion);
+  formulario.set('comentario', datos.comentario || '');
+  if (datos.fotoComprobante) {
+    formulario.set('foto_comprobante', datos.fotoComprobante);
+  }
+  const response = await fetch(`${API_URL}/calificaciones`, {
+    method: 'POST',
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: formulario,
+  });
+  return leerRespuesta(response);
+}
+
 export const presupuestosApi = {
   listarParaCliente: (idCliente) => request(`/clientes/${idCliente}/presupuestos`),
   listarParaPrestador: (idPrestador) => request(`/prestadores/${idPrestador}/presupuestos`),
+  listarCalificacionesPendientes: () => request('/calificaciones/pendientes'),
   aceptar: aceptarPresupuesto,
-  calificar: (idPostulacion, datos) => enviarPost('/calificaciones', {
-    id_postulacion: idPostulacion,
-    ...datos,
-  }),
+  actualizarPresupuesto,
+  calificar,
 };

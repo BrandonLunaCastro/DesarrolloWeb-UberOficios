@@ -29,6 +29,7 @@
 .pp-estado.pendiente{background:#fff7ed;color:#c2410c}
 .pp-estado.aceptado{background:#ecfdf5;color:#059669}
 .pp-estado.no-seleccionado{background:#f1f5f9;color:#64748b}
+.pp-estado.aviso-cerrado{background:#f1f5f9;color:#64748b}
 .pp-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;color:#64748b;font-size:9px}
 .pp-meta span{display:inline-flex;align-items:center;gap:4px}
 .pp-meta svg{flex:none}
@@ -63,4 +64,10 @@
 .pp-contacto{display:flex;align-items:center;gap:8px;margin:16px 0!important;padding:12px;border-radius:8px;background:#eff6ff;color:#1d4ed8!important;font-size:13px!important;font-weight:600}
 .pp-modal .pp-aviso-demo{color:#64748b;font-size:9px}
 .pp-modal-aviso{align-self:center}
+.pp-editar-form{display:flex;flex-direction:column;gap:8px;margin-top:14px;font-size:12px}
+.pp-editar-form label{font-weight:600}
+.pp-editar-form input{padding:10px;border:1px solid #cbd5e1;border-radius:7px;font:inherit}
+.pp-editar-form input:focus-visible{outline:2px solid #2563eb;outline-offset:2px}
+.pp-editar-form button:disabled{opacity:.55;cursor:not-allowed}
+.pp-error-edicion{margin:0;color:#dc2626;font-size:11px}
 @media(max-width:520px){.pp-card-pie{align-items:flex-start;flex-direction:column}.pp-acciones{align-self:flex-end}.pp-card-cabecera{gap:7px}.pp-estado{max-width:118px;white-space:normal;text-align:center}}

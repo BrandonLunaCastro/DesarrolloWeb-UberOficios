@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Bell, Briefcase, ClipboardList, MessageSquare } from 'lucide-react';
+import { Bell, Briefcase, ClipboardList, MessageSquare, Star } from 'lucide-react';
 import { notificacionesApi } from '../services/notificacionesService';
 import './NotificationsMenu.css';
 
@@ -8,6 +8,7 @@ const TIPOS = {
   mensaje: { Icono: MessageSquare, color: '#d97706', destino: 'chat' },
   presupuesto: { Icono: ClipboardList, color: '#059669', destino: 'presupuestos' },
   aviso: { Icono: Briefcase, color: '#2563eb', destino: 'feed' },
+  calificacion_pendiente: { Icono: Star, color: '#d97706', destino: 'inicioCliente' },
 };
 
 function hace(iso) {
@@ -39,6 +40,8 @@ export default function NotificationsMenu({ onNavigate, onOpen, onUnauthorized }
         evento.type === 'aviso_nuevo'
         || evento.type === 'presupuesto_nuevo'
         || evento.type === 'mensaje_nuevo'
+        || evento.type === 'calificacion_pendiente_nueva'
+        || evento.type === 'calificacion_completada'
         || evento.type === 'conectado'
       ) cargar();
     });
@@ -60,11 +63,13 @@ export default function NotificationsMenu({ onNavigate, onOpen, onUnauthorized }
   const alternar = () => { if (!abierto) onOpen?.(); setAbierto(!abierto); };
   const reintentar = () => { setError(null); notificacionesApi.listar().then(setLista).catch(setError); };
   const marcarTodas = () => {
-    setLista((p) => p.map((n) => ({ ...n, leida: true })));
+    setLista((p) => p.map((n) => (
+      n.tipo === 'calificacion_pendiente' ? n : { ...n, leida: true }
+    )));
     notificacionesApi.marcarTodasLeidas().catch(() => {});
   };
   const abrirNotificacion = (n) => {
-    if (!n.leida) {
+    if (!n.leida && n.tipo !== 'calificacion_pendiente') {
       setLista((p) => p.map((x) => (x.id === n.id ? { ...x, leida: true } : x)));
       notificacionesApi.marcarLeida(n.id).catch(() => {});
     }

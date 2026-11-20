@@ -12,6 +12,7 @@ class EstadoAvisoEnum(str, enum.Enum):
     EN_PROCESO = "EN_PROCESO"
     CANCELADO = "CANCELADO"
     FINALIZADO = "FINALIZADO"
+    EXPIRADO = "EXPIRADO"
 
 
 class Aviso(Base):
