@@ -10,6 +10,7 @@ from app.models import (
     Cliente,
     CompraCredito,
     Conversacion,
+    FotoPortafolio,
     Mensaje,
     Notificacion,
     PaqueteCredito,

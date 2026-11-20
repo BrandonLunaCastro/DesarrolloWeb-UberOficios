@@ -64,3 +64,9 @@ class PrestadorServicio(Base):
         uselist=False,
         cascade="all, delete-orphan",
     )
+    fotos_portafolio = relationship(
+        "FotoPortafolio",
+        back_populates="prestador",
+        cascade="all, delete-orphan",
+        order_by="FotoPortafolio.id_foto",
+    )

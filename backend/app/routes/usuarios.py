@@ -79,7 +79,14 @@ def obtener_perfil(
             }
             for calificacion in calificaciones
         ],
-        "fotos": [],
+        "fotos": [
+            {
+                "id_foto": foto.id_foto,
+                "url_imagen": foto.url_imagen,
+                "descripcion": foto.descripcion,
+            }
+            for foto in prestador.fotos_portafolio
+        ],
     }
 
 
