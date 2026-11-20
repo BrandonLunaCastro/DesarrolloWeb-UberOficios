@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Calendar, MapPin, Pencil, Star } from 'lucide-react';
+import { Calendar, ImagePlus, MapPin, Pencil, Star, Trash2 } from 'lucide-react';
 import { perfilApi } from '../../services/perfilService';
 import EditarPerfilModal from './EditarPerfilModal';
 import CompraCreditos from './CompraCreditos';
+import PortfolioUploader from './PortfolioUploader';
 import './perfil.css';
 
 const iniciales = (n = '', a = '') => `${n[0] ?? ''}${a[0] ?? ''}`.toUpperCase();
@@ -28,6 +29,8 @@ export default function PerfilPage() {
   const [perfil, setPerfil] = useState(null);
   const [error, setError] = useState('');
   const [modal, setModal] = useState(null);
+  const [errorFoto, setErrorFoto] = useState('');
+  const [fotoEliminando, setFotoEliminando] = useState(null);
 
   useEffect(() => {
     const cargar = () => perfilApi.obtener().then(setPerfil).catch((e) => setError(e.message));
@@ -45,6 +48,23 @@ export default function PerfilPage() {
   const calificaciones = perfil.calificaciones ?? [];
   const rating = perfil.rating ?? { promedio: 0, total: calificaciones.length };
   const hayOpiniones = rating.total > 0;
+  const fotos = perfil.fotos ?? [];
+
+  async function eliminarFoto(idFoto) {
+    setFotoEliminando(idFoto);
+    setErrorFoto('');
+    try {
+      await perfilApi.borrarFoto(idFoto);
+      setPerfil((actual) => ({
+        ...actual,
+        fotos: (actual.fotos ?? []).filter((foto) => foto.id_foto !== idFoto),
+      }));
+    } catch (e) {
+      setErrorFoto(e instanceof Error ? e.message : 'No se pudo eliminar la foto.');
+    } finally {
+      setFotoEliminando(null);
+    }
+  }
 
   return (
     <article className="perfil-card">
@@ -98,13 +118,47 @@ export default function PerfilPage() {
         </section>
 
         <section className="fotos">
-          <div className="row"><h2>Fotos de trabajos</h2></div>
-          <p className="vacio">La carga de fotos de trabajos todavía no está disponible.</p>
+          <div className="row">
+            <h2>Fotos de trabajos</h2>
+            <button className="btn sm" onClick={() => setModal('fotos')}>
+              <ImagePlus size={14} /> Agregar fotos
+            </button>
+          </div>
+          {errorFoto && <p className="err" role="alert">{errorFoto}</p>}
+          {fotos.length === 0 ? (
+            <p className="vacio">Todavía no agregaste fotos de tus trabajos.</p>
+          ) : (
+            <div className="grid">
+              {fotos.map((foto) => (
+                <figure key={foto.id_foto}>
+                  <img src={foto.url_imagen} alt={foto.descripcion || 'Trabajo realizado'} />
+                  <button
+                    className="foto-eliminar"
+                    aria-label={`Eliminar foto ${foto.descripcion || 'del portafolio'}`}
+                    title="Eliminar foto"
+                    disabled={fotoEliminando === foto.id_foto}
+                    onClick={() => eliminarFoto(foto.id_foto)}
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </figure>
+              ))}
+            </div>
+          )}
         </section>
         <CompraCreditos />
       </div>
 
       {modal === 'editar' && <EditarPerfilModal perfil={perfil} onClose={() => setModal(null)} onSaved={setPerfil} />}
+      {modal === 'fotos' && (
+        <PortfolioUploader
+          onClose={() => setModal(null)}
+          onUploaded={(nuevas) => setPerfil((actual) => ({
+            ...actual,
+            fotos: [...nuevas, ...(actual.fotos ?? [])],
+          }))}
+        />
+      )}
     </article>
   );
 }

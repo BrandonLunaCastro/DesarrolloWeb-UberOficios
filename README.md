@@ -213,9 +213,24 @@ MERCADOPAGO_ACCESS_TOKEN=TOKEN_PRIVADO_DE_MERCADO_PAGO
 MERCADOPAGO_WEBHOOK_SECRET=SECRETO_DE_FIRMA_DEL_WEBHOOK
 MERCADOPAGO_WEBHOOK_URL=https://URL_PUBLICA_DEL_BACKEND/creditos/pagos/webhook
 FRONTEND_URL=https://URL_PUBLICA_DEL_FRONTEND
+CLOUDINARY_CLOUD_NAME=TU_CLOUD_NAME
+CLOUDINARY_API_KEY=TU_API_KEY
+CLOUDINARY_API_SECRET=TU_API_SECRET
 ```
 
 > No subir el archivo `.env` a GitHub.
+> Para habilitar el portafolio, configurar las tres variables de Cloudinary en
+> el `.env` local y en el entorno del backend desplegado. Aplicar las migraciones
+> con `alembic upgrade head` desde `backend`. Las claves de Cloudinary deben
+> permanecer solo en el backend.
+
+## Portafolio de fotos del prestador
+
+El endpoint autenticado `POST /prestadores/me/fotos` recibe uno o varios
+archivos en el campo `fotos` (JPG, PNG o WebP; hasta 5 MB por archivo y 12 por
+envío). `DELETE /prestadores/me/fotos/{id_foto}` elimina una foto propia. Las
+imágenes se guardan en Cloudinary y su URL e identificador se conservan en
+`foto_portafolio`.
 > Para iniciar compras y confirmar pagos hay que configurar las credenciales de
 > Mercado Pago, la URL pública del webhook y la URL de retorno del frontend.
 > Aplicar las migraciones desde `backend` con `alembic upgrade head`; la migración
