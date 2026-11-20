@@ -27,12 +27,8 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [token, setToken] = useState(localStorage.getItem('jwt') || '');
-<<<<<<< Updated upstream
   const compraIdRetorno = new URLSearchParams(window.location.search).get('compra_id');
-=======
-    
->>>>>>> Stashed changes
-
+  
   const [pantalla, setPantalla] = useState(() =>
     compraIdRetorno
       ? 'creditos'
