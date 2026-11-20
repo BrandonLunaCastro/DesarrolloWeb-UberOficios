@@ -25,3 +25,7 @@
 button.lay-me{background:none;border:0;padding:0;cursor:pointer;font:inherit;color:inherit;text-align:left;width:100%}
 button.lay-me:hover b{text-decoration:underline}
 button.lay-me:focus-visible{outline:2px solid #2563eb;outline-offset:2px;border-radius:6px}
+.lay-av-edit{position:relative;display:grid;flex:none;padding:0;border:0;border-radius:50%;background:none;cursor:pointer}
+.lay-av-edit:focus-visible{outline:2px solid #2563eb;outline-offset:2px}
+.lay-lapiz{position:absolute;right:-3px;bottom:-3px;display:grid;place-items:center;width:20px;height:20px;border-radius:50%;background:#fff;color:#0f172a;border:1px solid #cbd5e1;box-shadow:0 1px 2px #0f172a33;transition:background .15s,border-color .15s,color .15s}
+.lay-av-edit:hover .lay-lapiz{background:#eff6ff;border-color:#2563eb;color:#2563eb}

@@ -14,13 +14,16 @@ const mesAnio = (iso) => {
 /**
  * Pantalla "Cliente - perfil" (Figma).
  *  - Vista: portada, avatar, nombre, datos personales y "¿Qué necesitás hoy?".
- *  - La zona se elige al publicar cada solicitud; solo el teléfono se guarda en el usuario.
+ *  - Se pueden editar nombre, apellido y teléfono. El correo no: es el dato con el que se inicia sesión.
+ *  - La zona se elige al publicar cada solicitud.
+ *  - onActualizado?.({ nombre, apellido }) permite que el layout refresque el nombre del menú.
+ *  - abrirEdicion: abre la pantalla directamente en modo edición (lápiz del menú del avatar).
  */
-export default function PerfilClientePage({ onUnauthorized }) {
+export default function PerfilClientePage({ onUnauthorized, onActualizado, abrirEdicion = false }) {
   const [perfil, setPerfil] = useState(null);   // GET /auth/me
-  const [form, setForm] = useState({ telefono: '' });
-  const [inicial, setInicial] = useState({ telefono: '' }); // último valor guardado
-  const [editando, setEditando] = useState(false);
+  const [form, setForm] = useState({ nombre: '', apellido: '', telefono: '' });
+  const [inicial, setInicial] = useState({ nombre: '', apellido: '', telefono: '' }); // último valor guardado
+  const [editando, setEditando] = useState(abrirEdicion); // true si se llegó desde el lápiz del menú
   const [errorCarga, setErrorCarga] = useState('');
   const [errores, setErrores] = useState({});
   const [guardando, setGuardando] = useState(false);
@@ -35,7 +38,7 @@ export default function PerfilClientePage({ onUnauthorized }) {
       .then((p) => {
         if (!vivo) return;
         setPerfil(p);
-        const v = { telefono: p.telefono ?? '' };
+        const v = { nombre: p.nombre ?? '', apellido: p.apellido ?? '', telefono: p.telefono ?? '' };
         setForm(v); setInicial(v); setErrorCarga('');
       })
       .catch((e) => {
@@ -53,7 +56,9 @@ export default function PerfilClientePage({ onUnauthorized }) {
     setMensaje(null);
   };
 
-  const hayCambios = form.telefono !== inicial.telefono;
+  const hayCambios = form.nombre.trim() !== inicial.nombre
+    || form.apellido.trim() !== inicial.apellido
+    || form.telefono !== inicial.telefono;
 
   const cancelar = () => { setForm(inicial); setErrores({}); setMensaje(null); setEditando(false); };
 
@@ -61,11 +66,15 @@ export default function PerfilClientePage({ onUnauthorized }) {
     e.preventDefault();
     if (guardando || !hayCambios) return;
     const x = {};
+    if (!form.nombre.trim()) x.nombre = 'Ingresá tu nombre.';
+    if (!form.apellido.trim()) x.apellido = 'Ingresá tu apellido.';
     if (form.telefono.trim() && !/^[\d\s()+-]{6,20}$/.test(form.telefono.trim())) x.telefono = 'Ingresá un teléfono válido.';
     setErrores(x);
     if (Object.keys(x).length) return;
 
     const body = {}; // el back actualiza únicamente los campos que recibe
+    if (form.nombre.trim() !== inicial.nombre) body.nombre = form.nombre.trim();
+    if (form.apellido.trim() !== inicial.apellido) body.apellido = form.apellido.trim();
     if (form.telefono !== inicial.telefono) body.telefono = form.telefono.trim() || null;
 
     setGuardando(true);
@@ -73,10 +82,22 @@ export default function PerfilClientePage({ onUnauthorized }) {
     try {
       const r = await clienteApi.actualizar(body);
       const c = r?.cliente ?? r?.prestador ?? {};
-      const v = { telefono: c.telefono ?? form.telefono.trim() };
+      // Nombre y apellido: se muestra lo que el back realmente guardó. Si la respuesta no trae `usuario`,
+      // se vuelve a pedir el perfil para no mostrar un cambio que el back ignoró.
+      let u = r?.usuario ?? null;
+      if (!u && ('nombre' in body || 'apellido' in body)) {
+        try { u = await clienteApi.obtener(); } catch { u = null; }
+      }
+      const v = {
+        nombre: u?.nombre ?? perfil.nombre ?? '',
+        apellido: u?.apellido ?? perfil.apellido ?? '',
+        telefono: c.telefono ?? form.telefono.trim(),
+      };
+      setPerfil((p) => ({ ...p, nombre: v.nombre, apellido: v.apellido, telefono: v.telefono }));
       setForm(v); setInicial(v);
       setEditando(false);
       setMensaje({ tipo: 'ok', texto: 'Cambios guardados correctamente.' });
+      onActualizado?.({ nombre: v.nombre, apellido: v.apellido });
     } catch (err) {
       if (err.status === 401) { localStorage.removeItem('jwt'); onUnauthorized?.(); return; }
       setMensaje({ tipo: 'error', texto: err.message });
@@ -129,8 +150,18 @@ export default function PerfilClientePage({ onUnauthorized }) {
           <div className="pc-card">
             <h3><User size={15} /> Información Personal</h3>
             <div className="pc-grid">
-              <div className="pc-field"><label htmlFor="pc-nombre">Nombre</label><input id="pc-nombre" value={perfil.nombre ?? ''} readOnly /></div>
-              <div className="pc-field"><label htmlFor="pc-apellido">Apellido</label><input id="pc-apellido" value={perfil.apellido ?? ''} readOnly /></div>
+              <div className="pc-field">
+                <label htmlFor="pc-nombre">Nombre</label>
+                <input id="pc-nombre" value={form.nombre} onChange={set('nombre')} maxLength={100} autoComplete="given-name"
+                  disabled={guardando} aria-invalid={!!errores.nombre} autoFocus />
+                {errores.nombre && <span className="pc-err">{errores.nombre}</span>}
+              </div>
+              <div className="pc-field">
+                <label htmlFor="pc-apellido">Apellido</label>
+                <input id="pc-apellido" value={form.apellido} onChange={set('apellido')} maxLength={100} autoComplete="family-name"
+                  disabled={guardando} aria-invalid={!!errores.apellido} />
+                {errores.apellido && <span className="pc-err">{errores.apellido}</span>}
+              </div>
               <div className="pc-field pc-full"><label htmlFor="pc-email">Correo electrónico</label><input id="pc-email" value={perfil.email ?? ''} readOnly /></div>
               <div className="pc-field pc-full">
                 <label htmlFor="pc-tel">Teléfono</label>
@@ -139,7 +170,7 @@ export default function PerfilClientePage({ onUnauthorized }) {
                 {errores.telefono && <span className="pc-err">{errores.telefono}</span>}
               </div>
             </div>
-            <p className="pc-nota">El nombre, el apellido y el correo no se pueden modificar desde acá.</p>
+            <p className="pc-nota">El correo electrónico no se puede modificar desde acá.</p>
           </div>
 
           <div className="pc-actions">

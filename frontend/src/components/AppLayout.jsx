@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import './AppLayout.css';
-import { ClipboardList, Coins, Home, LogOut, MessageSquare, RefreshCw, Settings, User } from 'lucide-react';
+import { ClipboardList, Coins, Home, LogOut, MessageSquare, Pencil, RefreshCw, Settings, User } from 'lucide-react';
 import NotificationsMenu from './NotificationsMenu';
 
 const iniciales = (n = '', a = '') => `${n[0] ?? ''}${a[0] ?? ''}`.toUpperCase();
 
 // vista: 'CLIENTE' | 'PRESTADOR' (qué pantalla está viendo).
-export default function AppLayout({ children, usuario, onLogout, onSwitchRole, vista = 'PRESTADOR', pantalla, onNavigate }) {
+export default function AppLayout({ children, usuario, onLogout, onSwitchRole, vista = 'PRESTADOR', pantalla, onNavigate, onEditarPerfil }) {
   const esCliente = vista === 'CLIENTE';
   const [menu, setMenu] = useState(false);
   const ref = useRef(null);
@@ -23,13 +23,21 @@ export default function AppLayout({ children, usuario, onLogout, onSwitchRole, v
 
   return (
     <div className="lay">
-      <header className="lay-top">
+            <header className="lay-top">
         <span className="lay-logo">OficiosYa</span>
         <div className="lay-tools" ref={ref}>
-         <NotificationsMenu onNavigate={onNavigate} onOpen={() => setMenu(false)} onUnauthorized={onLogout} />          <button className="lay-av" aria-haspopup="menu" aria-expanded={menu} aria-label="Menú de usuario" onClick={() => setMenu(!menu)}>{ini}</button>
+          <NotificationsMenu onNavigate={onNavigate} onOpen={() => setMenu(false)} onUnauthorized={onLogout} />
+          <button className="lay-av" aria-haspopup="menu" aria-expanded={menu} aria-label="Menú de usuario" onClick={() => setMenu(!menu)}>{ini}</button>
           {menu && (
             <div className="lay-menu" role="menu">
-              <div className="lay-cur"><span className="lay-av">{ini}</span><div><b>{nombre}</b><small>{esCliente ? 'Perfil de Cliente' : 'Perfil de Prestador'}</small></div></div>
+              <div className="lay-cur">
+                <button type="button" role="menuitem" className="lay-av-edit" title="Editar perfil" aria-label="Editar perfil"
+                  onClick={() => { setMenu(false); onEditarPerfil?.(); }}>
+                  <span className="lay-av">{ini}</span>
+                  <span className="lay-lapiz" aria-hidden="true"><Pencil size={11} /></span>
+                </button>
+                <div><b>{nombre}</b><small>{esCliente ? 'Perfil de Cliente' : 'Perfil de Prestador'}</small></div>
+              </div>
               <button role="menuitem" className="lay-item" onClick={() => { setMenu(false); onSwitchRole?.(); }}>
                 <span className="lay-circ"><RefreshCw size={14} /></span>
                 <div><b>{esCliente ? 'Cambiar a Prestador de Servicios' : 'Cambiar a Cliente'}</b><small>{esCliente ? 'Gestionar presupuestos y saldo' : 'Buscar y contratar servicios'}</small></div></button>
