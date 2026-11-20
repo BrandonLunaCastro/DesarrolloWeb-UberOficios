@@ -28,7 +28,6 @@ const mesAnio = (iso) => new Intl.DateTimeFormat('es-AR', { month: 'long', year:
 export default function PerfilPage({ abrirEdicion = false }) {
   const [perfil, setPerfil] = useState(null);
   const [error, setError] = useState('');
-  const [error, setError] = useState('');
   const [modal, setModal] = useState(abrirEdicion ? 'editar' : null);
   const [errorFoto, setErrorFoto] = useState('');
   const [fotoEliminando, setFotoEliminando] = useState(null);
