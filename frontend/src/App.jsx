@@ -28,7 +28,7 @@ export default function App() {
   const [error, setError] = useState('');
   const [token, setToken] = useState(localStorage.getItem('jwt') || '');
   const compraIdRetorno = new URLSearchParams(window.location.search).get('compra_id');
-
+  
   const [pantalla, setPantalla] = useState(() =>
     compraIdRetorno
       ? 'creditos'
@@ -38,6 +38,9 @@ export default function App() {
   const [rolUsuario, setRolUsuario] = useState(null); // 'CLIENTE' | 'PRESTADOR' | null (cargando)
   const [vista, setVista] = useState(null); // vista elegida con "Cambiar a..."; si es null se usa el rol
   const vistaActual = vista ?? rolUsuario;
+  const [abrirEdicion, setAbrirEdicion] = useState(false);
+  const irA = (destino) => { setAbrirEdicion(false); setPantalla(destino); };
+  const editarMiPerfil = () => { setAbrirEdicion(true); setPantalla(vistaActual === 'CLIENTE' ? 'perfilCliente' : 'perfilPrestador'); };
   const switchMode = (m) => {
     setMode(m);
     setError('');
@@ -110,12 +113,12 @@ if (token) {
       onLogout={handleLogout}
       vista={vistaActual ?? 'PRESTADOR'}
       pantalla={pantalla}
-      onNavigate={setPantalla}
+      onNavigate={irA}
+      onEditarPerfil={editarMiPerfil}
       onSwitchRole={() => { setPantalla('feed'); setVista(vistaActual === 'CLIENTE' ? 'PRESTADOR' : 'CLIENTE'); }}
     >
       {vistaActual === null && <p aria-busy="true">Cargando…</p>}
-      {vistaActual === 'CLIENTE' && pantalla === 'perfilCliente' && <PerfilClientePage onUnauthorized={handleLogout} />}
-      {vistaActual === 'CLIENTE' && pantalla === 'presupuestos' && (
+      {vistaActual === 'CLIENTE' && pantalla === 'perfilCliente' && <PerfilClientePage key={abrirEdicion ? 'editar' : 'ver'} abrirEdicion={abrirEdicion} onUnauthorized={handleLogout} />}      {vistaActual === 'CLIENTE' && pantalla === 'presupuestos' && (
         <PresupuestosClientePage
           usuario={usuarioActual}
           onUnauthorized={handleLogout}
@@ -133,8 +136,7 @@ if (token) {
           onUnauthorized={handleLogout}
         />
       )}
-      {vistaActual !== null && vistaActual !== 'CLIENTE' && pantalla === 'perfilPrestador' && <PerfilPage />}
-      {vistaActual !== null && vistaActual !== 'CLIENTE' && pantalla === 'presupuestos' && (
+      {vistaActual !== null && vistaActual !== 'CLIENTE' && pantalla === 'perfilPrestador' && <PerfilPage key={abrirEdicion ? 'editar' : 'ver'} abrirEdicion={abrirEdicion} />}      {vistaActual !== null && vistaActual !== 'CLIENTE' && pantalla === 'presupuestos' && (
         <PresupuestosPrestadorPage onUnauthorized={handleLogout} />
       )}
       {vistaActual !== null && vistaActual !== 'CLIENTE' && pantalla === 'creditos' && (

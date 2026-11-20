@@ -25,13 +25,12 @@ function Estrellas({ valor = 0, size = 16 }) {
 const mesAnio = (iso) => new Intl.DateTimeFormat('es-AR', { month: 'long', year: 'numeric' }).format(new Date(iso))
   .replace(/^./, (c) => c.toUpperCase()).replace(' de ', ' ');
 
-export default function PerfilPage() {
+export default function PerfilPage({ abrirEdicion = false }) {
   const [perfil, setPerfil] = useState(null);
   const [error, setError] = useState('');
-  const [modal, setModal] = useState(null);
+  const [modal, setModal] = useState(abrirEdicion ? 'editar' : null);
   const [errorFoto, setErrorFoto] = useState('');
   const [fotoEliminando, setFotoEliminando] = useState(null);
-
   useEffect(() => {
     const cargar = () => perfilApi.obtener().then(setPerfil).catch((e) => setError(e.message));
     cargar();
