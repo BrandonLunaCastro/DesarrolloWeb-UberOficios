@@ -3,11 +3,13 @@ import logging
 from cloudinary.exceptions import Error as CloudinaryError
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from fastapi.responses import Response
+from sqlalchemy import func
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload, selectinload
 
 from app.auth import get_current_user_id
 from app.database import get_db
+from app.models.calificacion import Calificacion
 from app.models.foto_portafolio import FotoPortafolio
 from app.models.PrestadorServicio import PrestadorServicio
 from app.services.portfolio_storage import (
@@ -62,6 +64,90 @@ def _obtener_prestador(db: Session, id_usuario: int) -> PrestadorServicio:
             detail="Se requiere una cuenta de prestador para administrar el portafolio.",
         )
     return prestador
+
+
+@router.get("/{id_prestador}/perfil")
+def obtener_perfil_publico_prestador(
+    id_prestador: int,
+    _id_usuario: int = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    prestador = (
+        db.query(PrestadorServicio)
+        .options(
+            joinedload(PrestadorServicio.usuario),
+            selectinload(PrestadorServicio.fotos_portafolio),
+        )
+        .filter(PrestadorServicio.id_prestador == id_prestador)
+        .first()
+    )
+    if prestador is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No se encontró el perfil del prestador.",
+        )
+
+    zona = prestador.zona.strip() if prestador.zona else ""
+    promedio, total = (
+        db.query(func.avg(Calificacion.puntuacion), func.count(Calificacion.id_calificacion))
+        .filter(Calificacion.id_prestador == prestador.id_prestador)
+        .one()
+    )
+    calificaciones = (
+        db.query(Calificacion)
+        .options(joinedload(Calificacion.cliente))
+        .filter(Calificacion.id_prestador == prestador.id_prestador)
+        .order_by(Calificacion.fecha.desc())
+        .limit(10)
+        .all()
+    )
+
+    return {
+        "usuario": {
+            "nombre": prestador.usuario.nombre,
+            "apellido": prestador.usuario.apellido,
+            "foto_perfil": prestador.usuario.foto_perfil,
+            "fecha_registro": prestador.usuario.fecha_registro,
+        },
+        "prestador": {
+            "id_prestador": prestador.id_prestador,
+            "matricula": prestador.matricula,
+            "biografia": prestador.biografia,
+            "zona": zona,
+            "oficio": prestador.oficio,
+        },
+        "categoria": prestador.oficio or "Oficio sin definir",
+        "zonas": [{"nombre": zona}] if zona else [],
+        "rating": {
+            "promedio": float(promedio or 0),
+            "total": total,
+        },
+        "calificaciones": [
+            {
+                "id_calificacion": calificacion.id_calificacion,
+                "puntuacion": calificacion.puntuacion,
+                "comentario": calificacion.comentario,
+                "fecha": calificacion.fecha,
+                "cliente": {
+                    "nombre": calificacion.cliente.nombre,
+                    "apellido": (
+                        f"{calificacion.cliente.apellido[0]}."
+                        if calificacion.cliente.apellido
+                        else ""
+                    ),
+                },
+            }
+            for calificacion in calificaciones
+        ],
+        "fotos": [
+            {
+                "id_foto": foto.id_foto,
+                "url_imagen": foto.url_imagen,
+                "descripcion": foto.descripcion,
+            }
+            for foto in prestador.fotos_portafolio
+        ],
+    }
 
 
 def _limpiar_subidas(public_ids: list[str]) -> None:

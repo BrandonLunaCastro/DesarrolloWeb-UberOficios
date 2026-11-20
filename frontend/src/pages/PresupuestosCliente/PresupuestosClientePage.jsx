@@ -3,6 +3,7 @@ import { Check, ChevronDown, Clock3, MapPin, Star, X } from 'lucide-react';
 import { avisosApi } from '../../services/avisosService';
 import { notificacionesApi } from '../../services/notificacionesService';
 import { presupuestosApi } from '../../services/presupuestosService';
+import PerfilPrestadorPublicoPage from '../../components/PerfilPrestadorPublicoPage';
 import '../Calificacion/calificacion.css';
 import './presupuestosCliente.css';
 
@@ -43,6 +44,7 @@ function agruparPresupuestos(avisos, postulaciones) {
         .join(' ') || 'Prestador';
       return {
         id: postulacion.id_postulacion,
+        idPrestador: postulacion.id_prestador,
         idConversacion: postulacion.id_conversacion,
         idCalificacion: postulacion.id_calificacion,
         nombre,
@@ -81,6 +83,7 @@ const formatoPrecio = (precio) => `$ ${precio.toLocaleString('es-AR')}`;
 function PresupuestoCard({
   aviso,
   onVerDetalle,
+  onVerPerfil,
   onAceptar,
   onAbrirChat,
   onFinalizar,
@@ -140,10 +143,17 @@ function PresupuestoCard({
           <div className="pcp-lista">
             {visibles.map((propuesta) => (
               <article className="pcp-profesional" key={propuesta.id}>
-                <span className="pcp-avatar">{propuesta.iniciales}</span>
                 <div className="pcp-profesional-info">
                   <div className="pcp-nombre-fila">
-                    <b>{propuesta.nombre}</b>
+                    <button
+                      type="button"
+                      className="pcp-identidad-perfil"
+                      aria-label={`Ver perfil de ${propuesta.nombre}`}
+                      onClick={() => onVerPerfil(propuesta.idPrestador)}
+                    >
+                      <span className="pcp-avatar">{propuesta.iniciales}</span>
+                      <b>{propuesta.nombre}</b>
+                    </button>
                     <span className="pcp-oficio">{propuesta.oficio}</span>
                     {propuesta.id === aviso.profesionalElegido && (
                       <span className="pcp-propuesta-aceptada"><Check size={12} /> Aceptada</span>
@@ -302,6 +312,7 @@ export default function PresupuestosClientePage({ usuario, onUnauthorized, onIrA
   const [calificando, setCalificando] = useState(null);
   const [enviandoCalificacion, setEnviandoCalificacion] = useState(false);
   const [errorCalificacion, setErrorCalificacion] = useState('');
+  const [idPerfilPrestador, setIdPerfilPrestador] = useState(null);
 
   useEffect(() => {
     if (!usuario?.id_usuario) return undefined;
@@ -345,6 +356,16 @@ export default function PresupuestosClientePage({ usuario, onUnauthorized, onIrA
     filtro === 'todos'
     || (filtro === 'aceptados' ? Boolean(aviso.profesionalElegido) : !aviso.profesionalElegido)
   ));
+
+  if (idPerfilPrestador !== null) {
+    return (
+      <PerfilPrestadorPublicoPage
+        key={idPerfilPrestador}
+        idPrestador={idPerfilPrestador}
+        onVolver={() => setIdPerfilPrestador(null)}
+      />
+    );
+  }
 
   const aceptar = async (propuesta) => {
     setAceptandoId(propuesta.id);
@@ -452,6 +473,7 @@ export default function PresupuestosClientePage({ usuario, onUnauthorized, onIrA
               key={aviso.id}
               aviso={aviso}
               onAceptar={aceptar}
+              onVerPerfil={setIdPerfilPrestador}
               onAbrirChat={onIrAChat}
               onFinalizar={finalizar}
               onCalificar={(aviso, propuesta) => {

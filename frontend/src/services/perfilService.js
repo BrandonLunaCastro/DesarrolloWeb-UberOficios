@@ -36,6 +36,10 @@ const wait = (v) => new Promise((r) => setTimeout(() => r(structuredClone(v)), 4
 const mock = {
   yo: () => wait(db.usuario),
   obtener: () => wait(db),
+  obtenerPrestador: (idPrestador) => wait({
+    ...db,
+    prestador: { ...db.prestador, id_prestador: idPrestador },
+  }),
   zonas: () => wait(ZONAS),
   actualizar: ({ biografia, zona, oficio }) => {
     db.prestador.biografia = biografia;
@@ -57,6 +61,7 @@ const mock = {
 const real = {
   yo: () => req('/auth/me'),
   obtener: () => req('/usuarios/perfil'),
+  obtenerPrestador: (idPrestador) => req(`/prestadores/${idPrestador}/perfil`),
   actualizar: async (d) => {
     await req('/usuarios/perfil', { method: 'PUT', body: JSON.stringify(d) });
     return req('/usuarios/perfil');

@@ -4,7 +4,7 @@ import { chatApi } from '../../services/chatService';
 import MessageBubble from './MessageBubble';
 import { etiquetaDia, iniciales } from './utils';
 
-export default function ChatWindow({ conversacion, yoId, onVolver, onActividad, onOcultada, onUnauthorized }) {
+export default function ChatWindow({ conversacion, yoId, onVolver, onActividad, onOcultada, onUnauthorized, onVerPerfil }) {
   const id = conversacion.id;
   const [mensajes, setMensajes] = useState(null); // null = cargando
   const [error, setError] = useState(null);
@@ -102,11 +102,29 @@ export default function ChatWindow({ conversacion, yoId, onVolver, onActividad, 
     <section className="chat-panel chat-ventana" aria-label={`Conversación con ${conversacion.otro.nombre}`}>
       <header className="chat-cab">
         <button className="chat-volver" onClick={onVolver} aria-label="Volver a las conversaciones"><ArrowLeft size={18} /></button>
-        <span className="chat-av">{iniciales(conversacion.otro.nombre)}</span>
-        <div className="chat-cab-txt">
-          <b>{conversacion.otro.nombre}</b>
-          <small>{conversacion.oficio}</small>
-        </div>
+        {conversacion.otro.idPrestador && (
+          <button
+            type="button"
+            className="chat-identidad-perfil"
+            aria-label={`Ver perfil de ${conversacion.otro.nombre}`}
+            onClick={() => onVerPerfil?.(conversacion.otro.idPrestador)}
+          >
+            <span className="chat-av">{iniciales(conversacion.otro.nombre)}</span>
+            <span className="chat-cab-txt">
+              <b>{conversacion.otro.nombre}</b>
+              <small>{conversacion.oficio}</small>
+            </span>
+          </button>
+        )}
+        {!conversacion.otro.idPrestador && (
+          <>
+            <span className="chat-av">{iniciales(conversacion.otro.nombre)}</span>
+            <div className="chat-cab-txt">
+              <b>{conversacion.otro.nombre}</b>
+              <small>{conversacion.oficio}</small>
+            </div>
+          </>
+        )}
         {conversacion.estado === 'en_proceso' && <span className="chat-badge">En proceso</span>}
         <button className="chat-icono" onClick={() => { setErrorOcultar(''); setConfirmando(true); }} aria-label="Desactivar conversación"><Trash2 size={16} /></button>
       </header>

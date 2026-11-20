@@ -231,6 +231,10 @@ archivos en el campo `fotos` (JPG, PNG o WebP; hasta 5 MB por archivo y 12 por
 envío). `DELETE /prestadores/me/fotos/{id_foto}` elimina una foto propia. Las
 imágenes se guardan en Cloudinary y su URL e identificador se conservan en
 `foto_portafolio`.
+
+Los clientes autenticados pueden consultar `GET /prestadores/{id_prestador}/perfil`
+para revisar la información pública, fotos de trabajos y calificaciones de un
+prestador.
 > Para iniciar compras y confirmar pagos hay que configurar las credenciales de
 > Mercado Pago, la URL pública del webhook y la URL de retorno del frontend.
 > Aplicar las migraciones desde `backend` con `alembic upgrade head`; la migración

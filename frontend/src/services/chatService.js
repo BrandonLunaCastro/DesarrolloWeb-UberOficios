@@ -28,7 +28,11 @@ const normMsg = (m) => ({
 });
 const normConv = (c) => ({
   id: c.id_conversacion, idAviso: c.id_aviso, oficio: c.oficio, estado: c.estado ?? 'en_proceso',
-  otro: { id: c.otro_participante.id_usuario, nombre: `${c.otro_participante.nombre} ${c.otro_participante.apellido}` },
+  otro: {
+    id: c.otro_participante.id_usuario,
+    idPrestador: c.otro_participante.id_prestador ?? null,
+    nombre: `${c.otro_participante.nombre} ${c.otro_participante.apellido}`,
+  },
   ultimo: c.ultimo_mensaje ? { texto: c.ultimo_mensaje.contenido, fecha: c.ultimo_mensaje.fecha_envio } : null,
 });
 
@@ -40,8 +44,8 @@ const oyentes = new Map(); // id_conversacion -> Set de { onMensaje, onEstado }
 const m = (id, rem, contenido, min) => ({ id_mensaje: id, id_conversacion: 1, id_remitente: rem, contenido, fecha_envio: hace(min) });
 const db = {
   conversaciones: [
-    { id_conversacion: 1, id_aviso: 2, oficio: 'Instalación de tomacorrientes', estado: 'en_proceso', otro_participante: { id_usuario: 7, nombre: 'Martín', apellido: 'Gómez' } },
-    { id_conversacion: 2, id_aviso: 1, oficio: 'Reparación caño cocina', estado: 'en_proceso', otro_participante: { id_usuario: 9, nombre: 'Sofía', apellido: 'Ledesma' } },
+    { id_conversacion: 1, id_aviso: 2, oficio: 'Instalación de tomacorrientes', estado: 'en_proceso', otro_participante: { id_usuario: 7, id_prestador: 1, nombre: 'Martín', apellido: 'Gómez' } },
+    { id_conversacion: 2, id_aviso: 1, oficio: 'Reparación caño cocina', estado: 'en_proceso', otro_participante: { id_usuario: 9, id_prestador: 2, nombre: 'Sofía', apellido: 'Ledesma' } },
   ],
   mensajes: {
     1: [

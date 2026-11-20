@@ -25,11 +25,14 @@
 .pcp-orden select{appearance:none;max-width:140px;padding:4px 19px 4px 6px;border:1px solid #e2e8f0;border-radius:5px;background:#fff;color:#334155;font:inherit}
 .pcp-orden svg{margin-left:-21px;pointer-events:none}
 .pcp-lista{display:flex;flex-direction:column;gap:8px;margin-top:9px}
-.pcp-profesional{display:grid;grid-template-columns:30px minmax(0,1fr);gap:8px;padding:10px;border:1px solid #e2e8f0;border-radius:9px}
+.pcp-profesional{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;padding:10px;border:1px solid #e2e8f0;border-radius:9px}
 .pcp-avatar{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:#2563eb;color:#fff;font-size:10px;font-weight:700}
 .pcp-profesional:nth-child(even) .pcp-avatar{background:#059669}
 .pcp-profesional-info{min-width:0}
 .pcp-nombre-fila{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px}
+.pcp-identidad-perfil{display:inline-flex;align-items:center;gap:7px;padding:0;border:0;background:none;color:inherit;text-align:left;cursor:pointer}
+.pcp-identidad-perfil:hover b{text-decoration:underline}
+.pcp-identidad-perfil:focus-visible{outline:2px solid #2563eb;outline-offset:3px;border-radius:4px}
 .pcp-nombre-fila>b,.pcp-elegido-info>b{font-size:10px}
 .pcp-oficio{color:#64748b;font-size:9px}
 .pcp-propuesta-aceptada{display:inline-flex;align-items:center;gap:3px;color:#059669;font-size:9px;font-weight:700}
@@ -76,5 +79,5 @@
 .pcp-rating-acciones{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
 .pcp-rating-acciones button{min-height:34px;padding:7px 12px;border-radius:6px;font:inherit;font-size:11px;font-weight:700;cursor:pointer}
 .pcp-rating-cancelar{border:1px solid #cbd5e1;background:#fff;color:#475569}
-@media(min-width:700px){.pcp-profesional{grid-template-columns:30px minmax(0,1fr) 150px;align-items:start}.pcp-acciones{flex-direction:column;align-items:stretch;margin-top:0}.pcp-boton-elegir{width:100%}.pcp-link{width:100%;text-align:center}}
+@media(min-width:700px){.pcp-profesional{grid-template-columns:minmax(0,1fr) 150px;align-items:start}.pcp-acciones{flex-direction:column;align-items:stretch;margin-top:0}.pcp-boton-elegir{width:100%}.pcp-link{width:100%;text-align:center}}
 @media(max-width:500px){.pcp-presupuestos-cabecera{align-items:flex-start;flex-direction:column}.pcp-orden{align-self:flex-end}}

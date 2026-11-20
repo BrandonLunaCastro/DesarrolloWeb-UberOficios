@@ -93,6 +93,9 @@ async def listar_conversaciones(
                 "id_usuario": otro_usuario.id_usuario,
                 "nombre": otro_usuario.nombre,
                 "apellido": otro_usuario.apellido,
+                "id_prestador": (
+                    conversacion.prestador.id_prestador if es_cliente else None
+                ),
             },
             "ultimo_mensaje": (
                 {
