@@ -1,8 +1,7 @@
-import asyncio
 import os
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -19,16 +18,9 @@ from app.schemas.compras_creditos import (
     CompraCreditoResponse,
     IniciarCompraRequest,
     PaqueteCreditoResponse,
+    SimularPagoRequest,
 )
 from app.services.creditos import registrar_transaccion
-from app.services.mercado_pago import (
-    MercadoPagoError,
-    configuracion_mercado_pago_disponible,
-    crear_preferencia,
-    firma_webhook_valida,
-    importe_pago_valido,
-    obtener_pago,
-)
 
 
 router = APIRouter(prefix="/creditos", tags=["Compras de créditos"])
@@ -47,25 +39,6 @@ async def _obtener_prestador(
             detail="Se requiere una cuenta de prestador para comprar créditos",
         )
     return prestador
-
-
-async def _iniciar_checkout(
-    db: AsyncSession,
-    compra: CompraCredito,
-) -> CompraCredito:
-    try:
-        preference = await asyncio.to_thread(crear_preferencia, compra)
-    except MercadoPagoError as error:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail={"mensaje": str(error), "compra_id": compra.id},
-        ) from error
-
-    compra.preferencia_pago_id = preference["id"]
-    compra.url_pago = preference["url"]
-    await db.commit()
-    await db.refresh(compra)
-    return compra
 
 
 @router.get("/paquetes", response_model=list[PaqueteCreditoResponse])
@@ -92,12 +65,6 @@ async def iniciar_compra_creditos(
     db: AsyncSession = Depends(get_async_db),
     id_usuario: int = Depends(get_current_user_id),
 ):
-    if not configuracion_mercado_pago_disponible():
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="La pasarela de pago no está configurada",
-        )
-
     prestador = await _obtener_prestador(db, id_usuario)
     paquete = await db.scalar(
         select(PaqueteCredito).where(
@@ -119,7 +86,7 @@ async def iniciar_compra_creditos(
     db.add(compra)
     await db.commit()
     await db.refresh(compra)
-    return await _iniciar_checkout(db, compra)
+    return compra
 
 
 @router.get("/compras", response_model=list[CompraCreditoResponse])
@@ -147,42 +114,11 @@ async def listar_compras_creditos(
             "precio_centavos": compra.precio_centavos,
             "moneda": compra.moneda,
             "estado": compra.estado,
-            "url_pago": compra.url_pago,
             "fecha_creacion": compra.fecha_creacion,
             "fecha_acreditacion": compra.fecha_acreditacion,
         }
         for compra, paquete_nombre in resultado.all()
     ]
-
-
-@router.post(
-    "/compras/{compra_id}/checkout",
-    response_model=CompraCreditoResponse,
-)
-async def reintentar_checkout_compra(
-    compra_id: int,
-    db: AsyncSession = Depends(get_async_db),
-    id_usuario: int = Depends(get_current_user_id),
-):
-    prestador = await _obtener_prestador(db, id_usuario)
-    compra = await db.scalar(
-        select(CompraCredito).where(
-            CompraCredito.id == compra_id,
-            CompraCredito.prestador_id == prestador.id_prestador,
-        )
-    )
-    if compra is None:
-        raise HTTPException(status_code=404, detail="No se encontró la compra")
-    if compra.estado != EstadoCompraCreditoEnum.PENDIENTE:
-        raise HTTPException(status_code=409, detail="La compra ya no está pendiente")
-    if compra.url_pago:
-        return compra
-    if not configuracion_mercado_pago_disponible():
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="La pasarela de pago no está configurada",
-        )
-    return await _iniciar_checkout(db, compra)
 
 
 @router.get("/compras/{compra_id}", response_model=CompraCreditoResponse)
@@ -203,72 +139,37 @@ async def consultar_compra_creditos(
     return compra
 
 
-@router.post("/pagos/webhook")
-async def confirmar_pago_creditos(
-    request: Request,
+@router.post(
+    "/compras/{compra_id}/simular-pago",
+    response_model=CompraCreditoResponse,
+)
+async def simular_pago_creditos(
+    compra_id: int,
+    datos: SimularPagoRequest,
     db: AsyncSession = Depends(get_async_db),
+    id_usuario: int = Depends(get_current_user_id),
 ):
-    if not os.getenv("MERCADOPAGO_WEBHOOK_SECRET"):
+    if os.getenv("PAYMENT_MODE") != "mock":
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="La confirmación de pagos no está configurada",
+            detail="El simulador de pagos no está habilitado",
         )
 
-    try:
-        body = await request.json()
-    except ValueError:
-        body = {}
-    if not isinstance(body, dict):
-        body = {}
-    data = body.get("data")
-    if not isinstance(data, dict):
-        data = {}
-    payment_id = (
-        request.query_params.get("data.id")
-        or data.get("id")
-    )
-    event_type = request.query_params.get("type") or body.get("type")
-    if event_type not in (None, "payment"):
-        return {"recibido": True}
-    if not payment_id:
-        raise HTTPException(status_code=400, detail="Falta el identificador del pago")
-    payment_id = str(payment_id)
-    if not firma_webhook_valida(
-        payment_id=payment_id,
-        request_id=request.headers.get("x-request-id"),
-        signature=request.headers.get("x-signature"),
-    ):
-        raise HTTPException(status_code=401, detail="Firma de notificación inválida")
-
-    try:
-        pago = await asyncio.to_thread(obtener_pago, payment_id)
-    except MercadoPagoError as error:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=str(error),
-        ) from error
-
-    if str(pago.get("id")) != payment_id:
-        raise HTTPException(status_code=400, detail="La pasarela devolvió otro pago")
-    external_reference = pago.get("external_reference")
-    if not external_reference or not str(external_reference).isdigit():
-        raise HTTPException(status_code=404, detail="No se encontró la compra del pago")
-
+    prestador = await _obtener_prestador(db, id_usuario)
     compra = await db.scalar(
         select(CompraCredito)
-        .where(CompraCredito.id == int(external_reference))
+        .where(
+            CompraCredito.id == compra_id,
+            CompraCredito.prestador_id == prestador.id_prestador,
+        )
         .with_for_update()
     )
     if compra is None:
-        raise HTTPException(status_code=404, detail="No se encontró la compra del pago")
-    if not importe_pago_valido(pago, compra):
-        raise HTTPException(status_code=400, detail="El importe o moneda del pago no coincide")
-
+        raise HTTPException(status_code=404, detail="No se encontró la compra")
     if compra.estado != EstadoCompraCreditoEnum.PENDIENTE:
-        return {"recibido": True, "estado": compra.estado.value}
+        raise HTTPException(status_code=409, detail="La compra ya fue resuelta")
 
-    estado_pago = pago.get("status")
-    if estado_pago == "approved":
+    if datos.resultado == EstadoCompraCreditoEnum.APROBADA:
         nombre_paquete = await db.scalar(
             select(PaqueteCredito.nombre).where(
                 PaqueteCredito.id == compra.paquete_id
@@ -287,15 +188,13 @@ async def confirmar_pago_creditos(
             ),
         )
         compra.estado = EstadoCompraCreditoEnum.APROBADA
-        compra.referencia_pago = payment_id
         compra.transaccion_id = transaccion.id
         compra.fecha_acreditacion = datetime.now(timezone.utc)
-    elif estado_pago == "rejected":
+    elif datos.resultado == EstadoCompraCreditoEnum.RECHAZADA:
         compra.estado = EstadoCompraCreditoEnum.RECHAZADA
-        compra.referencia_pago = payment_id
-    elif estado_pago == "cancelled":
+    else:
         compra.estado = EstadoCompraCreditoEnum.CANCELADA
-        compra.referencia_pago = payment_id
 
     await db.commit()
-    return {"recibido": True, "estado": compra.estado.value}
+    await db.refresh(compra)
+    return compra

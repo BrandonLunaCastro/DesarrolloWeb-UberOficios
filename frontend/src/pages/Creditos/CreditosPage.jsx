@@ -13,27 +13,18 @@ const TIPOS = {
   devuelto: { label: 'Devueltos', Icono: RotateCcw }, // solo se muestra si hay devoluciones
 };
 const ESTADOS = { aprobada: 'Aprobada', pendiente: 'Pendiente', rechazada: 'Rechazada', cancelada: 'Cancelada' };
-const RESULTADO_COMPRA = {
-  APROBADA: ['ok', 'Pago aprobado. Tus créditos ya fueron acreditados.'],
-  PENDIENTE: ['pend', 'Tu pago está pendiente. Los créditos se acreditan cuando se confirme.'],
-  RECHAZADA: ['err', 'El pago fue rechazado. No se acreditaron créditos.'],
-  CANCELADA: ['err', 'La compra fue cancelada. No se acreditaron créditos.'],
-};
-
-export default function CreditosPage({ compraIdRetorno = null, onUnauthorized }) {
+export default function CreditosPage({ onUnauthorized }) {
   const [datos, setDatos] = useState(null); // { saldo, paquetes, movimientos, compras }
   const [error, setError] = useState(null);
   const [intento, setIntento] = useState(0);
   const [tab, setTab] = useState('movimientos');
   const [filtro, setFiltro] = useState('todos');
   const [seleccion, setSeleccion] = useState(null);
+  const [compraSimulada, setCompraSimulada] = useState(null);
   const [enviando, setEnviando] = useState(false);
-  const [reintentandoCompraId, setReintentandoCompraId] = useState(null);
   const [errorCompra, setErrorCompra] = useState('');
-  const [errorCheckout, setErrorCheckout] = useState('');
+  const [errorSimulacion, setErrorSimulacion] = useState('');
   const [aviso, setAviso] = useState('');
-  const [compraRetorno, setCompraRetorno] = useState(null);
-  const [errorRetorno, setErrorRetorno] = useState('');
 
   const traer = useCallback(() =>
     Promise.all([creditosApi.saldo(), creditosApi.paquetes(), creditosApi.movimientos(),
@@ -46,89 +37,43 @@ export default function CreditosPage({ compraIdRetorno = null, onUnauthorized })
     return () => { vivo = false; };
   }, [intento, onUnauthorized, traer]);
 
-  useEffect(() => {
-    if (!compraIdRetorno || !/^\d+$/.test(compraIdRetorno)) return undefined;
-
-    let vivo = true;
-    let temporizador;
-    const consultar = async () => {
-      try {
-        const compra = await creditosApi.consultar(compraIdRetorno);
-        if (!vivo) return;
-        setCompraRetorno(compra);
-        setErrorRetorno('');
-        if (compra.estado === 'PENDIENTE') {
-          temporizador = window.setTimeout(consultar, 3000);
-          return;
-        }
-
-        const datosActualizados = await traer();
-        if (vivo) setDatos(datosActualizados);
-      } catch (e) {
-        if (!vivo) return;
-        if (e.status === 401) onUnauthorized?.();
-        setErrorRetorno(e.message);
-      }
-    };
-
-    consultar();
-    return () => {
-      vivo = false;
-      window.clearTimeout(temporizador);
-    };
-  }, [compraIdRetorno, onUnauthorized, traer]);
-
-  // Mientras haya compras pendientes se consulta cada 3 s hasta que el back las confirme
-  const hayPendientes = datos?.compras?.some((c) => c.estado === 'pendiente');
-  useEffect(() => {
-    if (!hayPendientes) return undefined;
-    const t = setInterval(() => traer().then(setDatos).catch(() => {}), 3000);
-    return () => clearInterval(t);
-  }, [hayPendientes, traer]);
-
   const reintentar = () => { setDatos(null); setError(null); setIntento((n) => n + 1); };
 
   async function confirmarCompra() {
     setEnviando(true);
     setErrorCompra('');
-    setErrorCheckout('');
+    setErrorSimulacion('');
     try {
       const r = await creditosApi.comprar(seleccion.id);
-      if (r?.url_pago) { window.location.assign(r.url_pago); return; } // checkout externo
       setSeleccion(null);
-      setAviso('Compra iniciada. Tus créditos se acreditan cuando se confirme el pago.');
+      setCompraSimulada(r);
+      setAviso('Compra de prueba registrada. No se realizó ningún cobro.');
       setTab('compras');
       traer().then(setDatos).catch(() => {});
     } catch (e) {
       if (e.status === 401) onUnauthorized?.();
-      if (e.compraId) {
-        setSeleccion(null);
-        setTab('compras');
-        setErrorCheckout(e.message);
-        traer().then(setDatos).catch(() => {});
-      } else {
-        setErrorCompra(e.message);
-      }
+      setErrorCompra(e.message);
     } finally {
       setEnviando(false);
     }
   }
 
-  async function reintentarPago(compraId) {
-    setReintentandoCompraId(compraId);
-    setErrorCheckout('');
+  async function resolverPagoSimulado(resultado) {
+    if (!compraSimulada) return;
+    setEnviando(true);
+    setErrorSimulacion('');
     try {
-      const compra = await creditosApi.reintentarCheckout(compraId);
-      if (compra?.url_pago) {
-        window.location.assign(compra.url_pago);
-        return;
-      }
-      setErrorCheckout('No se recibió un enlace de pago. Intentá nuevamente.');
+      const compra = await creditosApi.simularPago(compraSimulada.id, resultado);
+      setCompraSimulada(compra);
+      setAviso(resultado === 'APROBADA'
+        ? 'Pago simulado aprobado. Los créditos fueron acreditados.'
+        : 'Resultado simulado registrado. No se acreditaron créditos.');
+      traer().then(setDatos).catch(() => {});
     } catch (e) {
       if (e.status === 401) onUnauthorized?.();
-      setErrorCheckout(e.message);
+      setErrorSimulacion(e.message);
     } finally {
-      setReintentandoCompraId(null);
+      setEnviando(false);
     }
   }
 
@@ -140,10 +85,6 @@ export default function CreditosPage({ compraIdRetorno = null, onUnauthorized })
   const { saldo, paquetes, movimientos, compras } = datos;
   const totales = Object.keys(TIPOS).map((t) => [t, movimientos.filter((m) => m.tipo === t).reduce((s, m) => s + Math.abs(m.cantidad), 0)]).filter(([t, n]) => t !== 'devuelto' || n > 0);
   const visibles = movimientos.filter((m) => filtro === 'todos' || m.tipo === filtro);
-  const res = compraRetorno ? RESULTADO_COMPRA[compraRetorno.estado] : null;
-  const errorCompraId = compraIdRetorno && !/^\d+$/.test(compraIdRetorno)
-    ? 'El identificador de compra recibido no es válido.'
-    : '';
   // Ahorro frente al paquete con el crédito más caro (el más chico), como en el diseño de paquetes
   const base = paquetes.length ? Math.max(...paquetes.map((p) => p.precio / p.creditos)) : 0;
   const ahorroDe = (p) => (base ? Math.round((1 - p.precio / p.creditos / base) * 100) : 0);
@@ -154,10 +95,19 @@ export default function CreditosPage({ compraIdRetorno = null, onUnauthorized })
         <div><p>Tu Saldo Disponible</p><div className="cre-num"><b>{saldo}</b><span>CRÉDITOS</span></div></div>
       </div>
 
-      {res && <p className={`cre-aviso cre-${res[0]}`} role="status">{res[1]}</p>}
-      {(errorRetorno || errorCompraId) && <p className="cre-aviso cre-err" role="alert">{errorRetorno || errorCompraId}</p>}
       {aviso && <p className="cre-aviso cre-ok" role="status">{aviso}</p>}
-      {errorCheckout && <p className="cre-aviso cre-err" role="alert">{errorCheckout}</p>}
+      {errorSimulacion && <p className="cre-aviso cre-err" role="alert">{errorSimulacion}</p>}
+
+      {compraSimulada?.estado === 'pendiente' && (
+        <div className="cre-aviso cre-pend" role="group" aria-label="Simulación de pago">
+          <p>Simulación de pago para la compra #{compraSimulada.id}. No se realizará un cobro real.</p>
+          <div className="cre-acc">
+            <button className="cre-btn" onClick={() => resolverPagoSimulado('APROBADA')} disabled={enviando}>Aprobar pago de prueba</button>
+            <button className="cre-btn-sec" onClick={() => resolverPagoSimulado('RECHAZADA')} disabled={enviando}>Rechazar</button>
+            <button className="cre-btn-sec" onClick={() => resolverPagoSimulado('CANCELADA')} disabled={enviando}>Cancelar</button>
+          </div>
+        </div>
+      )}
 
       <h2>Comprar créditos</h2>
       {paquetes.length === 0 ? (
@@ -226,16 +176,12 @@ export default function CreditosPage({ compraIdRetorno = null, onUnauthorized })
               <span className="cre-der">
                 <b>{peso.format(c.monto)}</b>
                 <small className={`cre-estado cre-e-${c.estado}`}>{ESTADOS[c.estado]}</small>
-                {c.estado === 'pendiente' && c.url_pago && (
-                  <a href={c.url_pago}>Continuar con el pago</a>
-                )}
-                {c.estado === 'pendiente' && !c.url_pago && (
+                {c.estado === 'pendiente' && (
                   <button
                     className="cre-btn"
-                    onClick={() => reintentarPago(c.id)}
-                    disabled={reintentandoCompraId === c.id}
+                    onClick={() => { setErrorSimulacion(''); setCompraSimulada(c); }}
                   >
-                    {reintentandoCompraId === c.id ? 'Preparando…' : 'Reintentar pago'}
+                    Resolver pago de prueba
                   </button>
                 )}
               </span>
@@ -249,11 +195,11 @@ export default function CreditosPage({ compraIdRetorno = null, onUnauthorized })
           <div className="cre-modal" onClick={(e) => e.stopPropagation()}>
             <h3 id="cm-t">Confirmar compra</h3>
             <p>Vas a comprar <b>{seleccion.creditos} créditos</b> ({seleccion.nombre}) por <b>{peso.format(seleccion.precio)}</b>.</p>
-            <p className="cre-nota">El pago se completa en un sitio externo seguro. OficiosYa no guarda datos de tarjetas. Los créditos comprados no vencen ni se reembolsan, y se acreditan cuando se confirma el pago.</p>
+            <p className="cre-nota">Esta es una compra simulada para probar el registro. No se procesa ni se cobra dinero real; los créditos se acreditan únicamente al elegir “Aprobar pago de prueba”.</p>
             {errorCompra && <p className="cre-err" role="alert">{errorCompra}</p>}
             <div className="cre-acc">
               <button className="cre-btn-sec" onClick={() => setSeleccion(null)} disabled={enviando}>Cancelar</button>
-              <button className="cre-btn" onClick={confirmarCompra} disabled={enviando}>{enviando ? 'Procesando…' : 'Continuar al pago'}</button>
+              <button className="cre-btn" onClick={confirmarCompra} disabled={enviando}>{enviando ? 'Registrando…' : 'Crear compra de prueba'}</button>
             </div>
           </div>
         </div>

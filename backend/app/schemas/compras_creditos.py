@@ -1,5 +1,7 @@
 from datetime import datetime
 
+from typing import Literal
+
 from pydantic import BaseModel, ConfigDict
 
 from app.models.creditos import EstadoCompraCreditoEnum
@@ -19,6 +21,14 @@ class IniciarCompraRequest(BaseModel):
     paquete_id: int
 
 
+class SimularPagoRequest(BaseModel):
+    resultado: Literal[
+        EstadoCompraCreditoEnum.APROBADA,
+        EstadoCompraCreditoEnum.RECHAZADA,
+        EstadoCompraCreditoEnum.CANCELADA,
+    ]
+
+
 class CompraCreditoResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -29,6 +39,5 @@ class CompraCreditoResponse(BaseModel):
     precio_centavos: int
     moneda: str
     estado: EstadoCompraCreditoEnum
-    url_pago: str | None
     fecha_creacion: datetime
     fecha_acreditacion: datetime | None

@@ -18,7 +18,6 @@ async function req(path, init = {}) {
       : detail;
     const err = new Error(Array.isArray(detail) ? detail.map((i) => i.msg).join('. ') : mensaje || detail || `Error ${res.status}`);
     err.status = res.status;
-    if (detail && typeof detail === 'object' && !Array.isArray(detail)) err.compraId = detail.compra_id;
     throw err;
   }
   return data;
@@ -57,7 +56,6 @@ const normCompra = (c) => ({
   id: c.id, paquete: c.paquete_nombre ?? c.nombre_paquete ?? 'Paquete', creditos: c.cantidad_creditos,
   monto: c.precio_centavos / 100, moneda: c.moneda ?? 'ARS',
   estado: ESTADO[String(c.estado ?? '').toLowerCase()] ?? 'pendiente', fecha: c.fecha_creacion ?? c.fecha_compra,
-  url_pago: c.url_pago ?? null,
 });
 
 // ---------- MOCK (misma forma que el back real) ----------
@@ -103,28 +101,27 @@ const mock = {
     }
     return compra;
   }),
-  reintentarCheckout: (compraId) => demora(() => {
+  simularPago: (compraId, resultado) => demora(() => {
     const compra = compras.find((item) => item.id === Number(compraId));
     if (!compra || compra.estado !== 'PENDIENTE') {
       const error = new Error('La compra ya no está pendiente.');
       error.status = 409;
       throw error;
     }
-    return compra;
+    compra.estado = resultado;
+    if (resultado === 'APROBADA') {
+      const paquete = PAQUETES.find((item) => item.id === compra.paquete_id);
+      movs.push({ id: ++seq, tipo: 'RECARGA', monto: compra.cantidad_creditos, descripcion: `Compra de paquete ${paquete.nombre} (${compra.cantidad_creditos} créditos)`, fecha_registro: new Date().toISOString() });
+      mockSumarCreditos(compra.cantidad_creditos);
+    }
+    return normCompra(compra);
   }),
   comprar: (idPaquete) => demora(() => {
     if (modo() === 'errorCompra') falla('No pudimos iniciar la compra. Intentá de nuevo.');
     const p = PAQUETES.find((x) => x.id === idPaquete);
     const c = { id: ++seq, paquete_id: p.id, paquete_nombre: p.nombre, cantidad_creditos: p.cantidad_creditos, precio_centavos: p.precio_centavos, moneda: p.moneda, estado: 'PENDIENTE', fecha_creacion: new Date().toISOString() };
     compras.push(c);
-    // Simula la confirmación del pago (en el back real la hace el aviso del medio de pago)
-    setTimeout(() => {
-      if (modo() === 'rechazo') { c.estado = 'RECHAZADA'; return; }
-      c.estado = 'APROBADA';
-      movs.push({ id: ++seq, tipo: 'RECARGA', monto: p.cantidad_creditos, descripcion: `Compra de paquete ${p.nombre} (${p.cantidad_creditos} créditos)`, fecha_registro: new Date().toISOString() });
-      mockSumarCreditos(p.cantidad_creditos);
-    }, 4000);
-    return { id: c.id, estado: 'PENDIENTE', url_pago: null };
+    return normCompra(c);
   }),
 };
 
@@ -138,23 +135,20 @@ const real = {
   paquetes: () => req('/creditos/paquetes').then((l) => l.map(normPaquete)),
   movimientos: () => req('/creditos/movimientos').then((l) => l.map(normMov)),
   compras: () => req('/creditos/compras').then((l) => l.map(normCompra)),
-  consultar: (compraId) => req(`/creditos/compras/${compraId}`),
-  reintentarCheckout: (compraId) => req(`/creditos/compras/${compraId}/checkout`, { method: 'POST' }),
-  comprar: (idPaquete) =>
-    req('/creditos/compras', { method: 'POST', body: JSON.stringify({ paquete_id: idPaquete }) })
-      .then((r) => ({ ...r, url_pago: r.url_pago ?? r.init_point ?? null })),
+  consultar: (compraId) => req(`/creditos/compras/${compraId}`).then(normCompra),
+  simularPago: (compraId, resultado) => req(`/creditos/compras/${compraId}/simular-pago`, {
+    method: 'POST',
+    body: JSON.stringify({ resultado }),
+  }).then(normCompra),
+  comprar: (idPaquete) => req('/creditos/compras', {
+    method: 'POST',
+    body: JSON.stringify({ paquete_id: idPaquete }),
+  }).then(normCompra),
 };
 
 export const creditosApi = USE_MOCK ? mock : real;
-export const listarPaquetesCreditos = () => req('/creditos/paquetes');
-
-export const iniciarCompraCreditos = (paqueteId) => req('/creditos/compras', {
-  method: 'POST',
-  body: JSON.stringify({ paquete_id: paqueteId }),
-});
-
-export const consultarCompraCreditos = (compraId) =>
-  req(`/creditos/compras/${compraId}`);
-
-export const reintentarCheckoutCreditos = (compraId) =>
-  creditosApi.reintentarCheckout(compraId);
+export const listarPaquetesCreditos = () => creditosApi.paquetes();
+export const iniciarCompraCreditos = (paqueteId) => creditosApi.comprar(paqueteId);
+export const consultarCompraCreditos = (compraId) => creditosApi.consultar(compraId);
+export const simularPagoCreditos = (compraId, resultado) =>
+  creditosApi.simularPago(compraId, resultado);

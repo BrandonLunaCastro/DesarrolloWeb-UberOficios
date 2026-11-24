@@ -70,7 +70,6 @@ class CompraCredito(Base):
     __table_args__ = (
         CheckConstraint("cantidad_creditos > 0", name="ck_compra_credito_cantidad"),
         CheckConstraint("precio_centavos > 0", name="ck_compra_credito_precio"),
-        UniqueConstraint("referencia_pago", name="uq_compra_credito_referencia_pago"),
         UniqueConstraint("transaccion_id", name="uq_compra_credito_transaccion"),
     )
 
@@ -98,14 +97,11 @@ class CompraCredito(Base):
         nullable=False,
         default=EstadoCompraCreditoEnum.PENDIENTE,
     )
-    referencia_pago = Column(String(100), nullable=True)
     transaccion_id = Column(
         Integer,
         ForeignKey("transaccion_credito.id", ondelete="RESTRICT"),
         nullable=True,
     )
-    preferencia_pago_id = Column(String(100), nullable=True)
-    url_pago = Column(String(2048), nullable=True)
     fecha_creacion = Column(
         DateTime(timezone=True),
         nullable=False,

@@ -209,10 +209,7 @@ Ejemplo de estructura:
 
 ```env
 DATABASE_URL=URL_DE_LA_BASE_DE_DATOS
-MERCADOPAGO_ACCESS_TOKEN=TOKEN_PRIVADO_DE_MERCADO_PAGO
-MERCADOPAGO_WEBHOOK_SECRET=SECRETO_DE_FIRMA_DEL_WEBHOOK
-MERCADOPAGO_WEBHOOK_URL=https://URL_PUBLICA_DEL_BACKEND/creditos/pagos/webhook
-FRONTEND_URL=https://URL_PUBLICA_DEL_FRONTEND
+PAYMENT_MODE=mock
 CLOUDINARY_CLOUD_NAME=TU_CLOUD_NAME
 CLOUDINARY_API_KEY=TU_API_KEY
 CLOUDINARY_API_SECRET=TU_API_SECRET
@@ -248,22 +245,17 @@ Al finalizar un trabajo, el panel principal del cliente muestra una calificació
 pendiente hasta que envíe su puntuación de 1 a 5 estrellas. El comentario y la
 foto comprobante son opcionales; las fotos comprobantes se guardan en Cloudinary
 y se muestran públicamente junto a la opinión del prestador.
-> Para iniciar compras y confirmar pagos hay que configurar las credenciales de
-> Mercado Pago, la URL pública del webhook y la URL de retorno del frontend.
-> Aplicar las migraciones desde `backend` con `alembic upgrade head`; la migración
-> agrega los paquetes Inicial, Popular y Profesional.
+> Para usar el simulador de pagos de créditos, configurar `PAYMENT_MODE=mock`
+> en el entorno del backend. La persona prestadora puede registrar una compra y
+> elegir un resultado de prueba aprobado, rechazado o cancelado. Esos resultados
+> no realizan cobros reales; solo el resultado aprobado acredita créditos en la
+> billetera y crea su movimiento. Aplicar las migraciones desde `backend` con
+> `alembic upgrade head`; esto crea los paquetes y elimina columnas de la antigua
+> integración con una pasarela externa.
 
-En Mercado Pago, configurar una notificación de tipo **Pagos** apuntando a
-`https://URL_PUBLICA_DEL_BACKEND/creditos/pagos/webhook` y copiar su clave
-secreta de firma en `MERCADOPAGO_WEBHOOK_SECRET`. El webhook debe ser público y
-usar HTTPS; `localhost` no es accesible desde Mercado Pago. Para probar, usar
-credenciales y cuentas de prueba de Mercado Pago; para producción, reemplazar
-el access token de prueba por el token de producción. No mezclar credenciales de
-prueba con cuentas reales.
-
-`FRONTEND_URL` debe ser el origen público del frontend (sin una ruta específica);
-ese origen se usa tanto para volver del checkout como para autorizar CORS. En el
-frontend, configurar `VITE_API_URL` con la URL base pública del backend.
+En el frontend, configurar `VITE_API_URL` con la URL base del backend. No
+habilitar `PAYMENT_MODE=mock` en un entorno donde se acepten pagos reales: el
+simulador no sustituye una pasarela ni procesa dinero.
 
 El `.gitignore` debe contener:
 
