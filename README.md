@@ -209,6 +209,7 @@ Ejemplo de estructura:
 
 ```env
 DATABASE_URL=URL_DE_LA_BASE_DE_DATOS
+MERCADOPAGO_ENVIRONMENT=test
 MERCADOPAGO_ACCESS_TOKEN=TOKEN_PRIVADO_DE_MERCADO_PAGO
 MERCADOPAGO_WEBHOOK_SECRET=SECRETO_DE_FIRMA_DEL_WEBHOOK
 MERCADOPAGO_WEBHOOK_URL=https://URL_PUBLICA_DEL_BACKEND/creditos/pagos/webhook
@@ -252,6 +253,9 @@ y se muestran públicamente junto a la opinión del prestador.
 > Mercado Pago, la URL pública del webhook y la URL de retorno del frontend.
 > Aplicar las migraciones desde `backend` con `alembic upgrade head`; la migración
 > agrega los paquetes Inicial, Popular y Profesional.
+> `MERCADOPAGO_ENVIRONMENT` debe ser `test` para usar el checkout de prueba o
+> `production` para cobrar pagos reales. Se configura explícitamente porque el
+> prefijo del Access Token no identifica de forma confiable el entorno.
 
 En Mercado Pago, configurar una notificación de tipo **Pagos** apuntando a
 `https://URL_PUBLICA_DEL_BACKEND/creditos/pagos/webhook` y copiar su clave

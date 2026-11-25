@@ -23,7 +23,10 @@ def configuracion_mercado_pago_disponible() -> bool:
             "MERCADOPAGO_WEBHOOK_SECRET",
             "MERCADOPAGO_WEBHOOK_URL",
         )
-    )
+    ) and os.getenv("MERCADOPAGO_ENVIRONMENT", "").strip().lower() in {
+        "test",
+        "production",
+    }
 
 
 def _solicitud_mercado_pago(
@@ -72,6 +75,12 @@ def _solicitud_mercado_pago(
 
 
 def crear_preferencia(compra: CompraCredito) -> dict:
+    ambiente = os.getenv("MERCADOPAGO_ENVIRONMENT", "").strip().lower()
+    if ambiente not in {"test", "production"}:
+        raise MercadoPagoError(
+            "MERCADOPAGO_ENVIRONMENT debe ser 'test' o 'production'"
+        )
+
     frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173").rstrip("/")
     return_url = f"{frontend_url}/?compra_id={compra.id}"
     respuesta = _solicitud_mercado_pago(
@@ -99,10 +108,9 @@ def crear_preferencia(compra: CompraCredito) -> dict:
         },
     )
     preference_id = respuesta.get("id")
-    token = os.getenv("MERCADOPAGO_ACCESS_TOKEN", "")
     payment_url = (
         respuesta.get("sandbox_init_point")
-        if token.startswith("TEST-")
+        if ambiente == "test"
         else respuesta.get("init_point")
     )
     if not preference_id or not payment_url:
