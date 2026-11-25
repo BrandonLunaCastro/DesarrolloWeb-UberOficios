@@ -42,6 +42,8 @@ function transformarPostulacion(postulacion) {
     descripcion: postulacion.descripcion_aviso || '',
     comentario: postulacion.comentario || '',
     presupuesto: Number(postulacion.presupuesto),
+    precioMinimo: postulacion.presupuesto_minimo == null ? null : Number(postulacion.presupuesto_minimo),
+    precioMaximo: postulacion.presupuesto_maximo == null ? null : Number(postulacion.presupuesto_maximo),
     estado: normalizarEstado(postulacion.estado),
     estadoOriginal: postulacion.estado,
     estadoAviso: String(postulacion.estado_aviso || '').toUpperCase(),
@@ -104,6 +106,13 @@ function EditarPresupuestoModal({ presupuesto, guardando, error, onGuardar, onCe
         <span className="pp-kicker">EDITAR PROPUESTA</span>
         <h2 id="pp-editar-titulo">{presupuesto.titulo}</h2>
         <p>El cliente verá el importe vigente de tu presupuesto.</p>
+        {presupuesto.precioMinimo !== null && (
+          <p>
+            Rango de presupuestos del aviso: {formatearPrecio(presupuesto.precioMinimo)}
+            {' – '}
+            {formatearPrecio(presupuesto.precioMaximo)}
+          </p>
+        )}
         <form className="pp-editar-form" onSubmit={guardar}>
           <label htmlFor="pp-nuevo-presupuesto">Nuevo importe</label>
           <input
@@ -155,6 +164,13 @@ function PresupuestoCard({ presupuesto, onVer, onEditar }) {
         <span><UserRound size={13} />{presupuesto.cliente}</span>
         {presupuesto.zona && <span><MapPin size={13} />{presupuesto.zona}</span>}
       </div>
+      {presupuesto.precioMinimo !== null && (
+        <p className="pp-rango-precios">
+          Rango de presupuestos del aviso: <b>{formatearPrecio(presupuesto.precioMinimo)}</b>
+          {' – '}
+          <b>{formatearPrecio(presupuesto.precioMaximo)}</b>
+        </p>
+      )}
       <p className="pp-descripcion">{presupuesto.descripcion}</p>
       <div className="pp-card-pie">
         <div className="pp-fechas"><span>Enviado {presupuesto.enviado}</span></div>
@@ -245,10 +261,9 @@ export default function PresupuestosPrestadorPage({ onUnauthorized }) {
     setErrorEdicion('');
     try {
       await presupuestosApi.actualizarPresupuesto(edicion.id, monto);
-      setPresupuestos((items) => items.map((item) => (
-        item.id === edicion.id ? { ...item, presupuesto: monto } : item
-      )));
+      setPresupuestos(null);
       setEdicion(null);
+      setIntento((actual) => actual + 1);
     } catch (error) {
       if (error.status === 401) {
         onUnauthorized?.();

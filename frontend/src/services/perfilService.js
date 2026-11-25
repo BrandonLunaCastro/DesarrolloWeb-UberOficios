@@ -1,3 +1,5 @@
+import { ZONAS as ZONAS_DISPONIBLES } from '../constants/catalogos';
+
 const BASE = (import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000').replace(/\/+$/, '');
 // Con VITE_USE_MOCK=true en el .env, la pantalla funciona sin backend (datos en memoria).
 const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true';
@@ -17,7 +19,7 @@ async function req(path, init = {}) {
 
 // ---------- MOCK ----------
 const ph = (c) => 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='400' height='300'><rect width='100%' height='100%' fill='${c}'/></svg>`);
-const ZONAS = ['Capital', 'Godoy Cruz', 'Guaymallén', 'Las Heras', 'Luján de Cuyo', 'Maipú'].map((nombre, i) => ({ id_zona: i + 1, nombre }));
+const ZONAS = ZONAS_DISPONIBLES.map((nombre, i) => ({ id_zona: i + 1, nombre }));
 const db = {
   usuario: { nombre: 'Martin', apellido: 'Gomez', foto_perfil: null, fecha_registro: '2026-08-12' },
   prestador: { matricula: '55432', biografia: 'Especialista en instalaciones eléctricas domiciliarias. Trabajo rápido y con garantía. Matrícula N° 55432.', zona: 'Godoy Cruz', oficio: 'Electricista' },

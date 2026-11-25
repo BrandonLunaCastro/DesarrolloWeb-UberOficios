@@ -19,6 +19,8 @@ class PostulacionListItem(BaseModel):
     id_conversacion: int | None = None
     id_calificacion: int | None = None
     presupuesto: Decimal
+    presupuesto_minimo: Decimal | None = None
+    presupuesto_maximo: Decimal | None = None
     comentario: str | None = None
     fecha_postulacion: datetime
     estado: str

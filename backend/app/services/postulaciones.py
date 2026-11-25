@@ -1,7 +1,7 @@
 from decimal import Decimal
 
 from fastapi import HTTPException
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -24,6 +24,28 @@ from app.services.vencimiento_avisos import (
 
 
 COSTO_POSTULACION = 1
+
+
+async def _rangos_presupuesto_por_aviso(
+    db: AsyncSession,
+    ids_avisos: set[int],
+) -> dict[int, tuple[Decimal, Decimal]]:
+    if not ids_avisos:
+        return {}
+
+    resultado = await db.execute(
+        select(
+            Postulacion.id_aviso,
+            func.min(Postulacion.presupuesto).label("minimo"),
+            func.max(Postulacion.presupuesto).label("maximo"),
+        )
+        .where(Postulacion.id_aviso.in_(ids_avisos))
+        .group_by(Postulacion.id_aviso)
+    )
+    return {
+        id_aviso: (minimo, maximo)
+        for id_aviso, minimo, maximo in resultado.all()
+    }
 
 
 async def listar_postulaciones_por_prestador(
@@ -52,10 +74,16 @@ async def listar_postulaciones_por_prestador(
         .order_by(Postulacion.fecha_postulacion.desc())
     )
 
+    postulaciones = resultados.all()
+    rangos = await _rangos_presupuesto_por_aviso(
+        db,
+        {postulacion.id_aviso for postulacion in postulaciones},
+    )
     items: list[PostulacionListItem] = []
-    for postulacion in resultados.all():
+    for postulacion in postulaciones:
         aviso = postulacion.aviso
         cliente = aviso.cliente if aviso else None
+        minimo, maximo = rangos.get(postulacion.id_aviso, (None, None))
         items.append(
             PostulacionListItem(
                 id_postulacion=postulacion.id_postulacion,
@@ -73,6 +101,8 @@ async def listar_postulaciones_por_prestador(
                     else None
                 ),
                 presupuesto=postulacion.presupuesto,
+                presupuesto_minimo=minimo,
+                presupuesto_maximo=maximo,
                 comentario=postulacion.comentario,
                 fecha_postulacion=postulacion.fecha_postulacion,
                 estado=postulacion.estado,
@@ -113,11 +143,17 @@ async def listar_postulaciones_por_cliente(
         .order_by(Postulacion.fecha_postulacion.desc())
     )
 
+    postulaciones = resultados.all()
+    rangos = await _rangos_presupuesto_por_aviso(
+        db,
+        {postulacion.id_aviso for postulacion in postulaciones},
+    )
     items: list[PostulacionListItem] = []
-    for postulacion in resultados.all():
+    for postulacion in postulaciones:
         aviso = postulacion.aviso
         cliente = aviso.cliente if aviso else None
         prestador = postulacion.prestador
+        minimo, maximo = rangos.get(postulacion.id_aviso, (None, None))
         items.append(
             PostulacionListItem(
                 id_postulacion=postulacion.id_postulacion,
@@ -135,6 +171,8 @@ async def listar_postulaciones_por_cliente(
                     else None
                 ),
                 presupuesto=postulacion.presupuesto,
+                presupuesto_minimo=minimo,
+                presupuesto_maximo=maximo,
                 comentario=postulacion.comentario,
                 fecha_postulacion=postulacion.fecha_postulacion,
                 estado=postulacion.estado,

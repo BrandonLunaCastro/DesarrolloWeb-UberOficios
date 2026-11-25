@@ -9,6 +9,10 @@ El proyecto está dividido en:
 * **Frontend:** HTML + CSS + JavaScript
 * **Autenticación:** Passlib + bcrypt + JWT
 
+Para entender los flujos del backend con más detalle, consulta la
+[guía técnica del backend](./backend/GUIA_TECNICA_BACKEND.md) o el
+[diagrama entidad-relación](./backend/MODELO_MER.md).
+
 ---
 
 # 1. Estructura del proyecto

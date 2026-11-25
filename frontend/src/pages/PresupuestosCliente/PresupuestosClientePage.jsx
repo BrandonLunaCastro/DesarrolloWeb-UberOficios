@@ -58,6 +58,7 @@ function agruparPresupuestos(avisos, postulaciones) {
         estado: normalizarEstado(postulacion.estado),
       };
     });
+    const precios = propuestas.map((propuesta) => propuesta.precio);
     const aceptada = propuestas.find((propuesta) => propuesta.estado.startsWith('ACEPTAD'));
 
     return {
@@ -69,6 +70,8 @@ function agruparPresupuestos(avisos, postulaciones) {
       publicado: fechaLegible(aviso.fecha_creacion),
       estadoAviso: normalizarEstado(aviso.estado),
       profesionales: propuestas,
+      precioMinimo: precios.length ? Math.min(...precios) : null,
+      precioMaximo: precios.length ? Math.max(...precios) : null,
       profesionalElegido: aceptada?.id,
     };
   });
@@ -143,6 +146,13 @@ function PresupuestoCard({
           </label>
         )}
       </div>
+      {aviso.precioMinimo !== null && (
+        <p className="pcp-rango-precios">
+          Precio mínimo: <b>{formatoPrecio(aviso.precioMinimo)}</b>
+          {' · '}
+          Precio máximo: <b>{formatoPrecio(aviso.precioMaximo)}</b>
+        </p>
+      )}
 
       {aviso.profesionales.length > 0 ? (
         <>

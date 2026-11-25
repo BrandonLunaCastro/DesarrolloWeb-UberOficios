@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
 import { perfilApi } from '../../services/perfilService';
+import { OFICIOS, ZONAS } from '../../constants/catalogos';
 
 const MAX_BIO = 500;
 
@@ -36,10 +37,18 @@ export default function EditarPerfilModal({ perfil, onClose, onSaved }) {
         <div className="hint"><span /><span>{bio.length}/{MAX_BIO}</span></div>
 
         <label htmlFor="oficio">Oficio</label>
-        <input id="oficio" maxLength={100} value={oficio} onChange={(e) => setOficio(e.target.value)} />
+        <select id="oficio" value={oficio} onChange={(e) => setOficio(e.target.value)}>
+          <option value="">Elegí un oficio…</option>
+          {oficio && !OFICIOS.includes(oficio) && <option value={oficio}>{oficio} (actual)</option>}
+          {OFICIOS.map((opcion) => <option key={opcion} value={opcion}>{opcion}</option>)}
+        </select>
 
         <label htmlFor="zona">Zona donde ofrecés servicios</label>
-        <input id="zona" maxLength={150} value={zona} onChange={(e) => setZona(e.target.value)} />
+        <select id="zona" value={zona} onChange={(e) => setZona(e.target.value)}>
+          <option value="">Elegí una zona…</option>
+          {zona && !ZONAS.includes(zona) && <option value={zona}>{zona} (actual)</option>}
+          {ZONAS.map((opcion) => <option key={opcion} value={opcion}>{opcion}</option>)}
+        </select>
 
         {error && <p className="err" role="alert">{error}</p>}
         <footer>

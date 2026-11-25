@@ -33,8 +33,9 @@ def _normalizar_categoria(nombre: str) -> str:
     )
     normalizado = " ".join(sin_acentos.strip().split())
     aliases = {
-        "plomeria": "plomeria y gas",
-        "gasista": "plomeria y gas",
+        "plomero": "plomeria",
+        "gasista": "gas",
+        "mecanico": "mecanica",
         "electricista": "electricidad",
         "cerrajero": "cerrajeria",
     }

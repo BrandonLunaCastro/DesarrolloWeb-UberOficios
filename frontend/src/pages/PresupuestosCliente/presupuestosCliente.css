@@ -21,6 +21,8 @@
 .pcp-meta{display:flex;flex-wrap:wrap;gap:10px;color:#64748b;font-size:10px}
 .pcp-meta span,.pcp-recibido{display:inline-flex;align-items:center;gap:4px}
 .pcp-presupuestos-cabecera{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:12px;padding-top:10px;border-top:1px solid #e2e8f0;font-size:11px}
+.pcp-rango-precios{margin:8px 0 0;color:#475569;font-size:10px}
+.pcp-rango-precios b{color:#0f172a}
 .pcp-orden{display:flex;align-items:center;gap:5px;color:#64748b;font-size:10px}
 .pcp-orden select{appearance:none;max-width:140px;padding:4px 19px 4px 6px;border:1px solid #e2e8f0;border-radius:5px;background:#fff;color:#334155;font:inherit}
 .pcp-orden svg{margin-left:-21px;pointer-events:none}
