@@ -1,7 +1,7 @@
 const API_URL = (import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000')
   .replace(/\/+$/, '');
 
-async function request(endpoint, body, authenticated = false) {
+async function request(endpoint, body, authenticated = false, method = 'POST') {
   const headers = { 'Content-Type': 'application/json' };
   if (authenticated) {
     const token = localStorage.getItem('jwt');
@@ -10,7 +10,7 @@ async function request(endpoint, body, authenticated = false) {
   }
 
   const response = await fetch(`${API_URL}${endpoint}`, {
-    method: 'POST',
+    method,
     headers,
     body: JSON.stringify(body),
   });
@@ -39,4 +39,4 @@ export const registerUser = ({ nombre, apellido, email, contrasena, rol }) =>
   request('/auth/register', { nombre, apellido, email, contrasena, rol });
 
 export const cambiarRolUsuario = (rol) =>
-  request('/auth/me/rol', { rol }, true);
+  request('/auth/me/rol', { rol }, true, 'PUT');
