@@ -6,7 +6,7 @@ import NotificationsMenu from './NotificationsMenu';
 const iniciales = (n = '', a = '') => `${n[0] ?? ''}${a[0] ?? ''}`.toUpperCase();
 
 // vista: 'CLIENTE' | 'PRESTADOR' (qué pantalla está viendo).
-export default function AppLayout({ children, usuario, onLogout, onSwitchRole, vista = 'PRESTADOR', pantalla, onNavigate }) {
+export default function AppLayout({ children, usuario, onLogout, onSwitchRole, cambiandoRol = false, vista = 'PRESTADOR', pantalla, onNavigate }) {
   const esCliente = vista === 'CLIENTE';
   const [menu, setMenu] = useState(false);
   const ref = useRef(null);
@@ -30,9 +30,9 @@ export default function AppLayout({ children, usuario, onLogout, onSwitchRole, v
           {menu && (
             <div className="lay-menu" role="menu">
               <div className="lay-cur"><span className="lay-av">{ini}</span><div><b>{nombre}</b><small>{esCliente ? 'Perfil de Cliente' : 'Perfil de Prestador'}</small></div></div>
-              <button role="menuitem" className="lay-item" onClick={() => { setMenu(false); onSwitchRole?.(); }}>
+              <button role="menuitem" className="lay-item" disabled={cambiandoRol} onClick={() => { setMenu(false); onSwitchRole?.(); }}>
                 <span className="lay-circ"><RefreshCw size={14} /></span>
-                <div><b>{esCliente ? 'Cambiar a Prestador de Servicios' : 'Cambiar a Cliente'}</b><small>{esCliente ? 'Gestionar presupuestos y saldo' : 'Buscar y contratar servicios'}</small></div></button>
+                <div><b>{cambiandoRol ? 'Cambiando...' : esCliente ? 'Cambiar a Prestador de Servicios' : 'Cambiar a Cliente'}</b><small>{esCliente ? 'Gestionar presupuestos y saldo' : 'Buscar y contratar servicios'}</small></div></button>
               <hr />
               <button role="menuitem" className="lay-item sm"><span className="lay-circ"><Settings size={13} /></span><b>Configuración y privacidad</b></button>
               <button role="menuitem" className="lay-item sm" onClick={onLogout}><span className="lay-circ"><LogOut size={13} /></span><b>Cerrar sesión</b></button>

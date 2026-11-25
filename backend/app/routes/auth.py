@@ -21,12 +21,31 @@ from app.models.creditos import (
 from app.models.rol import Rol
 from app.models.usuario import Usuario
 from app.services.creditos import BONO_MENSUAL_CREDITOS
-from app.schemas.auth import LoginRequest, RegisterRequest
+from app.schemas.auth import CambiarRolRequest, LoginRequest, RegisterRequest
 
 router = APIRouter(
     prefix="/auth",
     tags=["Autenticación"],
 )
+
+
+def _crear_perfil_prestador(usuario: Usuario) -> None:
+    prestador = PrestadorServicio(saldo_creditos=BONO_MENSUAL_CREDITOS)
+    billetera = BilleteraCredito(saldo_actual=BONO_MENSUAL_CREDITOS)
+    billetera.transacciones.append(
+        TransaccionCredito(
+            monto=BONO_MENSUAL_CREDITOS,
+            tipo=TipoTransaccionEnum.BONIFICACION,
+            referencia_tipo="bonificacion_inicial",
+            descripcion="Bonificación inicial de créditos por registro",
+        )
+    )
+    prestador.billetera = billetera
+    usuario.prestador = prestador
+
+
+def _crear_perfil_cliente(db: Session, id_usuario: int) -> None:
+    db.add(Cliente(id_usuario=id_usuario))
 
 
 @router.post("/register")
@@ -56,26 +75,13 @@ def register(
         rol=rol,
     )
     if datos.rol == "PRESTADOR":
-        prestador = PrestadorServicio(
-            saldo_creditos=BONO_MENSUAL_CREDITOS
-        )
-        billetera = BilleteraCredito(saldo_actual=BONO_MENSUAL_CREDITOS)
-        billetera.transacciones.append(
-            TransaccionCredito(
-                monto=BONO_MENSUAL_CREDITOS,
-                tipo=TipoTransaccionEnum.BONIFICACION,
-                referencia_tipo="bonificacion_inicial",
-                descripcion="Bonificación inicial de créditos por registro",
-            )
-        )
-        prestador.billetera = billetera
-        nuevo_usuario.prestador = prestador
+        _crear_perfil_prestador(nuevo_usuario)
 
     db.add(nuevo_usuario)
     try:
         db.flush()
         if datos.rol == "CLIENTE":
-            db.add(Cliente(id_usuario=nuevo_usuario.id_usuario))
+            _crear_perfil_cliente(db, nuevo_usuario.id_usuario)
         db.commit()
     except IntegrityError as error:
         db.rollback()
@@ -94,6 +100,57 @@ def register(
         "apellido": nuevo_usuario.apellido,
         "email": nuevo_usuario.email,
         "rol": nuevo_usuario.rol.nombre,
+    }
+
+
+@router.put("/me/rol")
+def cambiar_rol_usuario(
+    datos: CambiarRolRequest,
+    db: Session = Depends(get_db),
+    id_usuario: int = Depends(get_current_user_id),
+):
+    usuario = (
+        db.query(Usuario)
+        .filter(Usuario.id_usuario == id_usuario)
+        .with_for_update()
+        .first()
+    )
+    if usuario is None:
+        raise HTTPException(status_code=401, detail="Usuario no encontrado")
+
+    rol = db.query(Rol).filter(Rol.nombre == datos.rol).first()
+    if rol is None:
+        raise HTTPException(
+            status_code=503,
+            detail=f"El rol {datos.rol} no está configurado en la base de datos",
+        )
+
+    if datos.rol == "PRESTADOR":
+        prestador = (
+            db.query(PrestadorServicio)
+            .filter(PrestadorServicio.id_usuario == id_usuario)
+            .first()
+        )
+        if prestador is None:
+            _crear_perfil_prestador(usuario)
+    else:
+        cliente = db.query(Cliente).filter(Cliente.id_usuario == id_usuario).first()
+        if cliente is None:
+            _crear_perfil_cliente(db, id_usuario)
+
+    usuario.rol = rol
+    try:
+        db.commit()
+    except IntegrityError as error:
+        db.rollback()
+        raise HTTPException(
+            status_code=409,
+            detail="No se pudo cambiar el rol. Volvé a intentarlo.",
+        ) from error
+
+    return {
+        "id_usuario": usuario.id_usuario,
+        "rol": rol.nombre,
     }
 
 

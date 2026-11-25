@@ -2,7 +2,7 @@ import { Mail, Lock, User, Eye, EyeOff, Search, Settings } from 'lucide-react';
 import { FcGoogle } from 'react-icons/fc';
 import { FaApple } from 'react-icons/fa';
 import { useCallback, useEffect, useState } from 'react';
-import { loginUser, registerUser } from './services/authService';
+import { cambiarRolUsuario, loginUser, registerUser } from './services/authService';
 import './App.css';
 import AppLayout from './components/AppLayout';
 import PerfilPage from './pages/PerfilPrestador/PerfilPage';
@@ -26,6 +26,8 @@ export default function App() {
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [errorCambioRol, setErrorCambioRol] = useState('');
+  const [cambiandoRol, setCambiandoRol] = useState(false);
   const [token, setToken] = useState(localStorage.getItem('jwt') || '');
   const compraIdRetorno = new URLSearchParams(window.location.search).get('compra_id');
 
@@ -84,6 +86,28 @@ const handleSubmit = async (e) => {
     setVista(null);
   }, []);
 
+  async function cambiarVista() {
+    if (!vistaActual || cambiandoRol) return;
+
+    const siguienteRol = vistaActual === 'CLIENTE' ? 'PRESTADOR' : 'CLIENTE';
+    setErrorCambioRol('');
+    setCambiandoRol(true);
+    try {
+      const resultado = await cambiarRolUsuario(siguienteRol);
+      setRolUsuario(resultado.rol);
+      setVista(resultado.rol);
+      setPantalla('feed');
+    } catch (e) {
+      if (e.status === 401) {
+        handleLogout();
+        return;
+      }
+      setErrorCambioRol(e.message);
+    } finally {
+      setCambiandoRol(false);
+    }
+  }
+
   // Con sesión activa, consulta el rol para decidir la pantalla de inicio.
   useEffect(() => {
     if (!token) return;
@@ -111,8 +135,10 @@ if (token) {
       vista={vistaActual ?? 'PRESTADOR'}
       pantalla={pantalla}
       onNavigate={setPantalla}
-      onSwitchRole={() => { setPantalla('feed'); setVista(vistaActual === 'CLIENTE' ? 'PRESTADOR' : 'CLIENTE'); }}
+      onSwitchRole={cambiarVista}
+      cambiandoRol={cambiandoRol || vistaActual === null}
     >
+      {errorCambioRol && <p className="error" role="alert">{errorCambioRol}</p>}
       {vistaActual === null && <p aria-busy="true">Cargando…</p>}
       {vistaActual === 'CLIENTE' && pantalla === 'perfilCliente' && <PerfilClientePage onUnauthorized={handleLogout} />}
       {vistaActual === 'CLIENTE' && pantalla === 'presupuestos' && (

@@ -17,3 +17,7 @@ class RegisterRequest(BaseModel):
     contrasena: str
     telefono: str | None = None
     rol: Literal["CLIENTE", "PRESTADOR"] = "CLIENTE"
+
+
+class CambiarRolRequest(BaseModel):
+    rol: Literal["CLIENTE", "PRESTADOR"]
