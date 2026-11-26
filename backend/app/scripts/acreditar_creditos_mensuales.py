@@ -5,6 +5,7 @@ from app.services.creditos import acreditar_bonos_mensuales
 
 
 def main() -> None:
+    # Ejecutable de mantenimiento: el servicio calcula bonos y aquí se confirma la operación.
     db = SessionLocal()
     try:
         prestadores, creditos = acreditar_bonos_mensuales(db)

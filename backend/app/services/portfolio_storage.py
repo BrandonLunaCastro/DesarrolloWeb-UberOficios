@@ -11,6 +11,7 @@ class CloudinaryNotConfiguredError(Exception):
 
 
 def _configure_cloudinary() -> None:
+    # Las credenciales se leen al usar el servicio para permitir configuración por entorno.
     credentials = {
         "cloud_name": os.getenv("CLOUDINARY_CLOUD_NAME"),
         "api_key": os.getenv("CLOUDINARY_API_KEY"),
@@ -23,6 +24,7 @@ def _configure_cloudinary() -> None:
 
 
 def upload_portfolio_image(content: bytes, folder: str) -> dict:
+    # Cloudinary recibe un stream y devuelve URL pública junto con el identificador eliminable.
     _configure_cloudinary()
     return uploader.upload(
         io.BytesIO(content),
@@ -35,6 +37,7 @@ def upload_portfolio_image(content: bytes, folder: str) -> dict:
 
 
 def delete_portfolio_image(public_id: str) -> dict:
+    # Se usa el public_id guardado en la base, no la URL visible para el usuario.
     _configure_cloudinary()
     return uploader.destroy(
         public_id,

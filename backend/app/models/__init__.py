@@ -1,3 +1,4 @@
+# Importar aquí los modelos registra sus tablas en Base.metadata para Alembic.
 from app.models.usuario import Usuario
 from app.models.PrestadorServicio import PrestadorServicio
 from app.models.foto_portafolio import FotoPortafolio

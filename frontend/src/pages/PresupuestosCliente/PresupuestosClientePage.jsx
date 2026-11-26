@@ -50,7 +50,7 @@ function agruparPresupuestos(avisos, postulaciones) {
         idCalificacion: postulacion.id_calificacion,
         nombre,
         iniciales: iniciales(nombre),
-        oficio: postulacion.oficio_prestador || aviso.oficio,
+        oficio: postulacion.oficio_aviso || aviso.oficio || postulacion.oficio_prestador,
         precio: Number(postulacion.presupuesto),
         detalle: postulacion.comentario?.trim() || 'El prestador no agregó un comentario.',
         fecha: postulacion.fecha_postulacion,

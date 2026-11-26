@@ -14,6 +14,7 @@ from app.database import Base
 
 
 class Mensaje(Base):
+    # Mensaje persistido; el identificador único permite reintentos idempotentes del cliente.
     __tablename__ = "mensaje"
     __table_args__ = (
         UniqueConstraint(

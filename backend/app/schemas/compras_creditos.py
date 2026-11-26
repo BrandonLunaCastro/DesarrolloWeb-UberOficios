@@ -6,6 +6,7 @@ from app.models.creditos import EstadoCompraCreditoEnum
 
 
 class PaqueteCreditoResponse(BaseModel):
+    # Datos públicos de un paquete disponible para iniciar una compra.
     model_config = ConfigDict(from_attributes=True)
 
     id: int
@@ -16,10 +17,12 @@ class PaqueteCreditoResponse(BaseModel):
 
 
 class IniciarCompraRequest(BaseModel):
+    # La cantidad y el precio se obtienen del paquete en el servidor, no del cliente.
     paquete_id: int
 
 
 class CompraCreditoResponse(BaseModel):
+    # Estado de la compra y URL externa para completar el checkout, si existe.
     model_config = ConfigDict(from_attributes=True)
 
     id: int

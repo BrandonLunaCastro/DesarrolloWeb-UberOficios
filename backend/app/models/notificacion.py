@@ -4,6 +4,7 @@ from app.database import Base
 
 
 class Notificacion(Base):
+    # Notificación persistente para mostrar eventos aunque el usuario no esté conectado.
     __tablename__ = "notificacion"
     __table_args__ = (
         Index("ix_notificacion_usuario_fecha", "id_usuario", "fecha_creacion"),

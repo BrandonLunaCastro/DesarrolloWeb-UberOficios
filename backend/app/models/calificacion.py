@@ -15,6 +15,7 @@ from app.database import Base
 
 
 class Calificacion(Base):
+    # Una sola calificación por postulación aceptada; la BD también limita la puntuación a 1–5.
     __tablename__ = "calificacion"
     __table_args__ = (
         CheckConstraint("puntuacion BETWEEN 1 AND 5", name="ck_calificacion_puntuacion"),

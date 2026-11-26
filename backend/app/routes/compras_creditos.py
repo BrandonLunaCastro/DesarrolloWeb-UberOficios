@@ -38,6 +38,7 @@ async def _obtener_prestador(
     db: AsyncSession,
     id_usuario: int,
 ) -> PrestadorServicio:
+    # Todas las operaciones de compra se vinculan al perfil del usuario autenticado.
     prestador = await db.scalar(
         select(PrestadorServicio).where(PrestadorServicio.id_usuario == id_usuario)
     )
@@ -53,6 +54,7 @@ async def _iniciar_checkout(
     db: AsyncSession,
     compra: CompraCredito,
 ) -> CompraCredito:
+    # La llamada de red se ejecuta en un hilo para no bloquear el event loop.
     try:
         preference = await asyncio.to_thread(crear_preferencia, compra)
     except MercadoPagoError as error:
@@ -73,6 +75,7 @@ async def listar_paquetes_creditos(
     db: AsyncSession = Depends(get_async_db),
     id_usuario: int = Depends(get_current_user_id),
 ):
+    # Los precios y cantidades publicados siempre se leen del catálogo del servidor.
     del id_usuario
     paquetes = await db.scalars(
         select(PaqueteCredito)
@@ -92,6 +95,7 @@ async def iniciar_compra_creditos(
     db: AsyncSession = Depends(get_async_db),
     id_usuario: int = Depends(get_current_user_id),
 ):
+    # Se guarda primero la compra pendiente para conservarla si falla la pasarela.
     if not configuracion_mercado_pago_disponible():
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -129,6 +133,7 @@ async def listar_compras_creditos(
     db: AsyncSession = Depends(get_async_db),
     id_usuario: int = Depends(get_current_user_id),
 ):
+    # La paginación y el filtro por prestador impiden exponer compras ajenas.
     prestador = await _obtener_prestador(db, id_usuario)
     resultado = await db.execute(
         select(CompraCredito, PaqueteCredito.nombre.label("paquete_nombre"))
@@ -164,6 +169,7 @@ async def reintentar_checkout_compra(
     db: AsyncSession = Depends(get_async_db),
     id_usuario: int = Depends(get_current_user_id),
 ):
+    # Reutiliza una compra pendiente; no crea otra ni duplica una preferencia ya guardada.
     prestador = await _obtener_prestador(db, id_usuario)
     compra = await db.scalar(
         select(CompraCredito).where(
@@ -191,6 +197,7 @@ async def consultar_compra_creditos(
     db: AsyncSession = Depends(get_async_db),
     id_usuario: int = Depends(get_current_user_id),
 ):
+    # La consulta también se restringe al dueño del perfil profesional.
     prestador = await _obtener_prestador(db, id_usuario)
     compra = await db.scalar(
         select(CompraCredito).where(
@@ -208,6 +215,7 @@ async def confirmar_pago_creditos(
     request: Request,
     db: AsyncSession = Depends(get_async_db),
 ):
+    # La notificación se contrasta con Mercado Pago antes de cambiar saldo o estado.
     if not os.getenv("MERCADOPAGO_WEBHOOK_SECRET"):
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -264,6 +272,7 @@ async def confirmar_pago_creditos(
     if not importe_pago_valido(pago, compra):
         raise HTTPException(status_code=400, detail="El importe o moneda del pago no coincide")
 
+    # Webhooks repetidos son seguros: una compra ya procesada no acredita de nuevo.
     if compra.estado != EstadoCompraCreditoEnum.PENDIENTE:
         return {"recibido": True, "estado": compra.estado.value}
 

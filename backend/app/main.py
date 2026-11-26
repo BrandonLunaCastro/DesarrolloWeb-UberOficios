@@ -18,6 +18,7 @@ from app.routes.prestadores import router as prestadores_router
 
 app = FastAPI()
 
+# Cada router agrupa las rutas de una funcionalidad y define su prefijo/etiqueta.
 app.include_router(auth_router)
 app.include_router(usuarios_router)
 app.include_router(avisos_router)
@@ -34,6 +35,7 @@ origenes_permitidos = {
     "http://127.0.0.1:5173",
     "https://uberoficios-frontend.onrender.com",
 }
+# Acepta además el origen del frontend desplegado configurado por entorno.
 frontend_url = os.getenv("FRONTEND_URL")
 if frontend_url:
     frontend = urlsplit(frontend_url)
@@ -43,6 +45,7 @@ if frontend_url:
 
 @app.get("/health")
 def health_check():
+    # Endpoint simple para comprobar disponibilidad sin consultar datos de usuario.
     return {"status": "ok"}
 
 

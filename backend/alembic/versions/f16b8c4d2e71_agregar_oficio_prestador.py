@@ -26,7 +26,6 @@ def upgrade() -> None:
             sa.Column("oficio", sa.String(length=100), nullable=True),
         )
 
-
 def downgrade() -> None:
     columns = {
         column["name"]

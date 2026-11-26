@@ -21,6 +21,7 @@ async def listar_conversaciones(
     *,
     id_usuario: int,
 ) -> list[dict]:
+    # Un usuario puede tener ambos perfiles; se filtra cada conversación según su lado.
     id_cliente = await db.scalar(
         select(Cliente.id_cliente).where(Cliente.id_usuario == id_usuario)
     )
@@ -47,6 +48,7 @@ async def listar_conversaciones(
     if not condiciones:
         return []
 
+    # Cargar relaciones en lote evita consultas extra al preparar cada resumen.
     conversaciones = await db.scalars(
         select(Conversacion)
         .where(or_(*condiciones))
@@ -123,6 +125,7 @@ async def _obtener_conversacion_participante(
     id_conversacion: int,
     id_usuario: int,
 ) -> Conversacion:
+    # Todas las operaciones del chat pasan por esta comprobación de pertenencia.
     conversacion = await db.get(Conversacion, id_conversacion)
     if conversacion is None:
         raise HTTPException(status_code=404, detail="Conversación no encontrada")
@@ -153,6 +156,7 @@ async def ocultar_conversacion(
     id_conversacion: int,
     id_usuario: int,
 ) -> None:
+    # El ocultamiento es por participante; el registro y el historial se conservan.
     conversacion = await _obtener_conversacion_participante(
         db,
         id_conversacion=id_conversacion,
@@ -185,6 +189,7 @@ async def crear_mensaje(
     id_usuario: int,
     datos: MensajeCreate,
 ) -> tuple[Mensaje, bool]:
+    # Devuelve además si se insertó, para no retransmitir mensajes reintentados.
     conversacion = await _obtener_conversacion_participante(
         db,
         id_conversacion=id_conversacion,
@@ -227,6 +232,7 @@ async def crear_mensaje(
             tipo="mensaje",
             mensaje=f"{nombre_remitente or 'Tienes'} te envió un mensaje.",
         )
+    # La restricción única convierte reintentos concurrentes en una operación idempotente.
     try:
         await db.commit()
     except IntegrityError:
@@ -265,6 +271,7 @@ async def obtener_historial_mensajes(
     id_usuario: int,
     despues_de_id: int = 0,
 ) -> list[Mensaje]:
+    # El cursor after_id permite pedir solo mensajes posteriores a los ya recibidos.
     await _obtener_conversacion_participante(
         db,
         id_conversacion=id_conversacion,

@@ -20,4 +20,5 @@ class RegisterRequest(BaseModel):
 
 
 class CambiarRolRequest(BaseModel):
+    # Mantiene el valor restringido a roles que la aplicación reconoce.
     rol: Literal["CLIENTE", "PRESTADOR"]

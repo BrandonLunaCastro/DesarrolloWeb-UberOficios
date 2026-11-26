@@ -5,6 +5,7 @@ from app.database import Base
 
 
 class Rol(Base):
+    # Catálogo de roles usados para decidir las capacidades del usuario.
     __tablename__ = "rol"
 
     id_rol = Column(Integer, primary_key=True)

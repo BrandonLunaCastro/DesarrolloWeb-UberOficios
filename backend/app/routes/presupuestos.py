@@ -35,6 +35,7 @@ async def editar_presupuesto(
     db: AsyncSession = Depends(get_async_db),
     usuario_actual: Usuario = Depends(get_current_user),
 ):
+    # La ruta valida el rol; el servicio además comprueba propiedad y estado del aviso.
     if (usuario_actual.rol.nombre or "").strip().upper() != "PRESTADOR":
         raise HTTPException(
             status_code=403,
@@ -58,6 +59,7 @@ async def aceptar_presupuesto(
     db: AsyncSession = Depends(get_async_db),
     usuario_actual: Usuario = Depends(get_current_user),
 ):
+    # Devuelve el chat asociado para que el cliente pueda continuar la coordinación.
     if (usuario_actual.rol.nombre or "").strip().upper() != "CLIENTE":
         raise HTTPException(
             status_code=403,
@@ -85,6 +87,7 @@ async def obtener_presupuestos_del_prestador(
     db: AsyncSession = Depends(get_async_db),
     usuario_actual: Usuario = Depends(get_current_user),
 ):
+    # No basta con el ID de la URL: se comprueba que pertenezca al usuario autenticado.
     if (usuario_actual.rol.nombre or "").strip().upper() != "PRESTADOR":
         raise HTTPException(
             status_code=403,
@@ -119,6 +122,7 @@ async def obtener_presupuestos_del_cliente(
     db: AsyncSession = Depends(get_async_db),
     usuario_actual: Usuario = Depends(get_current_user),
 ):
+    # Solo el cliente dueño de la cuenta puede consultar las propuestas recibidas.
     if (usuario_actual.rol.nombre or "").strip().upper() != "CLIENTE":
         raise HTTPException(
             status_code=403,

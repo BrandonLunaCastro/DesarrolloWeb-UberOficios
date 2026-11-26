@@ -30,6 +30,7 @@ router = APIRouter(
 
 
 def _crear_perfil_prestador(usuario: Usuario) -> None:
+    # El alta profesional incluye saldo inicial y su movimiento de auditoría.
     prestador = PrestadorServicio(saldo_creditos=BONO_MENSUAL_CREDITOS)
     billetera = BilleteraCredito(saldo_actual=BONO_MENSUAL_CREDITOS)
     billetera.transacciones.append(
@@ -45,9 +46,11 @@ def _crear_perfil_prestador(usuario: Usuario) -> None:
 
 
 def _crear_perfil_cliente(db: Session, id_usuario: int) -> None:
+    # Cliente es un perfil separado; el usuario conserva una sola identidad de acceso.
     db.add(Cliente(id_usuario=id_usuario))
 
 
+# Registra usuario y perfil dentro de una transacción para evitar altas incompletas.
 @router.post("/register")
 def register(
     datos: RegisterRequest,
@@ -78,6 +81,7 @@ def register(
         _crear_perfil_prestador(nuevo_usuario)
 
     db.add(nuevo_usuario)
+    # flush asigna el ID del usuario para poder crear el perfil cliente antes del commit.
     try:
         db.flush()
         if datos.rol == "CLIENTE":
@@ -103,6 +107,7 @@ def register(
     }
 
 
+# Cambia el rol activo sin borrar el perfil del rol anterior.
 @router.put("/me/rol")
 def cambiar_rol_usuario(
     datos: CambiarRolRequest,
@@ -125,6 +130,7 @@ def cambiar_rol_usuario(
             detail=f"El rol {datos.rol} no está configurado en la base de datos",
         )
 
+    # Si el perfil ya existe se reutiliza y no se vuelve a otorgar la bonificación inicial.
     if datos.rol == "PRESTADOR":
         prestador = (
             db.query(PrestadorServicio)
@@ -154,6 +160,7 @@ def cambiar_rol_usuario(
     }
 
 
+# Verifica la contraseña después de cerrar la sesión de lectura de la base.
 @router.post("/login")
 def login(
     datos: LoginRequest,
@@ -166,6 +173,7 @@ def login(
         .first()
     )
     if not usuario:
+        # Copiar los datos necesarios y liberar la transacción antes del cálculo del hash.
         db.rollback()
         raise HTTPException(
             status_code=401,
@@ -197,6 +205,7 @@ def login(
 
 @router.get("/me")
 def obtener_usuario_actual(usuario: Usuario = Depends(get_current_user)):
+    # Devuelve los datos de sesión ya autenticados, incluido el rol vigente.
     return {
         "id_usuario": usuario.id_usuario,
         "nombre": usuario.nombre,
@@ -214,6 +223,7 @@ def obtener_saldo_prestador(
     db: Session = Depends(get_db),
     id_usuario: int = Depends(get_current_user_id),
 ):
+    # El saldo solo aplica al perfil profesional asociado al usuario autenticado.
     prestador = (
         db.query(PrestadorServicio)
         .filter(PrestadorServicio.id_usuario == id_usuario)

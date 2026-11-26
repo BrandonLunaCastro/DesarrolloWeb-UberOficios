@@ -8,6 +8,7 @@ from app.database import (
 )
 
 
+# Adapta URLs de PostgreSQL al driver asíncrono que usa SQLAlchemy.
 def _async_database_url(url: str) -> str:
     if url.startswith("postgres://"):
         return url.replace("postgres://", "postgresql+asyncpg://", 1)
@@ -34,5 +35,6 @@ AsyncSessionLocal = async_sessionmaker(
 
 
 async def get_async_db():
+    # La dependencia de FastAPI cierra la sesión al terminar cada solicitud.
     async with AsyncSessionLocal() as session:
         yield session

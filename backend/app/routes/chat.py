@@ -30,6 +30,7 @@ async def consultar_conversaciones(
     db: AsyncSession = Depends(get_async_db),
     id_usuario: int = Depends(get_current_user_id),
 ):
+    # El servicio limita los resultados a conversaciones visibles para el usuario.
     return await listar_conversaciones(db, id_usuario=id_usuario)
 
 
@@ -39,6 +40,7 @@ async def desactivar_conversacion(
     db: AsyncSession = Depends(get_async_db),
     id_usuario: int = Depends(get_current_user_id),
 ):
+    # Oculta el chat solo para quien realiza la solicitud; no borra el historial.
     await ocultar_conversacion(
         db,
         id_conversacion=id_conversacion,
@@ -58,6 +60,7 @@ async def enviar_mensaje(
     db: AsyncSession = Depends(get_async_db),
     id_usuario: int = Depends(get_current_user_id),
 ):
+    # Se notifica por WebSocket solo cuando el servicio insertó un mensaje nuevo.
     mensaje, creado = await crear_mensaje(
         db,
         id_conversacion=id_conversacion,
@@ -82,6 +85,7 @@ async def consultar_historial(
     db: AsyncSession = Depends(get_async_db),
     id_usuario: int = Depends(get_current_user_id),
 ):
+    # after_id sirve como cursor para recuperar mensajes que faltan al cliente.
     return await obtener_historial_mensajes(
         db,
         id_conversacion=id_conversacion,
@@ -97,6 +101,7 @@ async def conectar_chat(
     token: str | None = Query(default=None),
     after_id: int = Query(default=0, ge=0),
 ):
+    # El token se valida antes de permitir la suscripción al canal del chat.
     await websocket.accept()
 
     try:
@@ -125,6 +130,7 @@ async def conectar_chat(
                     raise
                 return
 
+        # La suscripción y la carga inicial quedan ordenadas respecto de los broadcasts.
         async with chat_connections.lock_for(id_conversacion):
             chat_connections.connect(id_conversacion, websocket)
             async with AsyncSessionLocal() as db:
@@ -140,6 +146,7 @@ async def conectar_chat(
                     "message": MensajeResponse.model_validate(mensaje).model_dump(mode="json"),
                 })
 
+        # Este socket transmite eventos; el envío de mensajes se hace por el endpoint HTTP.
         while True:
             await websocket.receive_text()
             await websocket.close(code=1008, reason="El socket solo admite recepción")

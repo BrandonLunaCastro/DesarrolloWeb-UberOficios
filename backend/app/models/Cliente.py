@@ -5,6 +5,7 @@ from app.database import Base
 
 
 class Cliente(Base):
+    # Perfil de cliente separado de Usuario para relacionar sus conversaciones.
     __tablename__ = "cliente"
 
     id_cliente = Column(Integer, primary_key=True, index=True)

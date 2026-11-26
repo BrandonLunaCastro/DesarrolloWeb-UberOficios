@@ -39,6 +39,7 @@ async def listar_calificaciones_pendientes(
     db: AsyncSession = Depends(get_async_db),
     usuario: Usuario = Depends(get_current_user_async),
 ):
+    # Lista trabajos terminados y aceptados que aún no tienen calificación.
     if (usuario.rol.nombre or "").strip().upper() != "CLIENTE":
         raise HTTPException(
             status_code=403,
@@ -95,6 +96,7 @@ async def crear_calificacion(
     db: AsyncSession = Depends(get_async_db),
     usuario: Usuario = Depends(get_current_user_async),
 ):
+    # Verifica propiedad y finalización antes de asociar una calificación al prestador elegido.
     if (usuario.rol.nombre or "").strip().upper() != "CLIENTE":
         raise HTTPException(
             status_code=403,
@@ -158,8 +160,10 @@ async def crear_calificacion(
         await db.rollback()
         raise HTTPException(status_code=409, detail="Este trabajo ya fue calificado") from error
 
+    # La imagen es opcional; se valida antes de cargarla al almacenamiento externo.
     if foto_comprobante is not None:
         contenido = await foto_comprobante.read(MAX_IMAGE_SIZE_BYTES + 1)
+        # Actualiza el promedio y cierra la notificación pendiente junto con la calificación.
         try:
             validar_imagen(
                 contenido,

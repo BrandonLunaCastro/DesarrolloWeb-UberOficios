@@ -8,6 +8,7 @@ from app.database import Base
 
 
 class EstadoAvisoEnum(str, enum.Enum):
+    # Estados posibles del ciclo de vida de una solicitud de trabajo.
     ABIERTO = "ABIERTO"
     EN_PROCESO = "EN_PROCESO"
     CANCELADO = "CANCELADO"
@@ -16,6 +17,7 @@ class EstadoAvisoEnum(str, enum.Enum):
 
 
 class Aviso(Base):
+    # Une la solicitud con su cliente y categoría; la ubicación se almacena como texto.
     __tablename__ = "aviso"
 
     id_aviso = Column(Integer, primary_key=True, index=True)

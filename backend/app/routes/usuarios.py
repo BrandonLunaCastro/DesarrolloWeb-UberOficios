@@ -19,6 +19,7 @@ def obtener_perfil(
     db: Session = Depends(get_db),
     usuario: Usuario = Depends(get_current_user),
 ):
+    # La respuesta combina identidad, perfil profesional, calificaciones y portafolio.
     prestador = (
         db.query(PrestadorServicio)
         .filter(PrestadorServicio.id_usuario == usuario.id_usuario)
@@ -97,6 +98,7 @@ def actualizar_perfil(
     db: Session = Depends(get_db),
     usuario: Usuario = Depends(get_current_user),
 ):
+    # exclude_unset distingue un campo omitido de uno enviado explícitamente como null.
     campos = datos.dict(exclude_unset=True)
     if not campos:
         raise HTTPException(status_code=400, detail="Debe enviar al menos un dato para actualizar")
@@ -111,6 +113,7 @@ def actualizar_perfil(
 
     es_prestador = (usuario.rol.nombre or "").strip().upper() == "PRESTADOR"
     prestador = None
+    # Los datos de oficio y zona pertenecen al perfil profesional, no al de cliente.
     if es_prestador:
         prestador = (
             db.query(PrestadorServicio)

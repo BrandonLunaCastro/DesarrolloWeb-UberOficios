@@ -17,6 +17,7 @@ async def conectar_notificaciones(
     websocket: WebSocket,
     token: str | None = Query(default=None),
 ):
+    # El token viaja como parámetro porque los navegadores no adjuntan Authorization a WebSocket.
     await websocket.accept()
     if not token:
         await websocket.close(code=4401, reason="Autenticación requerida")
@@ -42,6 +43,7 @@ async def listar_notificaciones(
     db: AsyncSession = Depends(get_async_db),
     id_usuario: int = Depends(get_current_user_id),
 ):
+    # Las notificaciones se filtran siempre por el usuario autenticado.
     notificaciones = await db.scalars(
         select(Notificacion)
         .where(Notificacion.id_usuario == id_usuario)
@@ -55,6 +57,7 @@ async def marcar_todas_leidas(
     db: AsyncSession = Depends(get_async_db),
     id_usuario: int = Depends(get_current_user_id),
 ):
+    # Las calificaciones pendientes no se pueden cerrar hasta completar la acción requerida.
     resultado = await db.execute(
         update(Notificacion)
         .where(
@@ -74,6 +77,7 @@ async def marcar_notificacion_leida(
     db: AsyncSession = Depends(get_async_db),
     id_usuario: int = Depends(get_current_user_id),
 ):
+    # El filtro conjunto evita que un usuario modifique notificaciones de otra cuenta.
     notificacion = await db.scalar(
         select(Notificacion).where(
             Notificacion.id_notificacion == id_notificacion,

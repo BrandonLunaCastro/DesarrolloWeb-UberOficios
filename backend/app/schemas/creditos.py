@@ -6,6 +6,7 @@ from app.models.creditos import TipoTransaccionEnum
 
 
 class TransaccionCreditoResponse(BaseModel):
+    # Expone el historial auditable sin permitir que el cliente modifique movimientos.
     model_config = ConfigDict(from_attributes=True)
 
     id: int

@@ -15,6 +15,7 @@ from app.database import Base
 
 
 class PrestadorServicio(Base):
+    # Perfil profesional asociado uno a uno al usuario, con oficio, zona y saldo de créditos.
     __tablename__ = "prestador_servicio"
 
     id_prestador = Column(Integer, primary_key=True, index=True)

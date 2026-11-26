@@ -5,6 +5,7 @@ from app.database import Base
 
 
 class Categoria(Base):
+    # Catálogo de oficios al que apuntan los avisos publicados.
     __tablename__ = "categoria"
 
     id_categoria = Column(Integer, primary_key=True)

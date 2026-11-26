@@ -30,6 +30,7 @@ async def _rangos_presupuesto_por_aviso(
     db: AsyncSession,
     ids_avisos: set[int],
 ) -> dict[int, tuple[Decimal, Decimal]]:
+    # Agrupa por aviso para calcular todos los rangos con una única consulta.
     if not ids_avisos:
         return {}
 
@@ -53,6 +54,7 @@ async def listar_postulaciones_por_prestador(
     *,
     id_prestador: int,
 ) -> list[PostulacionListItem]:
+    # Completa los detalles de cada presupuesto para la pantalla del prestador.
     await expirar_avisos_vencidos_async(db)
     prestador = await db.scalar(
         select(PrestadorServicio)
@@ -66,6 +68,7 @@ async def listar_postulaciones_por_prestador(
         select(Postulacion)
         .options(
             selectinload(Postulacion.aviso).selectinload(Aviso.cliente),
+            selectinload(Postulacion.aviso).selectinload(Aviso.categoria),
             selectinload(Postulacion.prestador).selectinload(PrestadorServicio.usuario),
             selectinload(Postulacion.conversacion),
             selectinload(Postulacion.calificacion),
@@ -107,6 +110,11 @@ async def listar_postulaciones_por_prestador(
                 fecha_postulacion=postulacion.fecha_postulacion,
                 estado=postulacion.estado,
                 titulo_aviso=aviso.titulo if aviso else None,
+                oficio_aviso=(
+                    aviso.categoria.nombre
+                    if aviso and aviso.categoria
+                    else None
+                ),
                 descripcion_aviso=aviso.descripcion if aviso else None,
                 nombre_prestador=prestador.usuario.nombre if prestador.usuario else None,
                 apellido_prestador=prestador.usuario.apellido if prestador.usuario else None,
@@ -125,6 +133,7 @@ async def listar_postulaciones_por_cliente(
     *,
     id_cliente: int,
 ) -> list[PostulacionListItem]:
+    # Limita los resultados a avisos del cliente y adjunta los datos de sus propuestas.
     await expirar_avisos_vencidos_async(db)
     cliente = await db.get(Usuario, id_cliente)
     if cliente is None:
@@ -134,6 +143,7 @@ async def listar_postulaciones_por_cliente(
         select(Postulacion)
         .options(
             selectinload(Postulacion.aviso).selectinload(Aviso.cliente),
+            selectinload(Postulacion.aviso).selectinload(Aviso.categoria),
             selectinload(Postulacion.prestador).selectinload(PrestadorServicio.usuario),
             selectinload(Postulacion.conversacion),
             selectinload(Postulacion.calificacion),
@@ -177,6 +187,11 @@ async def listar_postulaciones_por_cliente(
                 fecha_postulacion=postulacion.fecha_postulacion,
                 estado=postulacion.estado,
                 titulo_aviso=aviso.titulo if aviso else None,
+                oficio_aviso=(
+                    aviso.categoria.nombre
+                    if aviso and aviso.categoria
+                    else None
+                ),
                 descripcion_aviso=aviso.descripcion if aviso else None,
                 nombre_prestador=prestador.usuario.nombre if prestador and prestador.usuario else None,
                 apellido_prestador=prestador.usuario.apellido if prestador and prestador.usuario else None,
@@ -197,6 +212,7 @@ async def crear_postulacion(
     id_usuario: int,
     datos: PostulacionCreate,
 ) -> Postulacion:
+    # Bloquea el aviso mientras valida estado, duplicados y consumo de créditos.
     aviso = await db.scalar(
         select(Aviso)
         .where(Aviso.id_aviso == id_aviso)
@@ -244,6 +260,7 @@ async def crear_postulacion(
     )
     db.add(postulacion)
 
+    # Propuesta, gasto de crédito y notificación se confirman juntos o se revierten juntos.
     try:
         await db.flush()
         await registrar_transaccion(
@@ -299,6 +316,7 @@ async def actualizar_presupuesto(
     id_usuario: int,
     presupuesto: Decimal,
 ) -> Postulacion:
+    # Primero localiza el aviso para bloquearlo antes de validar la propuesta editable.
     postulacion_inicial = await db.scalar(
         select(Postulacion).where(Postulacion.id_postulacion == id_postulacion)
     )
@@ -369,6 +387,7 @@ async def aceptar_postulacion(
     id_postulacion: int,
     id_usuario: int,
 ) -> tuple[Postulacion, Conversacion]:
+    # Aceptar una propuesta cierra el aviso y crea el chat en una única transacción.
     postulacion = await db.scalar(
         select(Postulacion)
         .where(Postulacion.id_postulacion == id_postulacion)

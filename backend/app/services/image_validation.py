@@ -1,4 +1,5 @@
 class ImageValidationError(ValueError):
+    # Conserva el mensaje y el estado HTTP para traducir validaciones a respuestas API.
     def __init__(self, detail: str, status_code: int = 400):
         super().__init__(detail)
         self.detail = detail
@@ -6,6 +7,7 @@ class ImageValidationError(ValueError):
 
 
 MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024
+# Se verifica la firma binaria además del Content-Type, que puede venir falsificado.
 _IMAGE_SIGNATURES = {
     "image/jpeg": lambda data: data.startswith(b"\xff\xd8\xff"),
     "image/png": lambda data: data.startswith(b"\x89PNG\r\n\x1a\n"),
@@ -16,6 +18,7 @@ _IMAGE_SIGNATURES = {
 
 
 def validar_imagen(contenido: bytes, content_type: str | None, nombre: str) -> None:
+    # Leer un byte extra permite detectar que se excedió el límite sin cargar el archivo entero.
     if len(contenido) > MAX_IMAGE_SIZE_BYTES:
         raise ImageValidationError(
             f"{nombre}: supera el límite de 5 MB.",

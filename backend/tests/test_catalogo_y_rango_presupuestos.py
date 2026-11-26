@@ -2,7 +2,10 @@ import asyncio
 from decimal import Decimal
 import unittest
 
-from app.routes.avisos import _normalizar_categoria
+from app.routes.avisos import (
+    _normalizar_categoria,
+    _oficio_coincide_con_categoria,
+)
 from app.services.postulaciones import _rangos_presupuesto_por_aviso
 
 
@@ -28,6 +31,17 @@ class CatalogoAvisosTests(unittest.TestCase):
         self.assertEqual(_normalizar_categoria("Plomería"), "plomeria")
         self.assertEqual(_normalizar_categoria("Gasista"), "gas")
         self.assertEqual(_normalizar_categoria("Mecánica"), "mecanica")
+
+    def test_feed_coincide_oficio_y_categoria_y_no_mezcla_servicios(self):
+        self.assertTrue(_oficio_coincide_con_categoria("Plomería", "Plomería"))
+        self.assertTrue(_oficio_coincide_con_categoria("Mecánica", "Mecánica"))
+        self.assertFalse(_oficio_coincide_con_categoria("Plomería", "Electricidad"))
+        self.assertFalse(_oficio_coincide_con_categoria("Mecánica", "Cerrajería"))
+
+    def test_categoria_legacy_plomeria_y_gas_coincide_con_ambos_oficios(self):
+        self.assertTrue(_oficio_coincide_con_categoria("Plomería", "Plomería y Gas"))
+        self.assertTrue(_oficio_coincide_con_categoria("Gas", "Plomería y Gas"))
+        self.assertFalse(_oficio_coincide_con_categoria("Electricidad", "Plomería y Gas"))
 
 
 class RangoPresupuestosTests(unittest.TestCase):

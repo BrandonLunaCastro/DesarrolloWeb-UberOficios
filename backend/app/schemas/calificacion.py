@@ -4,12 +4,14 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class CalificacionCreate(BaseModel):
+    # La puntuación y el identificador se validan en la entrada, no solo en la base.
     id_postulacion: int = Field(gt=0)
     puntuacion: int = Field(ge=1, le=5)
     comentario: str | None = Field(default=None, max_length=2000)
 
 
 class CalificacionResponse(BaseModel):
+    # Permite construir la respuesta directamente desde el modelo SQLAlchemy.
     model_config = ConfigDict(from_attributes=True)
 
     id_calificacion: int

@@ -4,6 +4,7 @@ from app.database import Base
 
 
 class Usuario(Base):
+    # Identidad autenticable; los perfiles de cliente y prestador dependen de este registro.
     __tablename__ = "usuario"
 
     id_usuario = Column(Integer, primary_key=True)

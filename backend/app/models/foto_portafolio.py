@@ -5,6 +5,7 @@ from app.database import Base
 
 
 class FotoPortafolio(Base):
+    # Metadatos de una imagen guardada en almacenamiento externo.
     __tablename__ = "foto_portafolio"
 
     id_foto = Column(Integer, primary_key=True)

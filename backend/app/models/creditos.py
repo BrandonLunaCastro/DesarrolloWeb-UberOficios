@@ -19,6 +19,7 @@ from app.database import Base
 
 
 class TipoTransaccionEnum(str, enum.Enum):
+    # Clasifica los movimientos para auditar cómo se modificó el saldo.
     RECARGA = "RECARGA"
     CONSUMO_POSTULACION = "CONSUMO_POSTULACION"
     DEVOLUCION = "DEVOLUCION"
@@ -26,6 +27,7 @@ class TipoTransaccionEnum(str, enum.Enum):
 
 
 class EstadoCompraCreditoEnum(str, enum.Enum):
+    # Estado interno de una compra, actualizado al procesar el pago externo.
     PENDIENTE = "PENDIENTE"
     APROBADA = "APROBADA"
     RECHAZADA = "RECHAZADA"
@@ -33,6 +35,7 @@ class EstadoCompraCreditoEnum(str, enum.Enum):
 
 
 class PaqueteCredito(Base):
+    # Oferta configurable de créditos; el importe se almacena en centavos.
     __tablename__ = "paquete_credito"
     __table_args__ = (
         CheckConstraint("cantidad_creditos > 0", name="ck_paquete_credito_cantidad"),
@@ -66,6 +69,7 @@ class PaqueteCredito(Base):
 
 
 class CompraCredito(Base):
+    # Conserva precio y cantidad al comprar, aunque luego cambie el paquete.
     __tablename__ = "compra_credito"
     __table_args__ = (
         CheckConstraint("cantidad_creditos > 0", name="ck_compra_credito_cantidad"),
@@ -120,6 +124,7 @@ class CompraCredito(Base):
 
 
 class BilleteraCredito(Base):
+    # Saldo vigente del prestador; sus movimientos quedan registrados aparte.
     __tablename__ = "billetera_credito"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -145,6 +150,7 @@ class BilleteraCredito(Base):
 
 
 class TransaccionCredito(Base):
+    # Registro inmutable de cada recarga, consumo o bonificación.
     __tablename__ = "transaccion_credito"
 
     id = Column(Integer, primary_key=True, index=True)

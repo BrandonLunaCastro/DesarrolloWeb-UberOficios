@@ -19,12 +19,14 @@ COSTO_POSTULACION_CREDITOS = 1
 
 
 def _normalizar_utc(fecha: datetime) -> datetime:
+    # Las fechas antiguas sin zona se interpretan como UTC para compararlas de forma segura.
     if fecha.tzinfo is None:
         return fecha.replace(tzinfo=timezone.utc)
     return fecha.astimezone(timezone.utc)
 
 
 def _aniversario_mensual(inicio: datetime, meses: int) -> datetime:
+    # Limita el día al último válido (por ejemplo, del 31 al fin de febrero).
     indice_mes = inicio.month - 1 + meses
     anio = inicio.year + indice_mes // 12
     mes = indice_mes % 12 + 1
@@ -36,6 +38,7 @@ def _meses_cumplidos(inicio: datetime, ahora: datetime) -> int:
     meses = (ahora.year - inicio.year) * 12 + ahora.month - inicio.month
     if meses <= 0:
         return 0
+    # El cambio de mes por sí solo no alcanza: debe haber pasado el día aniversario.
     if _aniversario_mensual(inicio, meses) > ahora:
         meses -= 1
     return max(meses, 0)
@@ -50,6 +53,7 @@ def acreditar_bonos_mensuales(
     prestadores_actualizados = 0
     creditos_acreditados = 0
 
+    # Bloquea filas y omite las ya tomadas por otra ejecución del proceso.
     prestadores = (
         db.query(PrestadorServicio)
         .filter(PrestadorServicio.inicio_ciclo_creditos <= fecha_actual)
@@ -65,6 +69,7 @@ def acreditar_bonos_mensuales(
         if meses_pendientes <= 0:
             continue
 
+        # Si el proceso estuvo detenido varios meses, acredita todos los ciclos pendientes juntos.
         credito = meses_pendientes * BONO_MENSUAL_CREDITOS
         prestador.saldo_creditos += credito
         prestador.meses_creditos_otorgados = meses_vencidos
@@ -118,6 +123,7 @@ async def registrar_transaccion(
     if tipo != TipoTransaccionEnum.CONSUMO_POSTULACION and monto < 0:
         raise ValueError("Las acreditaciones de créditos deben registrarse con un monto positivo")
 
+    # Bloquear perfil y billetera evita que dos operaciones gasten el mismo saldo a la vez.
     prestador = await db.scalar(
         select(PrestadorServicio)
         .where(PrestadorServicio.id_prestador == id_prestador)
@@ -146,6 +152,7 @@ async def registrar_transaccion(
     billetera.saldo_actual = saldo_actualizado
     billetera.fecha_actualizacion = fecha_actual
     prestador.saldo_creditos = saldo_actualizado
+    # El cambio de saldo y el movimiento quedan dentro de la transacción del llamador.
     transaccion = TransaccionCredito(
         billetera_id=billetera.id,
         monto=monto,

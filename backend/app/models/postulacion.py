@@ -17,6 +17,7 @@ from app.database import Base
 
 
 class Postulacion(Base):
+    # Propuesta de un prestador a un aviso; solo puede existir una por prestador y aviso.
     __tablename__ = "postulacion"
     __table_args__ = (
         UniqueConstraint("id_aviso", "id_prestador", name="uq_postulacion_aviso_prestador"),

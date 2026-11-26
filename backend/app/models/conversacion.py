@@ -5,6 +5,7 @@ from app.database import Base
 
 
 class Conversacion(Base):
+    # Conversación entre participantes creada a partir de una propuesta seleccionada.
     __tablename__ = "conversacion"
     __table_args__ = (
         UniqueConstraint(
@@ -55,6 +56,7 @@ class Conversacion(Base):
         server_default="false",
     )
 
+    # Ocultar es individual para que archivar el chat no lo elimine al otro participante.
     cliente = relationship("Cliente", back_populates="conversaciones")
     prestador = relationship("PrestadorServicio", back_populates="conversaciones")
     postulacion = relationship("Postulacion", back_populates="conversacion")

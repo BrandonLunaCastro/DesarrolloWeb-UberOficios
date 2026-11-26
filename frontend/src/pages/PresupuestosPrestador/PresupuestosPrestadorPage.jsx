@@ -35,7 +35,7 @@ function transformarPostulacion(postulacion) {
   return {
     id: postulacion.id_postulacion,
     idAviso: postulacion.id_aviso,
-    oficio: postulacion.oficio_prestador || 'Servicio',
+    oficio: postulacion.oficio_aviso || postulacion.oficio_prestador || 'Servicio',
     titulo: postulacion.titulo_aviso || 'Aviso',
     cliente,
     zona: postulacion.zona_aviso || '',

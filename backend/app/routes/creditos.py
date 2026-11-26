@@ -19,6 +19,7 @@ async def listar_movimientos_creditos(
     db: AsyncSession = Depends(get_async_db),
     id_usuario: int = Depends(get_current_user_id),
 ):
+    # Resuelve la billetera propia y devuelve sus movimientos más recientes con paginación.
     id_prestador = await db.scalar(
         select(PrestadorServicio.id_prestador).where(
             PrestadorServicio.id_usuario == id_usuario

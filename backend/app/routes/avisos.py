@@ -25,6 +25,7 @@ router = APIRouter(prefix="/avisos", tags=["Avisos"])
 
 
 def _normalizar_categoria(nombre: str) -> str:
+    # Permite comparar nombres con tildes/espacios y alias sin alterar el catálogo visible.
     descompuesto = unicodedata.normalize("NFKD", nombre.casefold())
     sin_acentos = "".join(
         caracter
@@ -42,11 +43,20 @@ def _normalizar_categoria(nombre: str) -> str:
     return aliases.get(normalizado, normalizado)
 
 
+def _oficio_coincide_con_categoria(oficio_prestador: str, categoria_aviso: str) -> bool:
+    oficio = _normalizar_categoria(oficio_prestador)
+    categoria = _normalizar_categoria(categoria_aviso)
+    if categoria == "plomeria y gas":
+        return oficio in {"plomeria", "gas", "plomeria y gas"}
+    return oficio == categoria
+
+
 @router.get("/zona")
 def listar_avisos_por_zona(
     db: Session = Depends(get_db),
     id_usuario: int = Depends(get_current_user_id),
 ):
+    # Solo entrega avisos abiertos en la zona del prestador y marca sus postulaciones previas.
     expirar_avisos_vencidos(db)
     prestador = (
         db.query(PrestadorServicio)
@@ -64,9 +74,14 @@ def listar_avisos_por_zona(
             status_code=400,
             detail="Debe configurar su zona en el perfil para buscar avisos",
         )
+    if prestador.oficio is None or not prestador.oficio.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="Debe configurar su oficio en el perfil para buscar avisos",
+        )
 
     zona_prestador = prestador.zona.strip().lower()
-    avisos = (
+    avisos_en_zona = (
         db.query(Aviso)
         .options(joinedload(Aviso.categoria), joinedload(Aviso.cliente))
         .filter(
@@ -76,7 +91,14 @@ def listar_avisos_por_zona(
         .order_by(Aviso.fecha_publicacion.desc())
         .all()
     )
+    avisos = [
+        aviso
+        for aviso in avisos_en_zona
+        if aviso.categoria
+        and _oficio_coincide_con_categoria(prestador.oficio, aviso.categoria.nombre)
+    ]
     ids_avisos = [aviso.id_aviso for aviso in avisos]
+    # Consulta en bloque evita una consulta por cada aviso del feed.
     avisos_postulados = {
         id_aviso
         for (id_aviso,) in (
@@ -127,6 +149,7 @@ def listar_mis_avisos(
     db: Session = Depends(get_db),
     id_usuario: int = Depends(get_current_user_id),
 ):
+    # La consulta expira primero los avisos cuyo plazo ya terminó.
     expirar_avisos_vencidos(db)
     avisos = (
         db.query(Aviso)
@@ -157,6 +180,7 @@ def crear_aviso(
     db: Session = Depends(get_db),
     id_usuario: int = Depends(get_current_user_id),
 ):
+    # Resuelve el oficio contra el catálogo persistido para guardar su clave foránea.
     categorias = db.query(Categoria).all()
     categoria_buscada = _normalizar_categoria(datos.oficio)
     categoria = next(
@@ -190,6 +214,7 @@ def crear_aviso(
     db.add(aviso)
     db.flush()
 
+    # Notifica a perfiles que ofrecen servicios en la misma zona del aviso.
     id_usuarios_prestadores = [
         fila[0]
         for fila in (
@@ -245,6 +270,7 @@ async def postularse_a_aviso(
     db: AsyncSession = Depends(get_async_db),
     usuario: Usuario = Depends(get_current_user_async),
 ):
+    # La identidad y el rol provienen del token, no de campos enviados por el cliente.
     if (usuario.rol.nombre or "").strip().upper() != "PRESTADOR":
         raise HTTPException(
             status_code=403,
@@ -265,6 +291,7 @@ async def finalizar_aviso(
     db: AsyncSession = Depends(get_async_db),
     usuario: Usuario = Depends(get_current_user_async),
 ):
+    # Solo el dueño puede finalizar y únicamente después de aceptar un presupuesto.
     if (usuario.rol.nombre or "").strip().upper() != "CLIENTE":
         raise HTTPException(status_code=403, detail="Solo un cliente puede finalizar un trabajo")
 

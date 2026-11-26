@@ -28,6 +28,8 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/prestadores", tags=["Prestadores"])
 
 MAX_FOTOS_POR_SUBIDA = 12
+
+# Centraliza la comprobación de que el usuario tenga un perfil profesional.
 def _obtener_prestador(db: Session, id_usuario: int) -> PrestadorServicio:
     prestador = (
         db.query(PrestadorServicio)
@@ -48,6 +50,7 @@ def obtener_perfil_publico_prestador(
     _id_usuario: int = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    # Agrega datos públicos, promedio y muestras recientes de opiniones del prestador.
     prestador = (
         db.query(PrestadorServicio)
         .options(
@@ -128,6 +131,7 @@ def obtener_perfil_publico_prestador(
 
 
 def _limpiar_subidas(public_ids: list[str]) -> None:
+    # Compensa cargas externas si después falla el guardado de metadatos en la BD.
     for public_id in public_ids:
         try:
             delete_portfolio_image(public_id)
@@ -144,6 +148,7 @@ def subir_fotos_portafolio(
     id_usuario: int = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    # Valida todos los archivos antes de subir cualquiera para evitar cargas parciales.
     if not fotos:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -159,6 +164,7 @@ def subir_fotos_portafolio(
     contenidos = []
     for archivo in fotos:
         contenido = archivo.file.read(MAX_IMAGE_SIZE_BYTES + 1)
+        # Cloudinary y la base no comparten transacción; los public_id permiten revertir la carga.
         try:
             validar_imagen(
                 contenido,
@@ -242,6 +248,7 @@ def eliminar_foto_portafolio(
     id_usuario: int = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    # La consulta une la foto con su dueño antes de eliminar el registro y el archivo externo.
     foto = (
         db.query(FotoPortafolio)
         .join(PrestadorServicio)

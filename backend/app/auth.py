@@ -60,6 +60,7 @@ security = HTTPBearer()
 def get_current_user_id(
     credentials: HTTPAuthorizationCredentials = Depends(security),
 ) -> int:
+    # Centraliza la extracción del identificador para rutas que no necesitan el objeto Usuario.
     return _get_authenticated_user_id(credentials)
 
 
@@ -67,6 +68,7 @@ def get_current_user(
     id_usuario: int = Depends(get_current_user_id),
     db: Session = Depends(get_db),
 ):
+    # La carga anticipada del rol evita consultas adicionales al consultar las capacidades del usuario.
     usuario = (
         db.query(Usuario)
         .options(joinedload(Usuario.rol))
@@ -87,6 +89,7 @@ async def get_current_user_async(
     id_usuario: int = Depends(get_current_user_id),
     db: AsyncSession = Depends(get_async_db),
 ):
+    # Versión asíncrona de la dependencia, para rutas que usan AsyncSession.
     result = await db.execute(
         select(Usuario)
         .options(joinedload(Usuario.rol))
@@ -106,6 +109,7 @@ async def get_current_user_async(
 def _get_authenticated_user_id(
     credentials: HTTPAuthorizationCredentials,
 ) -> int:
+    # HTTPBearer entrega el token sin el prefijo "Bearer".
     return get_user_id_from_token(credentials.credentials)
 
 
@@ -125,6 +129,7 @@ def get_user_id_from_token(token: str) -> int:
                 detail="Token inválido"
             )
 
+        # El claim se guarda como texto al emitir el JWT y se convierte al tipo usado por la BD.
         id_usuario = int(id_usuario)
 
     except (JWTError, ValueError):

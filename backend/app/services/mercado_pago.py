@@ -12,10 +12,12 @@ from app.models.creditos import CompraCredito
 
 
 class MercadoPagoError(Exception):
+    # Error esperado de integración, traducido por la ruta a una respuesta HTTP.
     pass
 
 
 def configuracion_mercado_pago_disponible() -> bool:
+    # Solo se considera lista si hay credenciales, webhook y un entorno reconocido.
     return all(
         os.getenv(variable)
         for variable in (
@@ -36,6 +38,7 @@ def _solicitud_mercado_pago(
     payload: dict | None = None,
     idempotency_key: str | None = None,
 ) -> dict:
+    # Centraliza autenticación, serialización, timeout y errores HTTP de la pasarela.
     token = os.getenv("MERCADOPAGO_ACCESS_TOKEN")
     if not token:
         raise MercadoPagoError("La pasarela de pago no está configurada")
@@ -83,6 +86,7 @@ def crear_preferencia(compra: CompraCredito) -> dict:
 
     frontend_url = os.getenv("FRONTEND_URL", "http://localhost:5173").rstrip("/")
     return_url = f"{frontend_url}/?compra_id={compra.id}"
+    # Una clave estable evita crear varias preferencias si el mismo checkout se reintenta.
     respuesta = _solicitud_mercado_pago(
         "POST",
         "/checkout/preferences",
@@ -119,6 +123,7 @@ def crear_preferencia(compra: CompraCredito) -> dict:
 
 
 def obtener_pago(payment_id: str) -> dict:
+    # Valida el formato antes de interpolar el identificador en la ruta externa.
     if not re.fullmatch(r"\d{1,30}", payment_id):
         raise MercadoPagoError("Identificador de pago inválido")
     return _solicitud_mercado_pago("GET", f"/v1/payments/{payment_id}")
@@ -130,6 +135,7 @@ def firma_webhook_valida(
     request_id: str | None,
     signature: str | None,
 ) -> bool:
+    # Verifica el HMAC del webhook comparándolo en tiempo constante.
     secret = os.getenv("MERCADOPAGO_WEBHOOK_SECRET")
     if not secret or not request_id or not signature:
         return False
@@ -154,6 +160,7 @@ def firma_webhook_valida(
 
 
 def importe_pago_valido(pago: dict, compra: CompraCredito) -> bool:
+    # Contrasta importe exacto en centavos y moneda contra la compra persistida.
     try:
         importe_centavos = Decimal(str(pago["transaction_amount"])) * 100
         return (
