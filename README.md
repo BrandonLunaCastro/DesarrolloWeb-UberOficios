@@ -34,8 +34,7 @@ DesarrolloWeb-UberOficios/
 │   │   └── main.jsx      # Punto de entrada de React
 │   ├── package.json      # Dependencias y comandos npm
 │   └── package-lock.json # Versiones exactas de dependencias
-├── GUIA_INSTALACION.md
-└── README.md
+├── README.md
 ```
 
 El backend y el frontend se instalan y ejecutan por separado. El archivo
