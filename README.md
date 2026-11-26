@@ -206,6 +206,11 @@ Una vez instalado, para trabajar localmente:
 
 Para detener cada servidor, volver a su terminal y presionar `Ctrl+C`.
 
+## 9 Prueba a traves del servicio Render
+
+1. Link Front End: 
+2. Link Backend: 
+
 ## Problemas frecuentes
 
 - **`python`, `node` o `npm` no se reconoce:** instalar la herramienta y
