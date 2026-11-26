@@ -1,766 +1,220 @@
-# UberOficios
+# Guía de instalación y ejecución de UberOficios
 
-Aplicación web para consultar y encontrar prestadores de servicios locales, como mecánicos, plomeros, electricistas, técnicos, etc.
+Esta guía explica cómo preparar el proyecto en Windows para ejecutarlo en una
+computadora nueva. El sistema tiene un backend con FastAPI, un frontend con
+React y una base de datos PostgreSQL.
 
-El proyecto está dividido en:
-
-* **Backend:** Python + FastAPI + SQLAlchemy + PostgreSQL
-* **Base de datos:** PostgreSQL mediante Supabase
-* **Frontend:** HTML + CSS + JavaScript
-* **Autenticación:** Passlib + bcrypt + JWT
-
-Para entender los flujos del backend con más detalle, consulta la
-[guía técnica del backend](./backend/GUIA_TECNICA_BACKEND.md) o el
-[diagrama entidad-relación](./backend/MODELO_MER.md).
-
----
-
-# 1. Estructura del proyecto
+## Estructura del proyecto
 
 ```text
-UberOficios/
-│
+DesarrolloWeb-UberOficios/
 ├── backend/
-│   └── app/
-│       ├── models/
-│       ├── routes/
-│       ├── schemas/
-│       ├── auth.py
-│       ├── database.py
-│       └── main.py
-│
+│   ├── app/
+│   │   ├── models/       # Modelos de datos
+│   │   ├── routes/       # Rutas y endpoints de la API
+│   │   ├── schemas/      # Esquemas de validación
+│   │   ├── scripts/      # Tareas ejecutables del backend
+│   │   ├── services/     # Lógica de servicios e integraciones
+│   │   ├── main.py       # Inicialización de FastAPI
+│   │   ├── auth.py       # Funciones de autenticación
+│   │   └── database.py   # Conexión a PostgreSQL
+│   ├── alembic/          # Migraciones de la base de datos
+│   ├── tests/            # Pruebas automatizadas del backend
+│   ├── requirements.txt  # Dependencias de Python
+│   └── alembic.ini       # Configuración de Alembic
 ├── frontend/
-│
-├── alembic/
-│
-├── .env
-├── .gitignore
-├── alembic.ini
-├── requirements.txt
+│   ├── public/           # Recursos estáticos
+│   ├── src/
+│   │   ├── assets/       # Imágenes y otros recursos
+│   │   ├── components/   # Componentes reutilizables
+│   │   ├── constants/    # Constantes del frontend
+│   │   ├── pages/        # Páginas de la aplicación
+│   │   ├── services/     # Comunicación con la API
+│   │   ├── App.jsx       # Componente principal
+│   │   └── main.jsx      # Punto de entrada de React
+│   ├── package.json      # Dependencias y comandos npm
+│   └── package-lock.json # Versiones exactas de dependencias
+├── GUIA_INSTALACION.md
 └── README.md
 ```
 
-> El archivo `.env` no debe subirse a GitHub porque contiene información sensible de conexión.
+El backend y el frontend se instalan y ejecutan por separado. El archivo
+`backend\requirements.txt` contiene las dependencias de Python; `frontend\package.json`
+y `frontend\package-lock.json` contienen las del cliente web. El entorno virtual
+`venv` y el archivo `.env` se crean localmente y no forman parte del código que
+se descarga.
 
-## Conexiones a PostgreSQL
+## 1. Requisitos
 
-El backend usa un pool sincronizado y otro asíncrono. Ambos leen estas variables
-de entorno (también se pueden configurar como variables del servicio en Render):
+Instalar previamente:
 
-```env
-DB_POOL_SIZE=3
-DB_MAX_OVERFLOW=1
-DB_POOL_TIMEOUT=30
-```
+- Git.
+- Python 3.
+- Node.js LTS (incluye npm).
+- Un editor de código, por ejemplo Visual Studio Code.
+- Acceso a una base de datos PostgreSQL y su URL de conexión.
 
-Cada proceso puede abrir hasta
-`2 * (DB_POOL_SIZE + DB_MAX_OVERFLOW)` conexiones entre ambos pools. Ajustá los
-valores según el máximo de conexiones de PostgreSQL, restando las conexiones
-reservadas para otros servicios y procesos. No existe concurrencia ilimitada
-hacia la base: cuando el pool está ocupado, las solicitudes esperan hasta
-`DB_POOL_TIMEOUT`; aumentar el pool por encima del límite de PostgreSQL puede
-causar nuevos errores de conexión.
-
-Por defecto, cada pool usa 3 conexiones y permite 1 conexión temporal adicional;
-como el backend tiene un pool síncrono y otro asíncrono, el máximo por proceso es
-8 conexiones. Evitá aumentar estos valores para resolver timeouts sin revisar
-primero si hay consultas duplicadas o conexiones retenidas.
-
-## Chat en tiempo real
-
-El historial y el envío de mensajes usan la API autenticada:
-
-```text
-GET  /conversaciones/{id}/mensajes?after_id={id_mensaje}
-POST /conversaciones/{id}/mensajes
-```
-
-Para recibir mensajes en vivo, el cliente abre
-`/conversaciones/{id}/ws?token={jwt}&after_id={ultimo_id_recibido}` usando
-`ws://` en desarrollo o `wss://` con HTTPS. El servidor valida el JWT y que el
-usuario participe de la conversación antes de enviar el historial pendiente.
-Cada mensaje llega como `{"type":"message","message":{...}}`. Los mensajes se
-guardan antes de difundirse; si hay una desconexión, el cliente reconecta con el
-último ID recibido para recuperar lo pendiente sin duplicarlo en pantalla.
-
----
-
-# 2. Requisitos
-
-Antes de comenzar, instalar:
-
-* Python 3
-* Git
-* Visual Studio Code
-
-Se recomienda tener Python agregado al PATH.
-
-Para comprobar Python:
-
-```powershell
-python --version
-```
-
-Para comprobar Git:
+Comprobar que Git, Python, Node.js y npm estén disponibles en PowerShell:
 
 ```powershell
 git --version
+python --version
+node --version
+npm --version
 ```
 
----
+## 2. Descargar el proyecto
 
-# 3. Clonar el repositorio
-
-Abrir PowerShell o una terminal y ejecutar:
+Abrir PowerShell en la carpeta donde se guardará el proyecto y ejecutar:
 
 ```powershell
-git clone URL_DEL_REPOSITORIO
+git clone https://github.com/BrandonLunaCastro/DesarrolloWeb-UberOficios.git
+cd DesarrolloWeb-UberOficios
 ```
 
-Luego entrar al proyecto:
+## 3. Instalar las dependencias del backend
 
-```powershell
-cd UberOficios
-```
-
----
-
-# 4. Crear el entorno virtual
-
-Cada integrante del equipo debe crear su propio entorno virtual.
-
-Desde la raíz del proyecto:
+Desde la carpeta raíz del proyecto, crear y activar un entorno virtual:
 
 ```powershell
 python -m venv venv
-```
-
-No se debe copiar el `venv` de otro integrante.
-
----
-
-# 5. Activar el entorno virtual
-
-En Windows PowerShell:
-
-```powershell
 .\venv\Scripts\Activate.ps1
 ```
 
-Si se activó correctamente, la terminal debería mostrar:
-
-```text
-(venv)
-```
-
-Por ejemplo:
-
-```text
-(venv) PS E:\UberOficios>
-```
-
----
-
-# 6. Instalar las dependencias
-
-Con el entorno virtual activado:
+Si PowerShell impide activar el entorno, permitir scripts solo durante la
+sesión actual y volver a activarlo:
 
 ```powershell
-pip install -r requirements.txt
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+.\venv\Scripts\Activate.ps1
 ```
 
-Esto instala las librerías necesarias para ejecutar el backend.
+Instalar los paquetes requeridos por el backend:
 
-Entre ellas se encuentran las utilizadas por:
-
-* FastAPI
-* Uvicorn
-* SQLAlchemy
-* PostgreSQL
-* Passlib
-* bcrypt
-* JWT
-
-## Importante sobre bcrypt
-
-El proyecto utiliza:
-
-```text
-bcrypt==4.0.1
+```powershell
+python -m pip install --upgrade pip
+python -m pip install -r backend\requirements.txt
 ```
 
-Esta versión debe mantenerse porque estamos utilizando Passlib para el hash de contraseñas.
+El entorno virtual debe permanecer activado en la terminal donde se ejecutará
+el backend.
 
-No actualizar bcrypt manualmente a una versión 5.x sin comprobar la compatibilidad con Passlib.
+## 4. Configurar la conexión a PostgreSQL
 
----
-
-# 7. Crear el archivo `.env`
-
-El archivo `.env` no se encuentra en el repositorio por seguridad.
-
-Cada integrante debe crear su propio archivo:
-
-```text
-.env
-```
-
-en la raíz del proyecto.
-
-La configuración debe ser proporcionada por el equipo.
-
-Ejemplo de estructura:
+Crear un archivo llamado `.env` en la carpeta raíz del proyecto. Solicitar al
+responsable del proyecto los datos de conexión; no usar credenciales reales de
+otra persona ni compartir este archivo. Como mínimo, definir:
 
 ```env
-DATABASE_URL=URL_DE_LA_BASE_DE_DATOS
+DATABASE_URL=postgresql://USUARIO:CONTRASENA@HOST:5432/NOMBRE_BASE
+FRONTEND_URL=http://localhost:5173
+```
+
+Reemplazar los valores de ejemplo por los datos entregados. Si la contraseña
+tiene caracteres especiales, la URL debe codificarlos correctamente.
+
+El equipo debe proporcionar una base PostgreSQL accesible. Puede ser una base
+local o una instancia compartida (por ejemplo, Supabase). No se incluyen
+credenciales de base de datos en el repositorio. Antes de continuar, confirmar
+que el usuario tenga permiso para crear o modificar las tablas de la base
+seleccionada.
+
+Las siguientes variables son opcionales para iniciar la aplicación, pero se
+necesitan para utilizar las funciones correspondientes:
+
+```env
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
 MERCADOPAGO_ENVIRONMENT=test
-MERCADOPAGO_ACCESS_TOKEN=TOKEN_PRIVADO_DE_MERCADO_PAGO
-MERCADOPAGO_WEBHOOK_SECRET=SECRETO_DE_FIRMA_DEL_WEBHOOK
-MERCADOPAGO_WEBHOOK_URL=https://URL_PUBLICA_DEL_BACKEND/creditos/pagos/webhook
-FRONTEND_URL=https://URL_PUBLICA_DEL_FRONTEND
-CLOUDINARY_CLOUD_NAME=TU_CLOUD_NAME
-CLOUDINARY_API_KEY=TU_API_KEY
-CLOUDINARY_API_SECRET=TU_API_SECRET
+MERCADOPAGO_ACCESS_TOKEN=
+MERCADOPAGO_WEBHOOK_SECRET=
+MERCADOPAGO_WEBHOOK_URL=
 ```
 
-> No subir el archivo `.env` a GitHub.
-> Para habilitar el portafolio y las fotos comprobantes de calificación,
-> configurar las tres variables de Cloudinary en el `.env` local y en el
-> entorno del backend desplegado. Aplicar las migraciones con
-> `alembic upgrade head` desde `backend`. Las claves de Cloudinary deben
-> permanecer solo en el backend.
+Cloudinary habilita el almacenamiento de imágenes. Mercado Pago habilita el
+flujo de compra de créditos y requiere credenciales de prueba para probar pagos.
+No se deben completar con valores inventados ni subir secretos a Git.
 
-## Portafolio de fotos del prestador
+## 5. Preparar el esquema de la base
 
-El endpoint autenticado `POST /prestadores/me/fotos` recibe uno o varios
-archivos en el campo `fotos` (JPG, PNG o WebP; hasta 5 MB por archivo y 12 por
-envío). `DELETE /prestadores/me/fotos/{id_foto}` elimina una foto propia. Las
-imágenes se guardan en Cloudinary y su URL e identificador se conservan en
-`foto_portafolio`.
-
-Los clientes autenticados pueden consultar `GET /prestadores/{id_prestador}/perfil`
-para revisar la información pública, fotos de trabajos y calificaciones de un
-prestador.
-
-## Vigencia de avisos y calificaciones
-
-Los avisos permanecen abiertos durante 72 horas desde su publicación; las
-postulaciones no tienen cupo máximo. Al vencer, dejan de aceptar postulaciones,
-presupuestos y cambios de importe. El prestador puede cambiar su importe vigente
-sin límite de veces mientras el aviso siga abierto y su propuesta esté pendiente.
-
-Al finalizar un trabajo, el panel principal del cliente muestra una calificación
-pendiente hasta que envíe su puntuación de 1 a 5 estrellas. El comentario y la
-foto comprobante son opcionales; las fotos comprobantes se guardan en Cloudinary
-y se muestran públicamente junto a la opinión del prestador.
-> Para iniciar compras y confirmar pagos hay que configurar las credenciales de
-> Mercado Pago, la URL pública del webhook y la URL de retorno del frontend.
-> Aplicar las migraciones desde `backend` con `alembic upgrade head`; la migración
-> agrega los paquetes Inicial, Popular y Profesional.
-> `MERCADOPAGO_ENVIRONMENT` debe ser `test` para usar el checkout de prueba o
-> `production` para cobrar pagos reales. Se configura explícitamente porque el
-> prefijo del Access Token no identifica de forma confiable el entorno.
-
-En Mercado Pago, configurar una notificación de tipo **Pagos** apuntando a
-`https://URL_PUBLICA_DEL_BACKEND/creditos/pagos/webhook` y copiar su clave
-secreta de firma en `MERCADOPAGO_WEBHOOK_SECRET`. El webhook debe ser público y
-usar HTTPS; `localhost` no es accesible desde Mercado Pago. Para probar, usar
-credenciales y cuentas de prueba de Mercado Pago; para producción, reemplazar
-el access token de prueba por el token de producción. No mezclar credenciales de
-prueba con cuentas reales.
-
-`FRONTEND_URL` debe ser el origen público del frontend (sin una ruta específica);
-ese origen se usa tanto para volver del checkout como para autorizar CORS. En el
-frontend, configurar `VITE_API_URL` con la URL base pública del backend.
-
-El `.gitignore` debe contener:
-
-```gitignore
-venv/
-__pycache__/
-*.pyc
-.env
-```
-
----
-
-# 8. Ejecutar el backend
-
-Importante: el backend se ejecuta desde la carpeta `backend`.
-
-Primero:
+En la terminal con el entorno virtual activo, entrar a `backend` y ejecutar las
+migraciones:
 
 ```powershell
 cd backend
+alembic upgrade head
 ```
 
-Luego:
+Este comando aplica a la base configurada en `DATABASE_URL` las migraciones
+incluidas en el proyecto. Si falla, revisar la URL, el acceso a PostgreSQL y los
+permisos antes de iniciar el servidor.
+
+## 6. Iniciar el backend
+
+Desde `backend`, en la misma terminal:
 
 ```powershell
 uvicorn app.main:app --reload
 ```
 
-Si todo funciona correctamente aparecerá algo similar a:
+Dejar esta terminal abierta. El backend quedará disponible en
+`http://127.0.0.1:8000`. Se puede comprobar su estado visitando
+`http://127.0.0.1:8000/health`; debe responder:
 
-```text
-Uvicorn running on http://127.0.0.1:8000
-Application startup complete.
+```json
+{"status":"ok"}
 ```
 
-## Ejecutar el frontend
+La documentación interactiva de la API está en `http://127.0.0.1:8000/docs`.
 
-En otra terminal, desde la raíz del proyecto:
+## 7. Instalar e iniciar el frontend
+
+Abrir una segunda terminal y, desde la raíz del proyecto, ejecutar:
 
 ```powershell
 cd frontend
-npm install
+npm ci
 npm run dev
 ```
 
-En desarrollo, el frontend se conecta por defecto a `http://127.0.0.1:8000`.
-Para desplegarlo, configurar `VITE_API_URL` con la URL base del backend.
+Vite indicará la dirección local del frontend, normalmente
+`http://localhost:5173`. El frontend usa por defecto el backend local en
+`http://127.0.0.1:8000`; no hace falta definir `VITE_API_URL` para esta
+configuración.
 
----
+## 8. Uso diario
 
-# 9. Abrir Swagger
+Una vez instalado, para trabajar localmente:
 
-FastAPI genera automáticamente una interfaz para probar los endpoints.
+1. Abrir PowerShell en la raíz del proyecto y ejecutar:
 
-Abrir en el navegador:
+   ```powershell
+   .\venv\Scripts\Activate.ps1
+   cd backend
+   uvicorn app.main:app --reload
+   ```
 
-```text
-http://127.0.0.1:8000/docs
-```
+2. Abrir otra terminal en la raíz del proyecto y ejecutar:
 
-Desde ahí se pueden probar los endpoints del backend.
+   ```powershell
+   cd frontend
+   npm run dev
+   ```
 
----
+3. Abrir en el navegador la dirección que muestre Vite.
 
-# 10. Comprobar el Health Check
+Para detener cada servidor, volver a su terminal y presionar `Ctrl+C`.
 
-El proyecto tiene un endpoint para comprobar que el servidor está funcionando:
+## Problemas frecuentes
 
-```text
-GET /health
-```
-
-Desde Swagger se puede ejecutar.
-
-La respuesta esperada es:
-
-```json
-{
-  "status": "ok"
-}
-```
-
----
-
-# 11. Autenticación
-
-Actualmente el backend contiene endpoints relacionados con autenticación.
-
-## Registrar usuario
-
-Endpoint:
-
-```text
-POST /auth/register
-```
-
-Datos necesarios:
-
-```json
-{
-  "nombre": "Nombre",
-  "apellido": "Apellido",
-  "email": "correo@email.com",
-  "contrasena": "123456",
-  "telefono": "+5491112345678",
-  "rol": "CLIENTE"
-}
-```
-
-`telefono` es opcional y `rol` puede ser `CLIENTE` o `PRESTADOR` (por defecto,
-`CLIENTE`). Al registrar un prestador también se crea su perfil en
-`prestador_servicio`; para habilitar conversaciones, también se crea el perfil
-de cliente que relaciona su cuenta con los chats.
-
-Al aceptar un presupuesto, el sistema marca el aviso como `EN_PROCESO`, crea la
-conversación con el prestador elegido y permite continuar el chat desde
-**Mensajes**. Los cambios de esquema de conversaciones se aplican ejecutando
-`alembic upgrade head` desde la carpeta `backend`.
-
-El proceso es:
-
-```text
-Datos recibidos
-      ↓
-Pydantic valida los datos
-      ↓
-Se comprueba si el correo ya existe
-      ↓
-Se hashea la contraseña con Passlib + bcrypt
-      ↓
-Se crea el Usuario
-      ↓
-Se guarda en PostgreSQL
-```
-
-La contraseña **no se guarda en texto plano**.
-En la tabla `usuario` se almacena en `password_hash`; los datos de acceso usan
-`email` y `contrasena`.
-
-Para iniciar sesión se envía `email` y `contrasena` a `POST /auth/login`.
-El endpoint `GET /auth/me` devuelve los datos básicos del usuario autenticado.
-
-## Bono mensual de créditos para prestadores
-
-Al registrarse, un prestador recibe 5 créditos iniciales. Además, recibe 5
-créditos acumulables en cada aniversario mensual de su ciclo. El proceso
-`python -m app.scripts.acreditar_creditos_mensuales` acredita los bonos
-vencidos sin reemplazar el saldo disponible; si se ejecuta tarde, acredita
-juntos todos los meses pendientes y no duplica los ya pagados.
-
-Después de `alembic upgrade head`, configura el programador de tareas del
-hosting para ejecutar ese comando diariamente desde la carpeta `backend`
-(por ejemplo, un Cron Job diario a las 00:00 UTC). Para prestadores ya
-registrados, el primer aniversario mensual empieza al aplicar esta migración;
-los nuevos prestadores empiezan desde su registro.
-
-## Buscar solicitudes por zona
-
-El endpoint autenticado `GET /avisos/zona` devuelve las solicitudes cuya
-localidad (`zona`) coincide con la zona configurada en el perfil del prestador.
-La comparación ignora mayúsculas y espacios al inicio o al final. El backend
-actual guarda la ubicación como texto, por lo que este filtro no calcula
-distancias geográficas.
-
-## Actualizar una base existente
-
-Desde la carpeta `backend`, ejecutar `alembic upgrade head` para aplicar la
-migración que adapta el esquema anterior, conserva los usuarios existentes y
-crea los roles requeridos. Los nombres completos se dividen en nombre y
-apellido, y los créditos existentes del prestador se conservan como saldo.
-Los campos antiguos sin equivalente (localidad del cliente,
-provincia/departamento, promedio y estado del prestador) se eliminan. La
-migración del backend cubre las tablas de autenticación y perfiles utilizadas
-actualmente; las tablas de avisos, postulaciones, trabajos y créditos se crean
-con el script PostgreSQL del modelo nuevo.
-
-Por ejemplo, si el usuario escribe:
-
-```text
-123456
-```
-
-en la base de datos se almacena un hash similar a:
-
-```text
-$2b$12$................................
-```
-
----
-
-# 12. Importante: no modificar las contraseñas almacenadas
-
-Las contraseñas están almacenadas mediante hash.
-
-No se deben guardar contraseñas directamente como:
-
-```text
-123456
-password
-admin123
-```
-
-El backend utiliza:
-
-```python
-pwd_context.hash(contrasena)
-```
-
-para generar el hash.
-
-Para comprobar una contraseña se utiliza:
-
-```python
-pwd_context.verify(
-    contrasena,
-    contrasena_hash
-)
-```
-
----
-
-# 13. Trabajar con Git
-
-Antes de comenzar a trabajar, siempre actualizar el repositorio:
-
-```powershell
-git pull
-```
-
-Después de realizar cambios:
-
-```powershell
-git status
-```
-
-Agregar los archivos modificados:
-
-```powershell
-git add .
-```
-
-Crear el commit:
-
-```powershell
-git commit -m "descripcion del cambio"
-```
-
-Finalmente:
-
-```powershell
-git push
-```
-
----
-
-# 14. Antes de empezar a programar
-
-Siempre hacer:
-
-```powershell
-git pull
-```
-
-Esto permite obtener los últimos cambios realizados por los demás integrantes.
-
-Ejemplo:
-
-```text
-GitHub
-   ↓
-git pull
-   ↓
-Tu computadora
-   ↓
-Realizás cambios
-   ↓
-git add
-   ↓
-git commit
-   ↓
-git push
-   ↓
-GitHub
-```
-
----
-
-# 15. Trabajo entre compañeros
-
-El proyecto está separado en backend y frontend:
-
-```text
-UberOficios/
-│
-├── backend/
-│
-└── frontend/
-```
-
-Esto permite que los integrantes puedan trabajar principalmente en su respectiva parte del proyecto.
-
-### Backend
-
-Ubicación:
-
-```text
-backend/
-```
-
-Tecnologías:
-
-* Python
-* FastAPI
-* SQLAlchemy
-* PostgreSQL
-* JWT
-* Passlib
-
-### Frontend
-
-Ubicación:
-
-```text
-frontend/
-```
-
-Tecnologías:
-
-* HTML
-* CSS
-* JavaScript
-
----
-
-# 16. Regla importante antes de hacer cambios
-
-Antes de comenzar:
-
-```powershell
-git pull
-```
-
-Después de terminar una tarea:
-
-```powershell
-git status
-git add .
-git commit -m "descripcion"
-git push
-```
-
-Evitar trabajar durante mucho tiempo sin actualizar el repositorio.
-
----
-
-# 17. Si Git muestra conflictos
-
-Si aparece un mensaje indicando que existen conflictos, **no borrar archivos ni hacer `git push --force`**.
-
-Primero avisar al equipo para resolver el conflicto correctamente.
-
----
-
-# 18. Flujo recomendado para una tarea
-
-Ejemplo: implementar un nuevo endpoint.
-
-### 1. Actualizar código
-
-```powershell
-git pull
-```
-
-### 2. Crear/modificar código
-
-Trabajar dentro de:
-
-```text
-backend/app/
-```
-
-### 3. Probar
-
-Ejecutar:
-
-```powershell
-cd backend
-uvicorn app.main:app --reload
-```
-
-Y comprobar mediante:
-
-```text
-http://127.0.0.1:8000/docs
-```
-
-### 4. Guardar cambios
-
-Desde la raíz:
-
-```powershell
-git add .
-```
-
-### 5. Crear commit
-
-```powershell
-git commit -m "feat: agregar nuevo endpoint"
-```
-
-### 6. Subir
-
-```powershell
-git push
-```
-
----
-
-# 19. Estado actual del proyecto
-
-Actualmente el backend tiene:
-
-* Estructura organizada dentro de `backend/app`
-* Conexión con PostgreSQL
-* Modelos SQLAlchemy
-* FastAPI funcionando
-* Swagger funcionando
-* Health Check
-* Sistema de registro de usuarios
-* Validación mediante Pydantic
-* Hash de contraseñas mediante Passlib + bcrypt
-* Primer endpoint de autenticación:
-
-```text
-POST /auth/register
-```
-
----
-
-# 20. Objetivo del desarrollo
-
-El proyecto se desarrollará progresivamente.
-
-No es necesario implementar todas las entidades y funcionalidades de una sola vez.
-
-La idea es:
-
-```text
-Base de datos
-      ↓
-Modelos
-      ↓
-Schemas
-      ↓
-Endpoints
-      ↓
-Autenticación
-      ↓
-Lógica de negocio
-      ↓
-Frontend
-      ↓
-Integración
-      ↓
-Pruebas
-```
-
-Cada funcionalidad debe probarse antes de continuar con la siguiente.
-
----
-
-# 21. Comando rápido para empezar a trabajar
-
-Después de haber clonado y configurado el proyecto, el flujo habitual será:
-
-```powershell
-cd UberOficios
-git pull
-
-.\venv\Scripts\Activate.ps1
-
-cd backend
-uvicorn app.main:app --reload
-```
-
-Luego abrir:
-
-```text
-http://127.0.0.1:8000/docs
-```
-
-¡Listo para trabajar!
+- **`python`, `node` o `npm` no se reconoce:** instalar la herramienta y
+  reiniciar PowerShell para actualizar el PATH.
+- **Error de conexión a la base:** verificar `DATABASE_URL`, conectividad,
+  permisos y que PostgreSQL esté disponible.
+- **No se encuentra `alembic` o `uvicorn`:** activar el entorno virtual y
+  confirmar que se instalaron los paquetes de `backend\requirements.txt`.
+- **El frontend no conecta con la API:** comprobar que ambos servidores estén
+  activos y que el backend responda en `/health`.
+- **Falla una función de pagos o imágenes:** comprobar que el responsable haya
+  proporcionado las credenciales de prueba correspondientes en `.env`.
