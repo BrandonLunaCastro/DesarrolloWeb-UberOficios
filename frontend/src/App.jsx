@@ -61,15 +61,26 @@ const handleSubmit = async (e) => {
       localStorage.setItem('jwt', data.access_token);
       setToken(data.access_token);
     } else {
-      await registerUser({
+      const data = await registerUser({
         nombre,
         apellido,
         email,
         contrasena: password,
         rol: role === 'provider' ? 'PRESTADOR' : 'CLIENTE',
       });
-
-      alert('Cuenta creada correctamente');
+      localStorage.setItem('jwt', data.access_token);
+      setToken(data.access_token);
+      setUsuarioActual({
+        id_usuario: data.id_usuario,
+        nombre: data.nombre,
+        apellido: data.apellido,
+        email: data.email,
+        rol: data.rol,
+      });
+      setRolUsuario(data.rol);
+      setVista(null);
+      setPantalla('feed');
+      setPassword('');
     }
   } catch (err) {
     setError(err.message);

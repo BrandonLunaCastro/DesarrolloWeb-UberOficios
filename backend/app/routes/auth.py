@@ -97,6 +97,11 @@ def register(
         raise
 
     db.refresh(nuevo_usuario)
+    token = crear_token({
+        "sub": str(nuevo_usuario.id_usuario),
+        "email": nuevo_usuario.email,
+        "rol": nuevo_usuario.rol.nombre,
+    })
     return {
         "mensaje": "Usuario registrado correctamente",
         "id_usuario": nuevo_usuario.id_usuario,
@@ -104,6 +109,8 @@ def register(
         "apellido": nuevo_usuario.apellido,
         "email": nuevo_usuario.email,
         "rol": nuevo_usuario.rol.nombre,
+        "access_token": token,
+        "token_type": "bearer",
     }
 
 
